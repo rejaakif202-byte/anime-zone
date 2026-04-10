@@ -10,12 +10,11 @@
 </head>
 <body>
 
-  <!-- HEADER -->
   <header class="header">
     <div class="header-left">
-      <a href="index.html" class="menu-btn icon-btn">
+      <button class="icon-btn" onclick="history.back()">
         <i class="fas fa-arrow-left"></i>
-      </a>
+      </button>
       <a href="index.html" class="logo">ANIME <span>VERSE</span></a>
     </div>
     <div class="header-right">
@@ -26,68 +25,87 @@
   </header>
 
   <main class="main" id="detailMain">
-    <p class="empty-msg" id="loadingMsg">Loading...</p>
+    <div class="empty-state" style="min-height:60vh">
+      <i class="fas fa-spinner fa-spin"></i>
+      <h2>Loading...</h2>
+    </div>
   </main>
 
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
   <script src="data.js"></script>
   <script>
-    // Theme
     function toggleTheme() {
       const html = document.documentElement;
-      const btn = document.getElementById('themeBtn');
-      if (html.getAttribute('data-theme') === 'dark') {
-        html.setAttribute('data-theme', 'light');
-        btn.innerHTML = '<i class="fas fa-sun"></i>';
-        localStorage.setItem('av_theme', 'light');
-      } else {
-        html.setAttribute('data-theme', 'dark');
-        btn.innerHTML = '<i class="fas fa-moon"></i>';
-        localStorage.setItem('av_theme', 'dark');
-      }
+      const btn  = document.getElementById('themeBtn');
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      btn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+      localStorage.setItem('av_theme', isDark ? 'light' : 'dark');
     }
     function loadTheme() {
       const saved = localStorage.getItem('av_theme') || 'dark';
       document.documentElement.setAttribute('data-theme', saved);
       const btn = document.getElementById('themeBtn');
       if (btn) btn.innerHTML = saved === 'dark'
-        ? '<i class="fas fa-moon"></i>'
-        : '<i class="fas fa-sun"></i>';
+        ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
     }
 
-    function getAllAnime() {
-      const base = typeof animeData !== 'undefined' ? animeData : [];
+    async function getAnime(id) {
       try {
-        const extra = JSON.parse(localStorage.getItem('av_anime') || '[]');
-        return [...base, ...extra];
-      } catch { return base; }
+        const doc = await db.collection('anime').doc(id).get();
+        if (doc.exists) return { ...doc.data(), firestoreId: doc.id };
+      } catch(e) {}
+      return null;
     }
 
-    function getMyList() {
-      try { return JSON.parse(localStorage.getItem('av_mylist') || '[]'); }
-      catch { return []; }
-    }
-    function toggleWatchlist(id) {
-      id = parseInt(id);
-      let list = getMyList();
-      const btn = document.getElementById('watchlistBtn');
-      if (list.includes(id)) {
-        list = list.filter(x => x !== id);
-        btn.classList.remove('saved');
-        btn.innerHTML = '<i class="fas fa-heart"></i> Add to List';
+    async function toggleWatchlist(id) {
+      const user = auth.currentUser;
+      const btn  = document.getElementById('watchlistBtn');
+      if (user) {
+        const ref  = db.collection('users').doc(user.uid);
+        const doc  = await ref.get();
+        let list   = doc.exists ? (doc.data().watchlist || []) : [];
+        if (list.includes(id)) {
+          list = list.filter(x => x !== id);
+          btn.classList.remove('saved');
+          btn.innerHTML = '<i class="fas fa-heart"></i> Add to List';
+        } else {
+          list.push(id);
+          btn.classList.add('saved');
+          btn.innerHTML = '<i class="fas fa-heart"></i> Saved!';
+        }
+        await ref.update({ watchlist: list });
       } else {
-        list.push(id);
-        btn.classList.add('saved');
-        btn.innerHTML = '<i class="fas fa-heart"></i> Saved!';
+        let list = JSON.parse(localStorage.getItem('av_mylist') || '[]');
+        if (list.includes(id)) {
+          list = list.filter(x => x !== id);
+          btn.classList.remove('saved');
+          btn.innerHTML = '<i class="fas fa-heart"></i> Add to List';
+        } else {
+          list.push(id);
+          btn.classList.add('saved');
+          btn.innerHTML = '<i class="fas fa-heart"></i> Saved!';
+        }
+        localStorage.setItem('av_mylist', JSON.stringify(list));
       }
-      localStorage.setItem('av_mylist', JSON.stringify(list));
     }
 
     function switchSeason(animeId, seasonIndex, seasons) {
-      // Update tab active
       document.querySelectorAll('.season-tab').forEach((t, i) => {
         t.classList.toggle('active', i === seasonIndex);
       });
       renderEpisodes(animeId, seasons[seasonIndex]);
+    }
+
+    function getEpisodeLanguages(ep) {
+      if (ep.languages && Object.keys(ep.languages).length > 0) return ep.languages;
+      // Legacy support
+      if (ep.videoUrls) return { 'Japanese': ep.videoUrls };
+      if (ep.videoUrl)  return { 'Japanese': { '720p': ep.videoUrl } };
+      return {};
     }
 
     function renderEpisodes(animeId, season) {
@@ -98,61 +116,79 @@
         return;
       }
       season.episodes.forEach(ep => {
+        const langs = getEpisodeLanguages(ep);
+        const langCount = Object.keys(langs).length;
+        const hasVideo  = langCount > 0;
+
         const item = document.createElement('div');
         item.className = 'episode-item';
         item.innerHTML = `
           <div class="ep-thumb" style="position:relative">
             <img src="${ep.thumbnail || ''}" alt="Ep ${ep.id}"
               style="width:100%;height:100%;object-fit:cover;border-radius:8px;background:var(--bg3)"
-              onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300&q=80'"/>
+              onerror="this.style.background='var(--bg3)'"/>
             <div class="ep-play-icon"><i class="fas fa-play"></i></div>
           </div>
           <div class="ep-info">
             <div class="ep-num">Episode ${ep.id}</div>
             <div class="ep-title">${ep.title}</div>
-            <div class="ep-duration"><i class="fas fa-clock" style="font-size:10px"></i> ${ep.duration || ''}</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:3px">
+              <span class="ep-duration">
+                <i class="fas fa-clock" style="font-size:9px"></i> ${ep.duration || ''}
+              </span>
+              ${hasVideo ? `
+              <span style="font-size:10px;color:var(--accent);font-weight:600">
+                <i class="fas fa-language"></i> ${langCount} lang${langCount>1?'s':''}
+              </span>` : `
+              <span style="font-size:10px;color:#888">No video</span>`}
+            </div>
           </div>
         `;
-        item.addEventListener('click', () => {
-          window.location.href = `watch.html?id=${animeId}&season=${season.id}&ep=${ep.id}`;
-        });
+        if (hasVideo) {
+          item.style.cursor = 'pointer';
+          item.addEventListener('click', () => {
+            window.location.href = `watch.html?id=${animeId}&season=${season.id}&ep=${ep.id}`;
+          });
+        }
         list.appendChild(item);
       });
     }
 
-    function renderDetail(anime) {
-      const myList = getMyList();
-      const isSaved = myList.includes(anime.id);
+    async function renderDetail(anime) {
+      const animeId = anime.firestoreId;
+      const user    = auth.currentUser;
+      let isSaved   = false;
+      if (user) {
+        const doc = await db.collection('users').doc(user.uid).get();
+        const wl  = doc.exists ? (doc.data().watchlist || []) : [];
+        isSaved   = wl.includes(animeId);
+      } else {
+        const local = JSON.parse(localStorage.getItem('av_mylist') || '[]');
+        isSaved = local.includes(animeId);
+      }
 
       const firstSeason = anime.seasons && anime.seasons[0];
-      const firstEp = firstSeason && firstSeason.episodes && firstSeason.episodes[0];
-      const watchUrl = firstEp
-        ? `watch.html?id=${anime.id}&season=${firstSeason.id}&ep=${firstEp.id}`
-        : '#';
+      const firstEp     = firstSeason && firstSeason.episodes && firstSeason.episodes[0];
+      const watchUrl    = firstEp
+        ? `watch.html?id=${animeId}&season=${firstSeason.id}&ep=${firstEp.id}` : '#';
 
-      const genres = (anime.genre || []).map(g =>
-        `<span class="genre-tag">${g}</span>`).join('');
-
-      const seasonTabs = (anime.seasons || []).map((s, i) =>
-        `<button class="season-tab ${i === 0 ? 'active' : ''}"
-          onclick="switchSeason(${anime.id}, ${i}, animeSeasons)">
+      const genres    = (anime.genre || []).map(g => `<span class="genre-tag">${g}</span>`).join('');
+      const seasonTabs= (anime.seasons || []).map((s, i) => `
+        <button class="season-tab ${i===0?'active':''}"
+          onclick="switchSeason('${animeId}', ${i}, animeSeasons)">
           ${s.title}
-        </button>`
-      ).join('');
+        </button>`).join('');
 
-      const main = document.getElementById('detailMain');
-      main.innerHTML = `
+      document.getElementById('detailMain').innerHTML = `
         <img class="anime-banner"
           src="${anime.banner || anime.thumbnail || ''}"
           alt="${anime.title}"
-          onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80'"/>
+          onerror="this.style.background='var(--bg3)'"/>
 
         <div class="anime-detail-card">
           <div class="anime-detail-top">
-            <img class="anime-poster"
-              src="${anime.thumbnail || ''}"
-              alt="${anime.title}"
-              onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&q=80'"/>
+            <img class="anime-poster" src="${anime.thumbnail || ''}" alt="${anime.title}"
+              onerror="this.style.background='var(--bg3)'"/>
             <div class="anime-info">
               <h1>${anime.title}</h1>
               <p class="subtitle">${anime.studio || ''} · ${anime.year || ''}</p>
@@ -165,7 +201,7 @@
                 </span>
                 <span class="info-chip">
                   <i class="fas fa-layer-group"></i>
-                  ${(anime.seasons || []).length} Season${(anime.seasons || []).length !== 1 ? 's' : ''}
+                  ${(anime.seasons||[]).length} Season${(anime.seasons||[]).length!==1?'s':''}
                 </span>
               </div>
               <div class="genre-tags">${genres}</div>
@@ -178,40 +214,39 @@
             <a href="${watchUrl}" class="btn-primary" style="text-decoration:none">
               <i class="fas fa-play"></i> Watch Now
             </a>
-            <button class="btn-outline ${isSaved ? 'saved' : ''}"
-              id="watchlistBtn" onclick="toggleWatchlist(${anime.id})">
-              <i class="fas fa-heart"></i> ${isSaved ? 'Saved!' : 'Add to List'}
+            <button class="btn-outline ${isSaved?'saved':''}" id="watchlistBtn"
+              onclick="toggleWatchlist('${animeId}')">
+              <i class="fas fa-heart"></i> ${isSaved?'Saved!':'Add to List'}
             </button>
           </div>
         </div>
 
-        <div class="seasons-tabs" id="seasonsTabs">
-          ${seasonTabs}
-        </div>
-
+        <div class="seasons-tabs">${seasonTabs}</div>
         <div class="episodes-list" id="episodesList"></div>
       `;
 
-      // Store seasons reference for switchSeason
       window.animeSeasons = anime.seasons || [];
-
-      // Render first season episodes
-      if (firstSeason) renderEpisodes(anime.id, firstSeason);
+      if (firstSeason) renderEpisodes(animeId, firstSeason);
     }
 
     // INIT
     loadTheme();
-    const params = new URLSearchParams(window.location.search);
-    const id = parseInt(params.get('id'));
-    const all = getAllAnime();
-    const anime = all.find(a => a.id === id);
+    const params  = new URLSearchParams(window.location.search);
+    const animeId = params.get('id');
 
-    if (anime) {
-      document.title = `${anime.title} — Anime Verse`;
-      renderDetail(anime);
-    } else {
-      document.getElementById('loadingMsg').textContent = 'Anime not found!';
-    }
+    getAnime(animeId).then(anime => {
+      if (anime) {
+        document.title = `${anime.title} — Anime Verse`;
+        renderDetail(anime);
+      } else {
+        document.getElementById('detailMain').innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-exclamation-circle"></i>
+            <h2>Anime not found!</h2>
+            <p><a href="index.html" style="color:var(--accent)">Go back home</a></p>
+          </div>`;
+      }
+    });
   </script>
 </body>
 </html>
