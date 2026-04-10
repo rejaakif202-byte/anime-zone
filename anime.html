@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Anime Detail — Anime Verse</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <a href="index.html" class="menu-btn icon-btn">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+      <a href="index.html" class="logo">ANIME <span>VERSE</span></a>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" id="themeBtn" onclick="toggleTheme()">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="main" id="detailMain">
+    <p class="empty-msg" id="loadingMsg">Loading...</p>
+  </main>
+
+  <script src="data.js"></script>
+  <script>
+    // Theme
+    function toggleTheme() {
+      const html = document.documentElement;
+      const btn = document.getElementById('themeBtn');
+      if (html.getAttribute('data-theme') === 'dark') {
+        html.setAttribute('data-theme', 'light');
+        btn.innerHTML = '<i class="fas fa-sun"></i>';
+        localStorage.setItem('av_theme', 'light');
+      } else {
+        html.setAttribute('data-theme', 'dark');
+        btn.innerHTML = '<i class="fas fa-moon"></i>';
+        localStorage.setItem('av_theme', 'dark');
+      }
+    }
+    function loadTheme() {
+      const saved = localStorage.getItem('av_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      const btn = document.getElementById('themeBtn');
+      if (btn) btn.innerHTML = saved === 'dark'
+        ? '<i class="fas fa-moon"></i>'
+        : '<i class="fas fa-sun"></i>';
+    }
+
+    function getAllAnime() {
+      const base = typeof animeData !== 'undefined' ? animeData : [];
+      try {
+        const extra = JSON.parse(localStorage.getItem('av_anime') || '[]');
+        return [...base, ...extra];
+      } catch { return base; }
+    }
+
+    function getMyList() {
+      try { return JSON.parse(localStorage.getItem('av_mylist') || '[]'); }
+      catch { return []; }
+    }
+    function toggleWatchlist(id) {
+      id = parseInt(id);
+      let list = getMyList();
+      const btn = document.getElementById('watchlistBtn');
+      if (list.includes(id)) {
+        list = list.filter(x => x !== id);
+        btn.classList.remove('saved');
+        btn.innerHTML = '<i class="fas fa-heart"></i> Add to List';
+      } else {
+        list.push(id);
+        btn.classList.add('saved');
+        btn.innerHTML = '<i class="fas fa-heart"></i> Saved!';
+      }
+      localStorage.setItem('av_mylist', JSON.stringify(list));
+    }
+
+    function switchSeason(animeId, seasonIndex, seasons) {
+      // Update tab active
+      document.querySelectorAll('.season-tab').forEach((t, i) => {
+        t.classList.toggle('active', i === seasonIndex);
+      });
+      renderEpisodes(animeId, seasons[seasonIndex]);
+    }
+
+    function renderEpisodes(animeId, season) {
+      const list = document.getElementById('episodesList');
+      list.innerHTML = '';
+      if (!season || !season.episodes || season.episodes.length === 0) {
+        list.innerHTML = '<p class="empty-msg">No episodes added yet.</p>';
+        return;
+      }
+      season.episodes.forEach(ep => {
+        const item = document.createElement('div');
+        item.className = 'episode-item';
+        item.innerHTML = `
+          <div class="ep-thumb" style="position:relative">
+            <img src="${ep.thumbnail || ''}" alt="Ep ${ep.id}"
+              style="width:100%;height:100%;object-fit:cover;border-radius:8px;background:var(--bg3)"
+              onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300&q=80'"/>
+            <div class="ep-play-icon"><i class="fas fa-play"></i></div>
+          </div>
+          <div class="ep-info">
+            <div class="ep-num">Episode ${ep.id}</div>
+            <div class="ep-title">${ep.title}</div>
+            <div class="ep-duration"><i class="fas fa-clock" style="font-size:10px"></i> ${ep.duration || ''}</div>
+          </div>
+        `;
+        item.addEventListener('click', () => {
+          window.location.href = `watch.html?id=${animeId}&season=${season.id}&ep=${ep.id}`;
+        });
+        list.appendChild(item);
+      });
+    }
+
+    function renderDetail(anime) {
+      const myList = getMyList();
+      const isSaved = myList.includes(anime.id);
+
+      const firstSeason = anime.seasons && anime.seasons[0];
+      const firstEp = firstSeason && firstSeason.episodes && firstSeason.episodes[0];
+      const watchUrl = firstEp
+        ? `watch.html?id=${anime.id}&season=${firstSeason.id}&ep=${firstEp.id}`
+        : '#';
+
+      const genres = (anime.genre || []).map(g =>
+        `<span class="genre-tag">${g}</span>`).join('');
+
+      const seasonTabs = (anime.seasons || []).map((s, i) =>
+        `<button class="season-tab ${i === 0 ? 'active' : ''}"
+          onclick="switchSeason(${anime.id}, ${i}, animeSeasons)">
+          ${s.title}
+        </button>`
+      ).join('');
+
+      const main = document.getElementById('detailMain');
+      main.innerHTML = `
+        <img class="anime-banner"
+          src="${anime.banner || anime.thumbnail || ''}"
+          alt="${anime.title}"
+          onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80'"/>
+
+        <div class="anime-detail-card">
+          <div class="anime-detail-top">
+            <img class="anime-poster"
+              src="${anime.thumbnail || ''}"
+              alt="${anime.title}"
+              onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&q=80'"/>
+            <div class="anime-info">
+              <h1>${anime.title}</h1>
+              <p class="subtitle">${anime.studio || ''} · ${anime.year || ''}</p>
+              <div class="info-row">
+                <span class="info-chip rating">
+                  <i class="fas fa-star"></i> ${anime.rating || 'N/A'}
+                </span>
+                <span class="info-chip">
+                  <i class="fas fa-circle-dot"></i> ${anime.status || ''}
+                </span>
+                <span class="info-chip">
+                  <i class="fas fa-layer-group"></i>
+                  ${(anime.seasons || []).length} Season${(anime.seasons || []).length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <div class="genre-tags">${genres}</div>
+            </div>
+          </div>
+
+          <p class="anime-desc">${anime.description || ''}</p>
+
+          <div class="action-btns">
+            <a href="${watchUrl}" class="btn-primary" style="text-decoration:none">
+              <i class="fas fa-play"></i> Watch Now
+            </a>
+            <button class="btn-outline ${isSaved ? 'saved' : ''}"
+              id="watchlistBtn" onclick="toggleWatchlist(${anime.id})">
+              <i class="fas fa-heart"></i> ${isSaved ? 'Saved!' : 'Add to List'}
+            </button>
+          </div>
+        </div>
+
+        <div class="seasons-tabs" id="seasonsTabs">
+          ${seasonTabs}
+        </div>
+
+        <div class="episodes-list" id="episodesList"></div>
+      `;
+
+      // Store seasons reference for switchSeason
+      window.animeSeasons = anime.seasons || [];
+
+      // Render first season episodes
+      if (firstSeason) renderEpisodes(anime.id, firstSeason);
+    }
+
+    // INIT
+    loadTheme();
+    const params = new URLSearchParams(window.location.search);
+    const id = parseInt(params.get('id'));
+    const all = getAllAnime();
+    const anime = all.find(a => a.id === id);
+
+    if (anime) {
+      document.title = `${anime.title} — Anime Verse`;
+      renderDetail(anime);
+    } else {
+      document.getElementById('loadingMsg').textContent = 'Anime not found!';
+    }
+  </script>
+</body>
+</html>
