@@ -12,9 +12,79 @@
 
   <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
+  <!-- AUTH MODAL -->
+  <div class="modal-overlay hidden" id="authModal">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeAuthModal()">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="logo" style="font-size:28px;margin-bottom:4px">
+        ANIME <span>VERSE</span>
+      </div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:20px">
+        Join the community
+      </p>
+
+      <!-- TABS -->
+      <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:20px">
+        <button class="auth-tab active" id="loginTab" onclick="switchAuthTab('login')">Login</button>
+        <button class="auth-tab" id="signupTab" onclick="switchAuthTab('signup')">Sign Up</button>
+      </div>
+
+      <div id="authError" style="display:none;background:rgba(229,9,20,0.1);border:1px solid #e50914;color:#e50914;padding:8px 12px;border-radius:8px;font-size:12px;margin-bottom:14px"></div>
+      <div id="authSuccess" style="display:none;background:rgba(39,174,96,0.1);border:1px solid #27ae60;color:#27ae60;padding:8px 12px;border-radius:8px;font-size:12px;margin-bottom:14px"></div>
+
+      <!-- LOGIN FORM -->
+      <div id="loginForm">
+        <div class="form-group">
+          <label>EMAIL</label>
+          <input type="email" id="loginEmail" placeholder="your@email.com"/>
+        </div>
+        <div class="form-group">
+          <label>PASSWORD</label>
+          <input type="password" id="loginPassword" placeholder="Enter password"/>
+        </div>
+        <button class="btn-primary" onclick="loginUser()" style="width:100%;margin-top:4px">
+          <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+      </div>
+
+      <!-- SIGNUP FORM -->
+      <div id="signupForm" style="display:none">
+        <div class="form-group">
+          <label>DISPLAY NAME</label>
+          <input type="text" id="signupName" placeholder="Your name"/>
+        </div>
+        <div class="form-group">
+          <label>EMAIL</label>
+          <input type="email" id="signupEmail" placeholder="your@email.com"/>
+        </div>
+        <div class="form-group">
+          <label>PASSWORD</label>
+          <input type="password" id="signupPassword" placeholder="Min 6 characters"/>
+        </div>
+        <button class="btn-primary" onclick="signupUser()" style="width:100%;margin-top:4px">
+          <i class="fas fa-user-plus"></i> Create Account
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">ANIME <span>VERSE</span></div>
+
+    <!-- User info in sidebar -->
+    <div id="sidebarUserInfo" style="display:none;padding:10px 20px 16px;border-bottom:1px solid var(--border);margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px" id="sidebarAvatar">?</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)" id="sidebarName">User</div>
+          <div style="font-size:11px;color:var(--text2)" id="sidebarEmail"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="sidebar-section">
       <p class="sidebar-label">BROWSE</p>
       <a href="index.html" class="sidebar-item active">
@@ -27,25 +97,35 @@
         <i class="fas fa-heart"></i> My List
       </a>
     </div>
+
     <div class="sidebar-section">
       <p class="sidebar-label">CATEGORIES</p>
       <a href="#" class="sidebar-item" onclick="filterCategory('all',null); closeSidebar()">
-        <i class="fas fa-folder"></i> All
+        <i class="fas fa-border-all"></i> All
       </a>
       <a href="#" class="sidebar-item" onclick="filterCategory('anime',null); closeSidebar()">
-        <i class="fas fa-folder"></i> Anime
+        <i class="fas fa-dragon"></i> Anime
       </a>
       <a href="#" class="sidebar-item" onclick="filterCategory('movie',null); closeSidebar()">
-        <i class="fas fa-folder"></i> Movie
-      </a>
-      <a href="#" class="sidebar-item" onclick="filterCategory('news',null); closeSidebar()">
-        <i class="fas fa-folder"></i> News
+        <i class="fas fa-film"></i> Movie
       </a>
       <a href="#" class="sidebar-item" onclick="filterCategory('series',null); closeSidebar()">
-        <i class="fas fa-folder"></i> Series
+        <i class="fas fa-tv"></i> Series
+      </a>
+      <a href="#" class="sidebar-item" onclick="filterCategory('news',null); closeSidebar()">
+        <i class="fas fa-newspaper"></i> News
       </a>
     </div>
-    <!-- Admin link - sirf admin session me dikhega -->
+
+    <div class="sidebar-section" style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
+      <a href="#" class="sidebar-item" id="sidebarLoginBtn" onclick="openAuthModal(); closeSidebar()">
+        <i class="fas fa-sign-in-alt"></i> Login / Sign Up
+      </a>
+      <a href="#" class="sidebar-item" id="sidebarLogoutBtn" style="display:none" onclick="logoutUser(); closeSidebar()">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </a>
+    </div>
+
     <div class="sidebar-section" id="adminSidebarSection" style="display:none">
       <a href="admin.html" class="sidebar-item admin-link">
         <i class="fas fa-cog"></i> Admin Panel
@@ -65,15 +145,15 @@
       <button class="icon-btn" onclick="toggleSearch()">
         <i class="fas fa-search"></i>
       </button>
-      <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle Theme">
+      <button class="icon-btn" id="themeBtn" onclick="toggleTheme()">
         <i class="fas fa-moon"></i>
       </button>
       <button class="icon-btn" onclick="showMyList()">
         <i class="fas fa-heart"></i>
       </button>
-      <div class="profile-btn icon-btn">
-        <i class="fas fa-user"></i>
-      </div>
+      <button class="profile-btn icon-btn" id="profileBtn" onclick="openAuthModal()">
+        <i class="fas fa-user" id="profileIcon"></i>
+      </button>
     </div>
   </header>
 
@@ -86,10 +166,8 @@
     <button onclick="closeSearch()"><i class="fas fa-times"></i></button>
   </div>
 
-  <!-- MAIN CONTENT -->
+  <!-- MAIN -->
   <main class="main">
-
-    <!-- CATEGORY PILLS -->
     <div class="category-pills">
       <button class="pill active" onclick="filterCategory('all', this)">ALL</button>
       <button class="pill" onclick="filterCategory('anime', this)">ANIME</button>
@@ -98,14 +176,12 @@
       <button class="pill" onclick="filterCategory('series', this)">SERIES</button>
     </div>
 
-    <!-- SEARCH RESULTS -->
     <section class="section hidden" id="searchSection">
       <h2 class="section-title">🔍 Search Results</h2>
       <div class="grid" id="searchGrid"></div>
       <p class="empty-msg hidden" id="searchEmpty">No results found!</p>
     </section>
 
-    <!-- MY LIST -->
     <section class="section hidden" id="myListSection">
       <h2 class="section-title">❤️ My List</h2>
       <div class="grid" id="myListGrid"></div>
@@ -114,23 +190,18 @@
       </p>
     </section>
 
-    <!-- CATEGORY RESULTS -->
     <section class="section hidden" id="categorySection">
-      <h2 class="section-title" id="categoryTitle">Anime</h2>
+      <h2 class="section-title" id="categoryTitle"></h2>
       <div class="grid" id="categoryGrid"></div>
     </section>
 
-    <!-- HOME SECTIONS -->
     <div id="homeSections">
-
-      <!-- TOP 10 -->
-      <section class="section" id="top10Section">
+      <section class="section hidden" id="top10Section">
         <h2 class="section-title">🏆 Top 10 Today</h2>
         <div class="scroll-row" id="top10Grid"></div>
       </section>
 
-      <!-- LATEST RELEASES -->
-      <section class="section" id="latestSection">
+      <section class="section hidden" id="latestSection">
         <div class="section-header">
           <h2 class="section-title">🎬 Latest Releases</h2>
           <a href="#" class="see-all" onclick="filterCategory('all',null)">See All →</a>
@@ -138,23 +209,30 @@
         <div class="grid" id="latestGrid"></div>
       </section>
 
-      <!-- TRENDING -->
-      <section class="section" id="trendingSection">
+      <section class="section hidden" id="trendingSection">
         <h2 class="section-title" id="trendingAnchor">🔥 Trending</h2>
         <div class="grid" id="trendingGrid"></div>
       </section>
 
-      <!-- EMPTY STATE (jab koi data nahi) -->
       <div id="emptyState" class="empty-state hidden">
         <i class="fas fa-film"></i>
         <h2>Coming Soon!</h2>
-        <p>Abhi koi anime available nahi hai. Admin jaldi content upload karega!</p>
+        <p>No content available yet. Check back soon!</p>
       </div>
 
+      <div id="loadingState" class="empty-state">
+        <i class="fas fa-spinner fa-spin"></i>
+        <h2>Loading...</h2>
+        <p>Fetching content for you</p>
+      </div>
     </div>
-
   </main>
 
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
