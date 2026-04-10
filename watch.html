@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Watch — Anime Verse</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-left">
+      <button class="icon-btn" id="backBtn" onclick="history.back()">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <a href="index.html" class="logo">ANIME <span>VERSE</span></a>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" id="themeBtn" onclick="toggleTheme()">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="main" id="watchMain">
+    <p class="empty-msg" id="loadingMsg">Loading player...</p>
+  </main>
+
+  <script src="data.js"></script>
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const btn = document.getElementById('themeBtn');
+      if (html.getAttribute('data-theme') === 'dark') {
+        html.setAttribute('data-theme', 'light');
+        btn.innerHTML = '<i class="fas fa-sun"></i>';
+        localStorage.setItem('av_theme', 'light');
+      } else {
+        html.setAttribute('data-theme', 'dark');
+        btn.innerHTML = '<i class="fas fa-moon"></i>';
+        localStorage.setItem('av_theme', 'dark');
+      }
+    }
+    function loadTheme() {
+      const saved = localStorage.getItem('av_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      const btn = document.getElementById('themeBtn');
+      if (btn) btn.innerHTML = saved === 'dark'
+        ? '<i class="fas fa-moon"></i>'
+        : '<i class="fas fa-sun"></i>';
+    }
+
+    function getAllAnime() {
+      const base = typeof animeData !== 'undefined' ? animeData : [];
+      try {
+        const extra = JSON.parse(localStorage.getItem('av_anime') || '[]');
+        return [...base, ...extra];
+      } catch { return base; }
+    }
+
+    function getEmbedUrl(url) {
+      if (!url || url.trim() === '') return null;
+      // YouTube full URL
+      if (url.includes('youtube.com/watch')) {
+        try {
+          const videoId = new URL(url).searchParams.get('v');
+          return { type: 'iframe', src: `https://www.youtube.com/embed/${videoId}?autoplay=1` };
+        } catch {}
+      }
+      // YouTube short URL
+      if (url.includes('youtu.be/')) {
+        const videoId = url.split('youtu.be/')[1].split('?')[0];
+        return { type: 'iframe', src: `https://www.youtube.com/embed/${videoId}?autoplay=1` };
+      }
+      // Google Drive
+      if (url.includes('drive.google.com')) {
+        const match = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+        if (match) return { type: 'iframe', src: `https://drive.google.com/file/d/${match[1]}/preview` };
+        const match2 = url.match(/id=([a-zA-Z0-9_-]{10,})/);
+        if (match2) return { type: 'iframe', src: `https://drive.google.com/file/d/${match2[1]}/preview` };
+      }
+      // Direct video file (mp4, etc.)
+      if (url.match(/\.(mp4|webm|ogg|mkv)(\?|$)/i)) {
+        return { type: 'video', src: url };
+      }
+      // Fallback - try iframe
+      return { type: 'iframe', src: url };
+    }
+
+    function renderPlayer(anime, season, episode, allEpisodes, seasonId, animeId) {
+      const embed = getEmbedUrl(episode.videoUrl);
+      let playerHTML = '';
+
+      if (!embed) {
+        playerHTML = `
+          <div class="player-wrapper">
+            <div class="no-video-msg">
+              <i class="fas fa-film"></i>
+              <span>Video not available yet.</span>
+              <small>Admin ne abhi tak video link add nahi kiya.</small>
+            </div>
+          </div>`;
+      } else if (embed.type === 'iframe') {
+        playerHTML = `
+          <div class="player-wrapper">
+            <iframe src="${embed.src}" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+          </div>`;
+      } else {
+        playerHTML = `
+          <div class="player-wrapper">
+            <video controls autoplay controlsList="nodownload">
+              <source src="${embed.src}"/>
+              Your browser does not support video.
+            </video>
+          </div>`;
+      }
+
+      // Find prev/next episode
+      const currIdx = allEpisodes.findIndex(e => e.id === episode.id);
+      const prevEp = currIdx > 0 ? allEpisodes[currIdx - 1] : null;
+      const nextEp = currIdx < allEpisodes.length - 1 ? allEpisodes[currIdx + 1] : null;
+
+      const prevBtn = prevEp
+        ? `<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${prevEp.id}" class="btn-outline" style="font-size:13px">
+            <i class="fas fa-backward"></i> Prev
+           </a>`
+        : `<button class="btn-outline" disabled style="opacity:0.4;font-size:13px">
+            <i class="fas fa-backward"></i> Prev
+           </button>`;
+
+      const nextBtn = nextEp
+        ? `<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${nextEp.id}" class="btn-primary" style="text-decoration:none;font-size:13px">
+            Next <i class="fas fa-forward"></i>
+           </a>`
+        : `<button class="btn-primary" disabled style="opacity:0.4;font-size:13px">
+            Next <i class="fas fa-forward"></i>
+           </button>`;
+
+      const main = document.getElementById('watchMain');
+      main.innerHTML = `
+        ${playerHTML}
+
+        <div class="ep-nav">
+          ${prevBtn}
+          <a href="anime.html?id=${animeId}" class="btn-outline" style="font-size:13px">
+            <i class="fas fa-list"></i> Episodes
+          </a>
+          ${nextBtn}
+        </div>
+
+        <div class="watch-info">
+          <div class="anime-ep-label">
+            ${anime.title} · ${season.title} · Episode ${episode.id}
+          </div>
+          <h2>${episode.title}</h2>
+          <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">
+            <span class="info-chip" style="font-size:12px;color:var(--text2)">
+              <i class="fas fa-clock" style="color:var(--accent)"></i> ${episode.duration || 'N/A'}
+            </span>
+          </div>
+          ${episode.description
+            ? `<p>${episode.description}</p>`
+            : ''}
+        </div>
+
+        <div style="margin-top:20px">
+          <h3 style="font-size:15px;margin-bottom:12px">Other Episodes</h3>
+          <div class="episodes-list" id="otherEps"></div>
+        </div>
+      `;
+
+      // Render other episodes
+      const otherEps = document.getElementById('otherEps');
+      allEpisodes.forEach(ep => {
+        const isActive = ep.id === episode.id;
+        const item = document.createElement('div');
+        item.className = 'episode-item';
+        if (isActive) item.style.borderColor = 'var(--accent)';
+        item.innerHTML = `
+          <div class="ep-thumb" style="position:relative">
+            <img src="${ep.thumbnail || ''}" alt="Ep ${ep.id}"
+              style="width:100%;height:100%;object-fit:cover;border-radius:8px;background:var(--bg3)"
+              onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300&q=80'"/>
+            ${isActive
+              ? `<div class="ep-play-icon" style="opacity:1;background:rgba(229,9,20,0.7)"><i class="fas fa-play"></i></div>`
+              : `<div class="ep-play-icon"><i class="fas fa-play"></i></div>`}
+          </div>
+          <div class="ep-info">
+            <div class="ep-num" ${isActive ? 'style="color:var(--accent)"' : ''}>
+              Episode ${ep.id} ${isActive ? '▶ Playing' : ''}
+            </div>
+            <div class="ep-title">${ep.title}</div>
+            <div class="ep-duration"><i class="fas fa-clock" style="font-size:10px"></i> ${ep.duration || ''}</div>
+          </div>
+        `;
+        if (!isActive) {
+          item.addEventListener('click', () => {
+            window.location.href = `watch.html?id=${animeId}&season=${seasonId}&ep=${ep.id}`;
+          });
+        }
+        otherEps.appendChild(item);
+      });
+    }
+
+    // INIT
+    loadTheme();
+    const params = new URLSearchParams(window.location.search);
+    const animeId = parseInt(params.get('id'));
+    const seasonId = parseInt(params.get('season'));
+    const epId = parseInt(params.get('ep'));
+
+    const all = getAllAnime();
+    const anime = all.find(a => a.id === animeId);
+
+    if (!anime) {
+      document.getElementById('loadingMsg').textContent = 'Anime not found!';
+    } else {
+      const season = anime.seasons.find(s => s.id === seasonId);
+      if (!season) {
+        document.getElementById('loadingMsg').textContent = 'Season not found!';
+      } else {
+        const episode = season.episodes.find(e => e.id === epId);
+        if (!episode) {
+          document.getElementById('loadingMsg').textContent = 'Episode not found!';
+        } else {
+          document.title = `${episode.title} — Anime Verse`;
+          renderPlayer(anime, season, episode, season.episodes, seasonId, animeId);
+        }
+      }
+    }
+  </script>
+</body>
+</html>
