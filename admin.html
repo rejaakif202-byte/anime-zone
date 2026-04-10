@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel — Anime Verse</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body class="admin-body">
+
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="admin-login">
+    <div class="login-card">
+      <span class="logo">ANIME <span style="color:var(--accent)">VERSE</span></span>
+      <p>Admin Panel — Sirf tumhare liye</p>
+      <div class="form-group">
+        <label>PASSWORD</label>
+        <input type="password" id="adminPass" placeholder="Enter password"
+          onkeydown="if(event.key==='Enter') checkLogin()"/>
+      </div>
+      <div id="loginError" style="color:#e50914;font-size:12px;margin-bottom:12px;display:none">
+        Wrong password!
+      </div>
+      <button class="btn-primary" onclick="checkLogin()" style="width:100%">
+        <i class="fas fa-lock"></i> Login
+      </button>
+    </div>
+  </div>
+
+  <!-- ADMIN DASHBOARD -->
+  <div id="adminDashboard" style="display:none">
+
+    <header class="admin-header">
+      <span class="logo">ANIME <span style="color:var(--accent)">VERSE</span> <span style="font-size:13px;color:var(--text2);font-family:'Poppins',sans-serif;font-weight:400"> Admin</span></span>
+      <div style="display:flex;gap:8px">
+        <button class="icon-btn" onclick="toggleTheme()" id="themeBtn">
+          <i class="fas fa-moon"></i>
+        </button>
+        <a href="index.html" class="icon-btn" style="display:flex;align-items:center;justify-content:center">
+          <i class="fas fa-home"></i>
+        </a>
+        <button class="icon-btn" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="admin-main">
+
+      <!-- STATS -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;margin-top:16px">
+        <div class="admin-card" style="text-align:center;padding:14px">
+          <div style="font-size:24px;font-weight:700;color:var(--accent)" id="statTotal">0</div>
+          <div style="font-size:11px;color:var(--text2)">Total</div>
+        </div>
+        <div class="admin-card" style="text-align:center;padding:14px">
+          <div style="font-size:24px;font-weight:700;color:#2a6dd9" id="statAnime">0</div>
+          <div style="font-size:11px;color:var(--text2)">Anime</div>
+        </div>
+        <div class="admin-card" style="text-align:center;padding:14px">
+          <div style="font-size:24px;font-weight:700;color:#27ae60" id="statMovies">0</div>
+          <div style="font-size:11px;color:var(--text2)">Movies</div>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="admin-tabs">
+        <button class="admin-tab active" onclick="switchTab('add', this)">➕ Add Anime</button>
+        <button class="admin-tab" onclick="switchTab('manage', this)">📋 Manage</button>
+        <button class="admin-tab" onclick="switchTab('episode', this)">🎬 Add Episode</button>
+      </div>
+
+      <!-- TAB: ADD ANIME -->
+      <div class="admin-panel active" id="tab-add">
+        <div class="admin-card">
+          <h3>Add New Anime / Movie</h3>
+          <div id="addSuccess" class="success-msg">✅ Added successfully!</div>
+
+          <div class="form-group">
+            <label>TITLE *</label>
+            <input type="text" id="a_title" placeholder="e.g. Demon Slayer"/>
+          </div>
+          <div class="form-group">
+            <label>TYPE *</label>
+            <select id="a_type">
+              <option value="anime">Anime</option>
+              <option value="movie">Movie</option>
+              <option value="series">Series</option>
+              <option value="news">News</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>GENRES (comma separated)</label>
+            <input type="text" id="a_genre" placeholder="e.g. Action, Fantasy, Drama"/>
+          </div>
+          <div class="form-group">
+            <label>RATING (out of 10)</label>
+            <input type="number" id="a_rating" placeholder="e.g. 8.5" min="0" max="10" step="0.1"/>
+          </div>
+          <div class="form-group">
+            <label>YEAR</label>
+            <input type="number" id="a_year" placeholder="e.g. 2023"/>
+          </div>
+          <div class="form-group">
+            <label>STATUS</label>
+            <select id="a_status">
+              <option value="Ongoing">Ongoing</option>
+              <option value="Completed">Completed</option>
+              <option value="Upcoming">Upcoming</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>STUDIO</label>
+            <input type="text" id="a_studio" placeholder="e.g. ufotable"/>
+          </div>
+          <div class="form-group">
+            <label>THUMBNAIL URL (Cover Image) *</label>
+            <input type="url" id="a_thumb" placeholder="https://..."/>
+          </div>
+          <div class="form-group">
+            <label>BANNER URL (Wide Banner)</label>
+            <input type="url" id="a_banner" placeholder="https://..."/>
+          </div>
+          <div class="form-group">
+            <label>DESCRIPTION</label>
+            <textarea id="a_desc" placeholder="Anime ki story likho..."></textarea>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+              <input type="checkbox" id="a_trending"/> Trending
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+              <input type="checkbox" id="a_latest"/> Latest Release
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+              <input type="checkbox" id="a_top10"/> Top 10
+            </label>
+          </div>
+          <button class="btn-primary" onclick="addAnime()" style="width:100%">
+            <i class="fas fa-plus"></i> Add to Website
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB: MANAGE -->
+      <div class="admin-panel" id="tab-manage">
+        <div class="admin-card">
+          <h3>All Anime (Admin Added)</h3>
+          <div id="manageList"></div>
+          <div id="manageEmpty" style="color:var(--text2);font-size:13px;text-align:center;padding:20px">
+            No admin-added anime yet.
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>📤 Export Data (Copy to data.js)</h3>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:10px">
+            Ye data copy karke GitHub me data.js me animeData array me add karo.
+          </p>
+          <button class="btn-outline" onclick="exportData()" style="width:100%;margin-bottom:10px">
+            <i class="fas fa-copy"></i> Generate Export JSON
+          </button>
+          <div id="exportBox" class="export-box" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- TAB: ADD EPISODE -->
+      <div class="admin-panel" id="tab-episode">
+        <div class="admin-card">
+          <h3>Add Season / Episode</h3>
+          <div id="epSuccess" class="success-msg">✅ Episode added!</div>
+
+          <div class="form-group">
+            <label>SELECT ANIME *</label>
+            <select id="ep_anime" onchange="loadAnimeSeasons()">
+              <option value="">-- Select Anime --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>SELECT SEASON *</label>
+            <select id="ep_season">
+              <option value="">-- Select Season --</option>
+              <option value="new">➕ Add New Season</option>
+            </select>
+          </div>
+          <div id="newSeasonFields" style="display:none">
+            <div class="form-group">
+              <label>NEW SEASON TITLE</label>
+              <input type="text" id="new_season_title" placeholder="e.g. Season 2"/>
+            </div>
+            <div class="form-group">
+              <label>SEASON YEAR</label>
+              <input type="number" id="new_season_year" placeholder="e.g. 2024"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>EPISODE NUMBER *</label>
+            <input type="number" id="ep_num" placeholder="e.g. 1"/>
+          </div>
+          <div class="form-group">
+            <label>EPISODE TITLE *</label>
+            <input type="text" id="ep_title" placeholder="e.g. The Beginning"/>
+          </div>
+          <div class="form-group">
+            <label>EPISODE DESCRIPTION</label>
+            <textarea id="ep_desc" placeholder="Is episode mein kya hota hai..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>DURATION</label>
+            <input type="text" id="ep_duration" placeholder="e.g. 23 min"/>
+          </div>
+          <div class="form-group">
+            <label>THUMBNAIL URL</label>
+            <input type="url" id="ep_thumb" placeholder="https://..."/>
+          </div>
+          <div class="form-group">
+            <label>VIDEO URL *</label>
+            <input type="url" id="ep_video" placeholder="YouTube / Google Drive / Direct Link"/>
+            <p style="font-size:11px;color:var(--text2);margin-top:4px">
+              Supported: YouTube, Google Drive share link, direct .mp4 link
+            </p>
+          </div>
+          <button class="btn-primary" onclick="addEpisode()" style="width:100%">
+            <i class="fas fa-film"></i> Add Episode
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    const ADMIN_PASSWORD = 'animeverseadmin'; // Change this!
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const btn = document.getElementById('themeBtn');
+      if (html.getAttribute('data-theme') === 'dark') {
+        html.setAttribute('data-theme', 'light');
+        btn.innerHTML = '<i class="fas fa-sun"></i>';
+        localStorage.setItem('av_theme', 'light');
+      } else {
+        html.setAttribute('data-theme', 'dark');
+        btn.innerHTML = '<i class="fas fa-moon"></i>';
+        localStorage.setItem('av_theme', 'dark');
+      }
+    }
+
+    function loadTheme() {
+      const saved = localStorage.getItem('av_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      const btn = document.getElementById('themeBtn');
+      if (btn) btn.innerHTML = saved === 'dark'
+        ? '<i class="fas fa-moon"></i>'
+        : '<i class="fas fa-sun"></i>';
+    }
+
+    function checkLogin() {
+      const pass = document.getElementById('adminPass').value;
+      if (pass === ADMIN_PASSWORD) {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminDashboard').style.display = 'block';
+        sessionStorage.setItem('av_admin', '1');
+        initDashboard();
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+      }
+    }
+
+    function logout() {
+      sessionStorage.removeItem('av_admin');
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('adminDashboard').style.display = 'none';
+    }
+
+    function getAdminAnime() {
+      try { return JSON.parse(localStorage.getItem('av_anime') || '[]'); }
+      catch { return []; }
+    }
+    function saveAdminAnime(list) {
+      localStorage.setItem('av_anime', JSON.stringify(list));
+    }
+
+    function getAllAnime() {
+      const base = typeof animeData !== 'undefined' ? animeData : [];
+      return [...base, ...getAdminAnime()];
+    }
+
+    function getNextId() {
+      const all = getAllAnime();
+      return all.length > 0 ? Math.max(...all.map(a => a.id)) + 1 : 100;
+    }
+
+    function switchTab(tab, btn) {
+      document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    function updateStats() {
+      const all = getAllAnime();
+      document.getElementById('statTotal').textContent = all.length;
+      document.getElementById('statAnime').textContent = all.filter(a => a.type === 'anime').length;
+      document.getElementById('statMovies').textContent = all.filter(a => a.type === 'movie').length;
+    }
+
+    function addAnime() {
+      const title = document.getElementById('a_title').value.trim();
+      const thumb = document.getElementById('a_thumb').value.trim();
+      if (!title) { alert('Title daalo!'); return; }
+      if (!thumb) { alert('Thumbnail URL daalo!'); return; }
+
+      const anime = {
+        id: getNextId(),
+        title,
+        type: document.getElementById('a_type').value,
+        genre: document.getElementById('a_genre').value.split(',').map(g => g.trim()).filter(Boolean),
+        rating: parseFloat(document.getElementById('a_rating').value) || 0,
+        year: parseInt(document.getElementById('a_year').value) || new Date().getFullYear(),
+        status: document.getElementById('a_status').value,
+        studio: document.getElementById('a_studio').value.trim(),
+        thumbnail: thumb,
+        banner: document.getElementById('a_banner').value.trim() || thumb,
+        description: document.getElementById('a_desc').value.trim(),
+        trending: document.getElementById('a_trending').checked,
+        latest: document.getElementById('a_latest').checked,
+        top10: document.getElementById('a_top10').checked,
+        top10rank: 0,
+        seasons: []
+      };
+
+      const list = getAdminAnime();
+      list.push(anime);
+      saveAdminAnime(list);
+
+      // Reset form
+      ['a_title','a_genre','a_rating','a_year','a_studio','a_thumb','a_banner','a_desc'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      ['a_trending','a_latest','a_top10'].forEach(id => {
+        document.getElementById(id).checked = false;
+      });
+
+      document.getElementById('addSuccess').style.display = 'block';
+      setTimeout(() => document.getElementById('addSuccess').style.display = 'none', 3000);
+      updateStats();
+      renderManageList();
+      populateAnimeDropdown();
+    }
+
+    function renderManageList() {
+      const list = getAdminAnime();
+      const container = document.getElementById('manageList');
+      const empty = document.getElementById('manageEmpty');
+      container.innerHTML = '';
+      if (list.length === 0) { empty.style.display = 'block'; return; }
+      empty.style.display = 'none';
+
+      list.forEach((anime, idx) => {
+        const item = document.createElement('div');
+        item.className = 'anime-manage-item';
+        item.innerHTML = `
+          <img class="anime-manage-thumb"
+            src="${anime.thumbnail || ''}" alt="${anime.title}"
+            onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=100&q=80'"/>
+          <div class="anime-manage-info">
+            <strong>${anime.title}</strong>
+            <span>${anime.type.toUpperCase()} · ${anime.year} · ${anime.seasons.length} season(s)</span>
+          </div>
+          <div class="anime-manage-actions">
+            <button class="btn-sm delete" onclick="deleteAnime(${anime.id})">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function deleteAnime(id) {
+      if (!confirm('Delete karna chahte ho?')) return;
+      let list = getAdminAnime();
+      list = list.filter(a => a.id !== id);
+      saveAdminAnime(list);
+      renderManageList();
+      updateStats();
+      populateAnimeDropdown();
+    }
+
+    function exportData() {
+      const list = getAdminAnime();
+      const box = document.getElementById('exportBox');
+      if (list.length === 0) {
+        box.style.display = 'block';
+        box.textContent = 'Koi admin-added anime nahi hai abhi.';
+        return;
+      }
+      box.style.display = 'block';
+      box.textContent = JSON.stringify(list, null, 2);
+    }
+
+    // Episode management
+    function populateAnimeDropdown() {
+      const sel = document.getElementById('ep_anime');
+      const all = getAllAnime();
+      sel.innerHTML = '<option value="">-- Select Anime --</option>';
+      all.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a.id;
+        opt.textContent = a.title;
+        sel.appendChild(opt);
+      });
+    }
+
+    function loadAnimeSeasons() {
+      const animeId = parseInt(document.getElementById('ep_anime').value);
+      const sel = document.getElementById('ep_season');
+      sel.innerHTML = '<option value="">-- Select Season --</option><option value="new">➕ Add New Season</option>';
+      document.getElementById('newSeasonFields').style.display = 'none';
+
+      if (!animeId) return;
+      const all = getAllAnime();
+      const anime = all.find(a => a.id === animeId);
+      if (!anime || !anime.seasons) return;
+
+      anime.seasons.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = s.title;
+        sel.insertBefore(opt, sel.lastElementChild);
+      });
+
+      sel.addEventListener('change', function() {
+        document.getElementById('newSeasonFields').style.display =
+          this.value === 'new' ? 'block' : 'none';
+      });
+    }
+
+    function addEpisode() {
+      const animeId = parseInt(document.getElementById('ep_anime').value);
+      const seasonVal = document.getElementById('ep_season').value;
+      const epNum = parseInt(document.getElementById('ep_num').value);
+      const epTitle = document.getElementById('ep_title').value.trim();
+
+      if (!animeId) { alert('Anime select karo!'); return; }
+      if (!seasonVal) { alert('Season select karo!'); return; }
+      if (!epNum) { alert('Episode number daalo!'); return; }
+      if (!epTitle) { alert('Episode title daalo!'); return; }
+
+      const episode = {
+        id: epNum,
+        title: epTitle,
+        description: document.getElementById('ep_desc').value.trim(),
+        duration: document.getElementById('ep_duration').value.trim(),
+        thumbnail: document.getElementById('ep_thumb').value.trim(),
+        videoUrl: document.getElementById('ep_video').value.trim()
+      };
+
+      // Check if anime is in admin list or base data
+      let adminList = getAdminAnime();
+      let anime = adminList.find(a => a.id === animeId);
+
+      if (!anime) {
+        // Copy from base data to admin list
+        const base = typeof animeData !== 'undefined' ? animeData : [];
+        const baseAnime = base.find(a => a.id === animeId);
+        if (baseAnime) {
+          anime = JSON.parse(JSON.stringify(baseAnime));
+          adminList.push(anime);
+        } else {
+          alert('Anime nahi mila!');
+          return;
+        }
+      }
+
+      if (seasonVal === 'new') {
+        // Add new season
+        const newSeasonId = anime.seasons.length > 0
+          ? Math.max(...anime.seasons.map(s => s.id)) + 1
+          : 1;
+        const newSeason = {
+          id: newSeasonId,
+          title: document.getElementById('new_season_title').value.trim() || `Season ${newSeasonId}`,
+          year: parseInt(document.getElementById('new_season_year').value) || new Date().getFullYear(),
+          episodes: [episode]
+        };
+        anime.seasons.push(newSeason);
+      } else {
+        // Add to existing season
+        const season = anime.seasons.find(s => s.id === parseInt(seasonVal));
+        if (!season) { alert('Season nahi mila!'); return; }
+        // Remove if same ep number exis
