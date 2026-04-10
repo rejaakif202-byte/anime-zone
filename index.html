@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AnimeZone</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+
+  <!-- SIDEBAR OVERLAY -->
+  <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">ANIME<span>ZONE</span></div>
+
+    <div class="sidebar-section">
+      <p class="sidebar-label">BROWSE</p>
+      <a href="index.html" class="sidebar-item active">
+        <i class="fas fa-home"></i> Home
+      </a>
+      <a href="#trending" class="sidebar-item" onclick="closeSidebar()">
+        <i class="fas fa-fire"></i> Trending
+      </a>
+      <a href="#" class="sidebar-item" onclick="openMyList()">
+        <i class="fas fa-heart"></i> My List
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <p class="sidebar-label">CATEGORIES</p>
+      <a href="#" class="sidebar-item" onclick="filterCategory('all')">
+        <i class="fas fa-folder"></i> All
+      </a>
+      <a href="#" class="sidebar-item" onclick="filterCategory('anime')">
+        <i class="fas fa-folder"></i> Anime
+      </a>
+      <a href="#" class="sidebar-item" onclick="filterCategory('movie')">
+        <i class="fas fa-folder"></i> Movie
+      </a>
+      <a href="#" class="sidebar-item" onclick="filterCategory('series')">
+        <i class="fas fa-folder"></i> Series
+      </a>
+    </div>
+  </aside>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <button class="menu-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="logo">ANIME<span>ZONE</span></div>
+    </div>
+
+    <div class="header-right">
+      <button class="icon-btn" onclick="toggleSearch()">
+        <i class="fas fa-search"></i>
+      </button>
+      <button class="icon-btn theme-btn" onclick="toggleTheme()" id="themeBtn">
+        <i class="fas fa-moon"></i>
+      </button>
+      <button class="icon-btn">
+        <i class="fas fa-bell"></i>
+      </button>
+      <button class="icon-btn profile-btn">
+        <i class="fas fa-user"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- SEARCH BAR -->
+  <div class="search-bar" id="searchBar">
+    <input type="text" id="searchInput" placeholder="Search anime, movies, series..."
+      oninput="searchAnime(this.value)" />
+    <button onclick="toggleSearch()"><i class="fas fa-times"></i></button>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- CATEGORY PILLS -->
+    <div class="category-pills">
+      <button class="pill active" onclick="filterCategory('all', this)">ALL</button>
+      <button class="pill" onclick="filterCategory('anime', this)">ANIME</button>
+      <button class="pill" onclick="filterCategory('movie', this)">MOVIE</button>
+      <button class="pill" onclick="filterCategory('news', this)">NEWS</button>
+      <button class="pill" onclick="filterCategory('series', this)">SERIES</button>
+    </div>
+
+    <!-- SEARCH RESULTS -->
+    <section class="section hidden" id="searchResults">
+      <h2 class="section-title">🔍 Search Results</h2>
+      <div class="grid" id="searchGrid"></div>
+    </section>
+
+    <!-- TOP 10 -->
+    <section class="section" id="top10Section">
+      <h2 class="section-title">🏆 Top 10 Today</h2>
+      <div class="scroll-row" id="top10Grid"></div>
+    </section>
+
+    <!-- LATEST RELEASES -->
+    <section class="section" id="latestSection">
+      <div class="section-header">
+        <h2 class="section-title">🎬 Latest Releases</h2>
+        <a href="#" class="see-all">See All →</a>
+      </div>
+      <div class="grid" id="latestGrid"></div>
+    </section>
+
+    <!-- TRENDING -->
+    <section class="section" id="trending">
+      <h2 class="section-title">🔥 Trending</h2>
+      <div class="grid" id="trendingGrid"></div>
+    </section>
+
+    <!-- MY LIST -->
+    <section class="section hidden" id="myListSection">
+      <h2 class="section-title">❤️ My List</h2>
+      <div class="grid" id="myListGrid"></div>
+    </section>
+
+  </main>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
