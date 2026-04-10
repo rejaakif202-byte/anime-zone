@@ -58,7 +58,6 @@ function searchAnime(query) {
   const homeSections = document.getElementById('homeSections');
   const myListSection = document.getElementById('myListSection');
   const categorySection = document.getElementById('categorySection');
-  const searchEmpty = document.getElementById('searchEmpty');
 
   if (q.length < 1) {
     searchSection.classList.add('hidden');
@@ -79,16 +78,18 @@ function searchAnime(query) {
   );
 
   const grid = document.getElementById('searchGrid');
+  const empty = document.getElementById('searchEmpty');
   grid.innerHTML = '';
+
   if (results.length === 0) {
-    searchEmpty.classList.remove('hidden');
+    empty.classList.remove('hidden');
   } else {
-    searchEmpty.classList.add('hidden');
+    empty.classList.add('hidden');
     results.forEach(a => grid.appendChild(createCard(a)));
   }
 }
 
-// ===== GET ALL ANIME (data.js + localStorage admin data) =====
+// ===== GET ALL ANIME =====
 function getAllAnime() {
   const base = typeof animeData !== 'undefined' ? animeData : [];
   try {
@@ -99,7 +100,6 @@ function getAllAnime() {
 
 // ===== FILTER CATEGORY =====
 function filterCategory(cat, btn) {
-  // Update pill active state
   if (btn) {
     document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
@@ -130,7 +130,14 @@ function filterCategory(cat, btn) {
 
   const filtered = getAllAnime().filter(a => a.type === cat);
   if (filtered.length === 0) {
-    grid.innerHTML = '<p class="empty-msg">Nothing here yet!</p>';
+    grid.innerHTML = `
+      <div style="grid-column:1/-1">
+        <div class="empty-state" style="min-height:40vh">
+          <i class="fas fa-folder-open"></i>
+          <h2>Koi content nahi</h2>
+          <p>Is category mein abhi kuch nahi hai.</p>
+        </div>
+      </div>`;
   } else {
     filtered.forEach(a => grid.appendChild(createCard(a)));
   }
@@ -141,20 +148,18 @@ function getMyList() {
   try { return JSON.parse(localStorage.getItem('av_mylist') || '[]'); }
   catch { return []; }
 }
-function saveMyList(list) {
-  localStorage.setItem('av_mylist', JSON.stringify(list));
-}
+
 function toggleMyList(id, btnEl) {
   id = parseInt(id);
   let list = getMyList();
   if (list.includes(id)) {
     list = list.filter(x => x !== id);
-    if (btnEl) { btnEl.classList.remove('saved'); btnEl.innerHTML = '<i class="fas fa-heart"></i>'; }
+    if (btnEl) { btnEl.classList.remove('saved'); }
   } else {
     list.push(id);
-    if (btnEl) { btnEl.classList.add('saved'); btnEl.innerHTML = '<i class="fas fa-heart"></i>'; }
+    if (btnEl) { btnEl.classList.add('saved'); }
   }
-  saveMyList(list);
+  localStorage.setItem('av_mylist', JSON.stringify(list));
 }
 
 function showMyList() {
@@ -162,7 +167,6 @@ function showMyList() {
   document.getElementById('searchSection').classList.add('hidden');
   document.getElementById('categorySection').classList.add('hidden');
   document.getElementById('myListSection').classList.remove('hidden');
-
   document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
 
   const list = getMyList();
@@ -198,9 +202,10 @@ function createCard(anime, isTop10 = false) {
 
   card.innerHTML = `
     <div style="position:relative">
-      <img class="card-thumb" src="${anime.thumbnail || ''}"
+      <img class="card-thumb"
+        src="${anime.thumbnail || ''}"
         alt="${anime.title}"
-        onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&q=80'"/>
+        onerror="this.style.background='var(--bg3)'"/>
       ${rankHTML}
       <button class="card-heart ${isSaved ? 'saved' : ''}"
         onclick="event.stopPropagation(); toggleMyList(${anime.id}, this)">
@@ -231,16 +236,37 @@ function scrollTrending() {
   if (el) el.scrollIntoView({ behavior: 'smooth' });
 }
 
-// ===== RENDER HOME SECTIONS =====
+// ===== RENDER HOME =====
 function renderHome() {
   const all = getAllAnime();
+
+  // Agar koi data nahi
+  const emptyState = document.getElementById('emptyState');
+  const top10Section = document.getElementById('top10Section');
+  const latestSection = document.getElementById('latestSection');
+  const trendingSection = document.getElementById('trendingSection');
+
+  if (all.length === 0) {
+    emptyState.classList.remove('hidden');
+    top10Section.classList.add('hidden');
+    latestSection.classList.add('hidden');
+    trendingSection.classList.add('hidden');
+    return;
+  }
+
+  emptyState.classList.add('hidden');
 
   // Top 10
   const top10 = all.filter(a => a.top10).sort((a, b) => (a.top10rank || 99) - (b.top10rank || 99));
   const top10Grid = document.getElementById('top10Grid');
   if (top10Grid) {
     top10Grid.innerHTML = '';
-    top10.forEach(a => top10Grid.appendChild(createCard(a, true)));
+    if (top10.length > 0) {
+      top10Section.classList.remove('hidden');
+      top10.forEach(a => top10Grid.appendChild(createCard(a, true)));
+    } else {
+      top10Section.classList.add('hidden');
+    }
   }
 
   // Latest
@@ -248,8 +274,12 @@ function renderHome() {
   const latestGrid = document.getElementById('latestGrid');
   if (latestGrid) {
     latestGrid.innerHTML = '';
-    const show = latest.length ? latest : all.slice(0, 4);
-    show.forEach(a => latestGrid.appendChild(createCard(a)));
+    if (latest.length > 0) {
+      latestSection.classList.remove('hidden');
+      latest.forEach(a => latestGrid.appendChild(createCard(a)));
+    } else {
+      latestSection.classList.add('hidden');
+    }
   }
 
   // Trending
@@ -257,8 +287,21 @@ function renderHome() {
   const trendingGrid = document.getElementById('trendingGrid');
   if (trendingGrid) {
     trendingGrid.innerHTML = '';
-    const show = trending.length ? trending : all.slice(0, 4);
-    show.forEach(a => trendingGrid.appendChild(createCard(a)));
+    if (trending.length > 0) {
+      trendingSection.classList.remove('hidden');
+      trending.forEach(a => trendingGrid.appendChild(createCard(a)));
+    } else {
+      trendingSection.classList.add('hidden');
+    }
+  }
+}
+
+// ===== ADMIN LINK IN SIDEBAR =====
+function checkAdminSession() {
+  const isAdmin = sessionStorage.getItem('av_admin');
+  const adminSection = document.getElementById('adminSidebarSection');
+  if (adminSection) {
+    adminSection.style.display = isAdmin ? 'block' : 'none';
   }
 }
 
@@ -266,4 +309,5 @@ function renderHome() {
 document.addEventListener('DOMContentLoaded', () => {
   loadTheme();
   renderHome();
+  checkAdminSession();
 });
