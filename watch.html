@@ -12,7 +12,7 @@
 
   <header class="header">
     <div class="header-left">
-      <button class="icon-btn" id="backBtn" onclick="history.back()">
+      <button class="icon-btn" onclick="history.back()">
         <i class="fas fa-arrow-left"></i>
       </button>
       <a href="index.html" class="logo">ANIME <span>VERSE</span></a>
@@ -25,11 +25,15 @@
   </header>
 
   <main class="main" id="watchMain">
-    <p class="empty-msg" id="loadingMsg">Loading player...</p>
+    <div class="empty-state" style="min-height:50vh">
+      <i class="fas fa-spinner fa-spin"></i>
+      <h2>Loading...</h2>
+    </div>
   </main>
 
   <script src="data.js"></script>
   <script>
+    // ===== THEME =====
     function toggleTheme() {
       const html = document.documentElement;
       const btn = document.getElementById('themeBtn');
@@ -52,6 +56,7 @@
         : '<i class="fas fa-sun"></i>';
     }
 
+    // ===== GET ALL ANIME =====
     function getAllAnime() {
       const base = typeof animeData !== 'undefined' ? animeData : [];
       try {
@@ -60,142 +65,275 @@
       } catch { return base; }
     }
 
+    // ===== EMBED URL PARSER =====
     function getEmbedUrl(url) {
       if (!url || url.trim() === '') return null;
-      // YouTube full URL
       if (url.includes('youtube.com/watch')) {
         try {
           const videoId = new URL(url).searchParams.get('v');
-          return { type: 'iframe', src: `https://www.youtube.com/embed/${videoId}?autoplay=1` };
+          return { type: 'iframe', src: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0` };
         } catch {}
       }
-      // YouTube short URL
       if (url.includes('youtu.be/')) {
         const videoId = url.split('youtu.be/')[1].split('?')[0];
-        return { type: 'iframe', src: `https://www.youtube.com/embed/${videoId}?autoplay=1` };
+        return { type: 'iframe', src: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0` };
       }
-      // Google Drive
       if (url.includes('drive.google.com')) {
         const match = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
         if (match) return { type: 'iframe', src: `https://drive.google.com/file/d/${match[1]}/preview` };
         const match2 = url.match(/id=([a-zA-Z0-9_-]{10,})/);
         if (match2) return { type: 'iframe', src: `https://drive.google.com/file/d/${match2[1]}/preview` };
       }
-      // Direct video file (mp4, etc.)
       if (url.match(/\.(mp4|webm|ogg|mkv)(\?|$)/i)) {
         return { type: 'video', src: url };
       }
-      // Fallback - try iframe
       return { type: 'iframe', src: url };
     }
 
-    function renderPlayer(anime, season, episode, allEpisodes, seasonId, animeId) {
-      const embed = getEmbedUrl(episode.videoUrl);
-      let playerHTML = '';
+    // ===== QUALITY CONFIG =====
+    const qualityConfig = {
+      '480p':  { label: '480p SD',   color: '#666666' },
+      '720p':  { label: '720p HD',   color: '#2a6dd9' },
+      '1080p': { label: '1080p FHD', color: '#27ae60' },
+      '4k':    { label: '4K UHD',    color: '#C87740' }
+    };
+
+    // Quality order (best first)
+    const qualityOrder = ['4k', '1080p', '720p', '480p'];
+
+    function getAvailableQualities(episode) {
+      const urls = episode.videoUrls || {};
+      // Legacy support — purana single videoUrl field
+      if (!Object.keys(urls).some(k => urls[k]) && episode.videoUrl) {
+        return { '720p': episode.videoUrl };
+      }
+      const available = {};
+      // Sort by quality order
+      qualityOrder.forEach(q => {
+        if (urls[q] && urls[q].trim()) available[q] = urls[q].trim();
+      });
+      return available;
+    }
+
+    function getBestQuality(qualities) {
+      // Prefer 1080p as default, then 720p, then whatever is available
+      if (qualities['1080p']) return '1080p';
+      if (qualities['720p'])  return '720p';
+      if (qualities['4k'])    return '4k';
+      if (qualities['480p'])  return '480p';
+      return Object.keys(qualities)[0] || '';
+    }
+
+    // ===== LOAD QUALITY =====
+    function loadQuality(url, quality, allQualities) {
+      const embed = getEmbedUrl(url);
+      const container = document.getElementById('playerContainer');
+
+      // Update active button state
+      document.querySelectorAll('.quality-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.quality === quality);
+      });
 
       if (!embed) {
-        playerHTML = `
-          <div class="player-wrapper">
-            <div class="no-video-msg">
-              <i class="fas fa-film"></i>
-              <span>Video not available yet.</span>
-              <small>Admin ne abhi tak video link add nahi kiya.</small>
-            </div>
+        container.innerHTML = `
+          <div class="no-video-msg">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>Is quality ka video load nahi hua.</span>
           </div>`;
-      } else if (embed.type === 'iframe') {
-        playerHTML = `
-          <div class="player-wrapper">
-            <iframe src="${embed.src}" allowfullscreen allow="autoplay; encrypted-media"></iframe>
-          </div>`;
-      } else {
-        playerHTML = `
-          <div class="player-wrapper">
-            <video controls autoplay controlsList="nodownload">
-              <source src="${embed.src}"/>
-              Your browser does not support video.
-            </video>
-          </div>`;
+        return;
       }
 
-      // Find prev/next episode
+      if (embed.type === 'iframe') {
+        container.innerHTML = `
+          <iframe
+            src="${embed.src}"
+            allowfullscreen
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            style="width:100%;height:100%;border:none">
+          </iframe>`;
+      } else {
+        container.innerHTML = `
+          <video
+            controls
+            autoplay
+            controlsList="nodownload"
+            style="width:100%;height:100%">
+            <source src="${embed.src}"/>
+            Your browser does not support video.
+          </video>`;
+      }
+    }
+
+    // ===== RENDER PLAYER =====
+    function renderPlayer(anime, season, episode, allEpisodes, seasonId, animeId) {
+      const qualities = getAvailableQualities(episode);
+      const qualityKeys = Object.keys(qualities);
+      const defaultQuality = getBestQuality(qualities);
+
+      // Build quality buttons
+      const qualityBtnsHTML = qualityKeys.map(q => {
+        const cfg = qualityConfig[q] || { label: q, color: '#888' };
+        return `
+          <button
+            class="quality-btn ${q === defaultQuality ? 'active' : ''}"
+            data-quality="${q}"
+            onclick="loadQuality('${qualities[q].replace(/'/g,"\\'")}', '${q}')"
+            style="--qcolor:${cfg.color}">
+            ${cfg.label}
+          </button>`;
+      }).join('');
+
+      // Prev / Next episode
       const currIdx = allEpisodes.findIndex(e => e.id === episode.id);
       const prevEp = currIdx > 0 ? allEpisodes[currIdx - 1] : null;
       const nextEp = currIdx < allEpisodes.length - 1 ? allEpisodes[currIdx + 1] : null;
 
       const prevBtn = prevEp
-        ? `<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${prevEp.id}" class="btn-outline" style="font-size:13px">
+        ? `<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${prevEp.id}"
+              class="btn-outline" style="font-size:13px;text-decoration:none">
             <i class="fas fa-backward"></i> Prev
            </a>`
-        : `<button class="btn-outline" disabled style="opacity:0.4;font-size:13px">
+        : `<button class="btn-outline" disabled style="opacity:0.4;font-size:13px;cursor:not-allowed">
             <i class="fas fa-backward"></i> Prev
            </button>`;
 
       const nextBtn = nextEp
-        ? `<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${nextEp.id}" class="btn-primary" style="text-decoration:none;font-size:13px">
+        ? `<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${nextEp.id}"
+              class="btn-primary" style="font-size:13px;text-decoration:none">
             Next <i class="fas fa-forward"></i>
            </a>`
-        : `<button class="btn-primary" disabled style="opacity:0.4;font-size:13px">
+        : `<button class="btn-primary" disabled style="opacity:0.4;font-size:13px;cursor:not-allowed">
             Next <i class="fas fa-forward"></i>
            </button>`;
 
       const main = document.getElementById('watchMain');
       main.innerHTML = `
-        ${playerHTML}
 
+        <!-- VIDEO PLAYER -->
+        <div class="player-wrapper">
+          <div id="playerContainer" style="width:100%;height:100%">
+            <div class="no-video-msg">
+              <i class="fas fa-spinner fa-spin" style="font-size:32px"></i>
+              <span>Loading video...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- QUALITY SELECTOR -->
+        ${qualityKeys.length > 1 ? `
+        <div class="quality-selector">
+          <span class="quality-label">
+            <i class="fas fa-sliders-h"></i> Quality:
+          </span>
+          <div class="quality-btns">
+            ${qualityBtnsHTML}
+          </div>
+        </div>` : qualityKeys.length === 1 ? `
+        <div class="quality-selector">
+          <span class="quality-label"><i class="fas fa-sliders-h"></i> Quality:</span>
+          <div class="quality-btns">${qualityBtnsHTML}</div>
+        </div>` : `
+        <div style="text-align:center;padding:12px;color:var(--text2);font-size:13px;
+          background:var(--card-bg);border-radius:8px;border:1px solid var(--border);margin-top:12px">
+          <i class="fas fa-exclamation-triangle" style="color:var(--accent)"></i>
+          Video abhi available nahi hai.
+        </div>`}
+
+        <!-- PREV / EPISODES / NEXT -->
         <div class="ep-nav">
           ${prevBtn}
-          <a href="anime.html?id=${animeId}" class="btn-outline" style="font-size:13px">
+          <a href="anime.html?id=${animeId}" class="btn-outline"
+            style="font-size:13px;text-decoration:none">
             <i class="fas fa-list"></i> Episodes
           </a>
           ${nextBtn}
         </div>
 
+        <!-- EPISODE INFO -->
         <div class="watch-info">
           <div class="anime-ep-label">
             ${anime.title} · ${season.title} · Episode ${episode.id}
           </div>
           <h2>${episode.title}</h2>
-          <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">
+          <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;align-items:center">
             <span class="info-chip" style="font-size:12px;color:var(--text2)">
-              <i class="fas fa-clock" style="color:var(--accent)"></i> ${episode.duration || 'N/A'}
+              <i class="fas fa-clock" style="color:var(--accent)"></i>
+              ${episode.duration || 'N/A'}
             </span>
+            ${defaultQuality ? `
+            <span class="info-chip" style="font-size:12px;color:var(--text2)">
+              <i class="fas fa-film" style="color:var(--accent)"></i>
+              ${qualityKeys.length} quality${qualityKeys.length > 1 ? 's' : ''} available
+            </span>` : ''}
           </div>
           ${episode.description
-            ? `<p>${episode.description}</p>`
+            ? `<p style="font-size:13px;color:var(--text2);line-height:1.7;margin-top:10px">
+                ${episode.description}
+               </p>`
             : ''}
         </div>
 
-        <div style="margin-top:20px">
-          <h3 style="font-size:15px;margin-bottom:12px">Other Episodes</h3>
+        <!-- OTHER EPISODES -->
+        <div style="margin-top:24px">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text)">
+            📋 ${season.title} — All Episodes
+          </h3>
           <div class="episodes-list" id="otherEps"></div>
         </div>
       `;
 
-      // Render other episodes
+      // Auto-load default quality
+      if (defaultQuality && qualities[defaultQuality]) {
+        setTimeout(() => {
+          loadQuality(qualities[defaultQuality], defaultQuality);
+        }, 100);
+      }
+
+      // Render other episodes list
       const otherEps = document.getElementById('otherEps');
       allEpisodes.forEach(ep => {
         const isActive = ep.id === episode.id;
+        const epQualities = getAvailableQualities(ep);
+        const epQualityCount = Object.keys(epQualities).length;
+
         const item = document.createElement('div');
         item.className = 'episode-item';
-        if (isActive) item.style.borderColor = 'var(--accent)';
+        if (isActive) {
+          item.style.borderColor = 'var(--accent)';
+          item.style.background = 'var(--bg3)';
+        }
         item.innerHTML = `
-          <div class="ep-thumb" style="position:relative">
-            <img src="${ep.thumbnail || ''}" alt="Ep ${ep.id}"
-              style="width:100%;height:100%;object-fit:cover;border-radius:8px;background:var(--bg3)"
-              onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300&q=80'"/>
-            ${isActive
-              ? `<div class="ep-play-icon" style="opacity:1;background:rgba(229,9,20,0.7)"><i class="fas fa-play"></i></div>`
-              : `<div class="ep-play-icon"><i class="fas fa-play"></i></div>`}
+          <div class="ep-thumb" style="position:relative;overflow:hidden">
+            <img
+              src="${ep.thumbnail || ''}"
+              alt="Ep ${ep.id}"
+              style="width:100%;height:100%;object-fit:cover;border-radius:8px;background:var(--bg3);display:block"
+              onerror="this.style.background='var(--bg3)';this.style.display='block'"/>
+            <div class="ep-play-icon"
+              style="${isActive ? 'opacity:1;background:rgba(200,119,64,0.75)' : ''}">
+              <i class="fas fa-${isActive ? 'pause' : 'play'}"></i>
+            </div>
           </div>
           <div class="ep-info">
-            <div class="ep-num" ${isActive ? 'style="color:var(--accent)"' : ''}>
-              Episode ${ep.id} ${isActive ? '▶ Playing' : ''}
+            <div class="ep-num" style="${isActive ? 'color:var(--accent)' : ''}">
+              Ep ${ep.id} ${isActive ? '▶ Now Playing' : ''}
             </div>
             <div class="ep-title">${ep.title}</div>
-            <div class="ep-duration"><i class="fas fa-clock" style="font-size:10px"></i> ${ep.duration || ''}</div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap">
+              <span class="ep-duration">
+                <i class="fas fa-clock" style="font-size:9px"></i> ${ep.duration || ''}
+              </span>
+              ${epQualityCount > 0 ? `
+              <span style="font-size:10px;color:var(--accent);font-weight:600">
+                ${epQualityCount} quality${epQualityCount > 1 ? 's' : ''}
+              </span>` : `
+              <span style="font-size:10px;color:#888">No video</span>`}
+            </div>
           </div>
         `;
+
         if (!isActive) {
+          item.style.cursor = 'pointer';
           item.addEventListener('click', () => {
             window.location.href = `watch.html?id=${animeId}&season=${seasonId}&ep=${ep.id}`;
           });
@@ -204,30 +342,38 @@
       });
     }
 
-    // INIT
+    // ===== INIT =====
     loadTheme();
-    const params = new URLSearchParams(window.location.search);
-    const animeId = parseInt(params.get('id'));
-    const seasonId = parseInt(params.get('season'));
-    const epId = parseInt(params.get('ep'));
 
-    const all = getAllAnime();
+    const params = new URLSearchParams(window.location.search);
+    const animeId  = parseInt(params.get('id'));
+    const seasonId = parseInt(params.get('season'));
+    const epId     = parseInt(params.get('ep'));
+
+    const all   = getAllAnime();
     const anime = all.find(a => a.id === animeId);
 
     if (!anime) {
-      document.getElementById('loadingMsg').textContent = 'Anime not found!';
+      document.getElementById('watchMain').innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-exclamation-circle"></i>
+          <h2>Anime nahi mila!</h2>
+          <p><a href="index.html" style="color:var(--accent)">Home pe wapas jao</a></p>
+        </div>`;
     } else {
-      const season = anime.seasons.find(s => s.id === seasonId);
-      if (!season) {
-        document.getElementById('loadingMsg').textContent = 'Season not found!';
+      const season  = anime.seasons.find(s => s.id === seasonId);
+      const episode = season && season.episodes.find(e => e.id === epId);
+
+      if (!season || !episode) {
+        document.getElementById('watchMain').innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-film"></i>
+            <h2>Episode nahi mila!</h2>
+            <p><a href="anime.html?id=${animeId}" style="color:var(--accent)">Anime page pe wapas jao</a></p>
+          </div>`;
       } else {
-        const episode = season.episodes.find(e => e.id === epId);
-        if (!episode) {
-          document.getElementById('loadingMsg').textContent = 'Episode not found!';
-        } else {
-          document.title = `${episode.title} — Anime Verse`;
-          renderPlayer(anime, season, episode, season.episodes, seasonId, animeId);
-        }
+        document.title = `${episode.title} — Anime Verse`;
+        renderPlayer(anime, season, episode, season.episodes, seasonId, animeId);
       }
     }
   </script>
