@@ -34,9 +34,6 @@
       <button class="btn-primary" onclick="checkLogin()" style="width:100%">
         <i class="fas fa-lock"></i> Login
       </button>
-      <p style="font-size:11px;color:var(--text2);margin-top:12px">
-        Hint: AnimeVerse@123
-      </p>
     </div>
   </div>
 
@@ -238,19 +235,56 @@
             <label>THUMBNAIL URL</label>
             <input type="url" id="ep_thumb" placeholder="https://..."/>
           </div>
-          <div class="form-group">
-            <label>VIDEO URL *</label>
-            <input type="url" id="ep_video" placeholder="YouTube / Google Drive link..."/>
+
+          <!-- MULTI QUALITY VIDEO URLS -->
+          <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:16px;border:1px solid var(--border)">
+            <div style="font-weight:700;font-size:14px;margin-bottom:6px;color:var(--text)">
+              🎬 Video Quality URLs
+            </div>
+            <p style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+              Jo quality available ho usi ka URL daalo. Ek bhi kaafi hai. Watch page pe user quality switch kar sakta hai.
+            </p>
+
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:6px">
+                <span style="background:#555;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">480p</span>
+                SD Quality
+              </label>
+              <input type="url" id="ep_video_480" placeholder="YouTube / Drive link (480p)"/>
+            </div>
+
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:6px">
+                <span style="background:#2a6dd9;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">720p</span>
+                HD Ready
+              </label>
+              <input type="url" id="ep_video_720" placeholder="YouTube / Drive link (720p)"/>
+            </div>
+
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:6px">
+                <span style="background:#27ae60;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">1080p</span>
+                Full HD
+              </label>
+              <input type="url" id="ep_video_1080" placeholder="YouTube / Drive link (1080p)"/>
+            </div>
+
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:6px">
+                <span style="background:var(--accent);color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">4K</span>
+                Ultra HD
+              </label>
+              <input type="url" id="ep_video_4k" placeholder="YouTube / Drive link (4K)"/>
+            </div>
+
             <div class="video-help">
-              <strong>🎬 YouTube URL kaise daalen:</strong>
-              Normal YouTube link paste karo — bas itna!<br>
-              Example: https://youtube.com/watch?v=XXXXXX<br><br>
-              <strong>📁 Google Drive URL kaise daalen:</strong>
-              1. Drive pe video upload karo<br>
-              2. Right click → Share → Anyone with link<br>
-              3. Woh link yahan paste karo
+              <strong>💡 Tips:</strong>
+              YouTube pe same video daalo — quality auto-switch hota hai toh ek hi link kaafi hai.<br>
+              Google Drive / Direct files ke liye alag alag upload karke alag links daalo.<br>
+              Kam se kam ek URL zaroori hai.
             </div>
           </div>
+
           <button class="btn-primary" onclick="addEpisode()" style="width:100%">
             <i class="fas fa-film"></i> Episode Add Karo
           </button>
@@ -272,38 +306,34 @@
                 2. Upload button (+) dabao<br>
                 3. Video select karo<br>
                 4. Title daalo<br>
-                5. <strong style="color:var(--text)">Visibility → "Unlisted" select karo</strong> (Public mat karo!)<br>
+                5. <strong style="color:var(--text)">Visibility → "Unlisted" select karo</strong><br>
                 6. Upload karo<br>
                 7. Video open karo → Share → Copy Link<br>
-                8. Woh link admin panel mein paste karo ✅
+                8. Woh link 720p ya 1080p field mein paste karo ✅
               </div>
             </div>
 
             <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:12px;border-left:3px solid #0f9d58">
               <div style="font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px">
-                <i class="fab fa-google-drive" style="color:#0f9d58"></i> Google Drive
+                <i class="fab fa-google-drive" style="color:#0f9d58"></i> Google Drive (Multiple Quality)
               </div>
               <div style="font-size:13px;color:var(--text2);line-height:1.8">
-                1. drive.google.com kholo<br>
-                2. "+ New" → File Upload → Video select karo<br>
-                3. Upload hone do (time lagega)<br>
-                4. Video pe long press → Share<br>
-                5. <strong style="color:var(--text)">"Anyone with the link" select karo</strong><br>
-                6. "Copy link" dabao<br>
-                7. Woh link admin panel mein paste karo ✅
+                1. drive.google.com pe alag alag quality videos upload karo<br>
+                2. Har video pe: Right click → Share → Anyone with link<br>
+                3. Copy link karo<br>
+                4. Har quality ka alag link apne field mein paste karo ✅
               </div>
             </div>
 
             <div style="background:var(--bg3);border-radius:10px;padding:14px;border-left:3px solid var(--accent)">
-              <div style="font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px">
-                <i class="fab fa-telegram" style="color:#2ca5e0"></i> Telegram (Best for Large Files)
+              <div style="font-weight:700;margin-bottom:8px">
+                🎯 Quality Guide
               </div>
               <div style="font-size:13px;color:var(--text2);line-height:1.8">
-                1. Telegram pe private channel banao<br>
-                2. Video upload karo (2GB tak free)<br>
-                3. Message pe press hold karo → Copy Link<br>
-                4. Woh link admin panel mein paste karo ✅<br><br>
-                <strong style="color:var(--text)">⚠️ Note:</strong> Telegram direct stream nahi karta — YouTube ya Drive better hai.
+                <span style="background:#555;color:#fff;font-size:10px;padding:1px 6px;border-radius:3px">480p</span> — Slow internet ke liye, file size kam<br>
+                <span style="background:#2a6dd9;color:#fff;font-size:10px;padding:1px 6px;border-radius:3px">720p</span> — Standard HD, most users ke liye best<br>
+                <span style="background:#27ae60;color:#fff;font-size:10px;padding:1px 6px;border-radius:3px">1080p</span> — Full HD, achhe connection ke liye<br>
+                <span style="background:#C87740;color:#fff;font-size:10px;padding:1px 6px;border-radius:3px">4K</span> — Ultra HD, very fast internet ke liye
               </div>
             </div>
           </div>
@@ -313,9 +343,9 @@
               💡 Thumbnail ke liye:
             </div>
             <div style="font-size:12px;color:var(--text2);line-height:1.7">
-              • Google Images se image copy karo → Right click → Copy image address<br>
-              • Ya Google Drive pe image upload karo → Share link copy karo<br>
-              • Ya anime fansite se direct image URL copy karo
+              • Google Images se image → Right click → Copy image address<br>
+              • Ya Google Drive pe upload → Share link copy karo<br>
+              • Ya kisi anime site se direct image URL copy karo
             </div>
           </div>
         </div>
@@ -326,7 +356,6 @@
 
   <script src="data.js"></script>
   <script>
-    // ===== PASSWORD - YE CHANGE KAR SAKTE HO =====
     const ADMIN_PASSWORD = 'AnimeVerse@123';
 
     function toggleTheme() {
@@ -417,11 +446,19 @@
       document.getElementById('statMovies').textContent = all.filter(a => a.type === 'movie').length;
     }
 
-    // Top 10 rank field toggle
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('a_top10').addEventListener('change', function() {
-        document.getElementById('top10RankField').style.display = this.checked ? 'block' : 'none';
-      });
+      const top10cb = document.getElementById('a_top10');
+      if (top10cb) {
+        top10cb.addEventListener('change', function() {
+          document.getElementById('top10RankField').style.display = this.checked ? 'block' : 'none';
+        });
+      }
+      const passInput = document.getElementById('adminPass');
+      if (passInput) {
+        passInput.addEventListener('keydown', e => {
+          if (e.key === 'Enter') checkLogin();
+        });
+      }
     });
 
     function addAnime() {
@@ -482,8 +519,7 @@
         item.className = 'anime-manage-item';
         item.innerHTML = `
           <img class="anime-manage-thumb"
-            src="${anime.thumbnail || ''}"
-            alt="${anime.title}"
+            src="${anime.thumbnail || ''}" alt="${anime.title}"
             onerror="this.style.background='var(--bg3)'"/>
           <div class="anime-manage-info">
             <strong>${anime.title}</strong>
@@ -562,13 +598,20 @@
       const seasonVal = document.getElementById('ep_season').value;
       const epNum = parseInt(document.getElementById('ep_num').value);
       const epTitle = document.getElementById('ep_title').value.trim();
-      const videoUrl = document.getElementById('ep_video').value.trim();
 
-      if (!animeId) { alert('Anime select karo!'); return; }
+      const v480  = document.getElementById('ep_video_480').value.trim();
+      const v720  = document.getElementById('ep_video_720').value.trim();
+      const v1080 = document.getElementById('ep_video_1080').value.trim();
+      const v4k   = document.getElementById('ep_video_4k').value.trim();
+
+      if (!animeId)   { alert('Anime select karo!'); return; }
       if (!seasonVal) { alert('Season select karo!'); return; }
-      if (!epNum) { alert('Episode number daalo!'); return; }
-      if (!epTitle) { alert('Episode title daalo!'); return; }
-      if (!videoUrl) { alert('Video URL daalo!'); return; }
+      if (!epNum)     { alert('Episode number daalo!'); return; }
+      if (!epTitle)   { alert('Episode title daalo!'); return; }
+      if (!v480 && !v720 && !v1080 && !v4k) {
+        alert('Kam se kam ek quality ka video URL daalo!');
+        return;
+      }
 
       const episode = {
         id: epNum,
@@ -576,7 +619,12 @@
         description: document.getElementById('ep_desc').value.trim(),
         duration: document.getElementById('ep_duration').value.trim(),
         thumbnail: document.getElementById('ep_thumb').value.trim(),
-        videoUrl
+        videoUrls: {
+          '480p':  v480,
+          '720p':  v720,
+          '1080p': v1080,
+          '4k':    v4k
+        }
       };
 
       let adminList = getAdminAnime();
@@ -615,7 +663,8 @@
       if (idx !== -1) adminList[idx] = anime;
       saveAdminAnime(adminList);
 
-      ['ep_num','ep_title','ep_desc','ep_duration','ep_thumb','ep_video']
+      ['ep_num','ep_title','ep_desc','ep_duration','ep_thumb',
+       'ep_video_480','ep_video_720','ep_video_1080','ep_video_4k']
         .forEach(id => { document.getElementById(id).value = ''; });
 
       document.getElementById('epSuccess').style.display = 'block';
@@ -631,19 +680,13 @@
       populateAnimeDropdown();
     }
 
-    // ===== INIT =====
+    // INIT
     loadTheme();
     if (sessionStorage.getItem('av_admin') === '1') {
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('adminDashboard').style.display = 'block';
       initDashboard();
     }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('adminPass').addEventListener('keydown', e => {
-        if (e.key === 'Enter') checkLogin();
-      });
-    });
   </script>
 </body>
 </html>
