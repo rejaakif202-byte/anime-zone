@@ -25,111 +25,102 @@
   </header>
 
   <main class="main" id="watchMain">
-    <div class="empty-state" style="min-height:50vh">
+    <div class="empty-state" style="min-height:60vh">
       <i class="fas fa-spinner fa-spin"></i>
-      <h2>Loading...</h2>
+      <h2>Loading player...</h2>
     </div>
   </main>
 
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
   <script src="data.js"></script>
   <script>
-    // ===== THEME =====
     function toggleTheme() {
       const html = document.documentElement;
-      const btn = document.getElementById('themeBtn');
-      if (html.getAttribute('data-theme') === 'dark') {
-        html.setAttribute('data-theme', 'light');
-        btn.innerHTML = '<i class="fas fa-sun"></i>';
-        localStorage.setItem('av_theme', 'light');
-      } else {
-        html.setAttribute('data-theme', 'dark');
-        btn.innerHTML = '<i class="fas fa-moon"></i>';
-        localStorage.setItem('av_theme', 'dark');
-      }
+      const btn  = document.getElementById('themeBtn');
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      btn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+      localStorage.setItem('av_theme', isDark ? 'light' : 'dark');
     }
     function loadTheme() {
       const saved = localStorage.getItem('av_theme') || 'dark';
       document.documentElement.setAttribute('data-theme', saved);
       const btn = document.getElementById('themeBtn');
       if (btn) btn.innerHTML = saved === 'dark'
-        ? '<i class="fas fa-moon"></i>'
-        : '<i class="fas fa-sun"></i>';
+        ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
     }
 
-    // ===== GET ALL ANIME =====
-    function getAllAnime() {
-      const base = typeof animeData !== 'undefined' ? animeData : [];
-      try {
-        const extra = JSON.parse(localStorage.getItem('av_anime') || '[]');
-        return [...base, ...extra];
-      } catch { return base; }
+    // Language flags
+    const langFlags = {
+      'Japanese':    '🇯🇵',
+      'English Dub': '🇺🇸',
+      'Hindi Dub':   '🇮🇳',
+      'Korean':      '🇰🇷',
+      'Chinese':     '🇨🇳',
+      'Portuguese':  '🇧🇷',
+      'Spanish':     '🇪🇸',
+      'French':      '🇫🇷',
+    };
+
+    const qualityConfig = {
+      '480p':  { label: '480p SD',   color: '#666' },
+      '720p':  { label: '720p HD',   color: '#2a6dd9' },
+      '1080p': { label: '1080p FHD', color: '#27ae60' },
+      '4k':    { label: '4K UHD',    color: '#C87740' },
+    };
+    const qualityOrder = ['4k', '1080p', '720p', '480p'];
+
+    let currentLanguage = '';
+    let currentLangData = {};
+
+    function getEpisodeLangs(episode) {
+      if (episode.languages && Object.keys(episode.languages).length > 0)
+        return episode.languages;
+      if (episode.videoUrls) return { 'Japanese': episode.videoUrls };
+      if (episode.videoUrl)  return { 'Japanese': { '720p': episode.videoUrl } };
+      return {};
     }
 
-    // ===== EMBED URL PARSER =====
+    function getBestQuality(qualityMap) {
+      for (const q of qualityOrder) {
+        if (qualityMap[q] && qualityMap[q].trim()) return q;
+      }
+      return Object.keys(qualityMap)[0] || '';
+    }
+
     function getEmbedUrl(url) {
-      if (!url || url.trim() === '') return null;
+      if (!url || !url.trim()) return null;
       if (url.includes('youtube.com/watch')) {
         try {
-          const videoId = new URL(url).searchParams.get('v');
-          return { type: 'iframe', src: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0` };
+          const id = new URL(url).searchParams.get('v');
+          return { type:'iframe', src:`https://www.youtube.com/embed/${id}?autoplay=1&rel=0` };
         } catch {}
       }
       if (url.includes('youtu.be/')) {
-        const videoId = url.split('youtu.be/')[1].split('?')[0];
-        return { type: 'iframe', src: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0` };
+        const id = url.split('youtu.be/')[1].split('?')[0];
+        return { type:'iframe', src:`https://www.youtube.com/embed/${id}?autoplay=1&rel=0` };
       }
       if (url.includes('drive.google.com')) {
-        const match = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
-        if (match) return { type: 'iframe', src: `https://drive.google.com/file/d/${match[1]}/preview` };
-        const match2 = url.match(/id=([a-zA-Z0-9_-]{10,})/);
-        if (match2) return { type: 'iframe', src: `https://drive.google.com/file/d/${match2[1]}/preview` };
+        const m1 = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+        if (m1) return { type:'iframe', src:`https://drive.google.com/file/d/${m1[1]}/preview` };
+        const m2 = url.match(/id=([a-zA-Z0-9_-]{10,})/);
+        if (m2) return { type:'iframe', src:`https://drive.google.com/file/d/${m2[1]}/preview` };
       }
       if (url.match(/\.(mp4|webm|ogg|mkv)(\?|$)/i)) {
-        return { type: 'video', src: url };
+        return { type:'video', src:url };
       }
-      return { type: 'iframe', src: url };
+      return { type:'iframe', src:url };
     }
 
-    // ===== QUALITY CONFIG =====
-    const qualityConfig = {
-      '480p':  { label: '480p SD',   color: '#666666' },
-      '720p':  { label: '720p HD',   color: '#2a6dd9' },
-      '1080p': { label: '1080p FHD', color: '#27ae60' },
-      '4k':    { label: '4K UHD',    color: '#C87740' }
-    };
-
-    // Quality order (best first)
-    const qualityOrder = ['4k', '1080p', '720p', '480p'];
-
-    function getAvailableQualities(episode) {
-      const urls = episode.videoUrls || {};
-      // Legacy support — purana single videoUrl field
-      if (!Object.keys(urls).some(k => urls[k]) && episode.videoUrl) {
-        return { '720p': episode.videoUrl };
-      }
-      const available = {};
-      // Sort by quality order
-      qualityOrder.forEach(q => {
-        if (urls[q] && urls[q].trim()) available[q] = urls[q].trim();
-      });
-      return available;
-    }
-
-    function getBestQuality(qualities) {
-      // Prefer 1080p as default, then 720p, then whatever is available
-      if (qualities['1080p']) return '1080p';
-      if (qualities['720p'])  return '720p';
-      if (qualities['4k'])    return '4k';
-      if (qualities['480p'])  return '480p';
-      return Object.keys(qualities)[0] || '';
-    }
-
-    // ===== LOAD QUALITY =====
-    function loadQuality(url, quality, allQualities) {
+    function loadVideo(url, quality, lang) {
+      currentLanguage = lang;
       const embed = getEmbedUrl(url);
       const container = document.getElementById('playerContainer');
 
-      // Update active button state
+      // Update quality buttons
       document.querySelectorAll('.quality-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.quality === quality);
       });
@@ -137,63 +128,101 @@
       if (!embed) {
         container.innerHTML = `
           <div class="no-video-msg">
-            <i class="fas fa-exclamation-circle"></i>
-            <span>Is quality ka video load nahi hua.</span>
+            <i class="fas fa-film"></i>
+            <span>Video not available for this quality.</span>
           </div>`;
         return;
       }
 
       if (embed.type === 'iframe') {
         container.innerHTML = `
-          <iframe
-            src="${embed.src}"
+          <iframe src="${embed.src}"
             allowfullscreen
-            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-            style="width:100%;height:100%;border:none">
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture">
           </iframe>`;
       } else {
         container.innerHTML = `
-          <video
-            controls
-            autoplay
-            controlsList="nodownload"
-            style="width:100%;height:100%">
+          <video controls autoplay controlsList="nodownload">
             <source src="${embed.src}"/>
-            Your browser does not support video.
           </video>`;
       }
     }
 
-    // ===== RENDER PLAYER =====
-    function renderPlayer(anime, season, episode, allEpisodes, seasonId, animeId) {
-      const qualities = getAvailableQualities(episode);
-      const qualityKeys = Object.keys(qualities);
-      const defaultQuality = getBestQuality(qualities);
+    function switchLanguage(lang, langData) {
+      currentLanguage = lang;
+      currentLangData = langData;
 
-      // Build quality buttons
-      const qualityBtnsHTML = qualityKeys.map(q => {
+      // Update language buttons
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === lang);
+      });
+
+      // Update quality buttons
+      const qualityBtnsContainer = document.getElementById('qualityBtnsContainer');
+      const availableQualities = qualityOrder.filter(q => langData[q] && langData[q].trim());
+
+      qualityBtnsContainer.innerHTML = availableQualities.map(q => {
         const cfg = qualityConfig[q] || { label: q, color: '#888' };
-        return `
-          <button
-            class="quality-btn ${q === defaultQuality ? 'active' : ''}"
-            data-quality="${q}"
-            onclick="loadQuality('${qualities[q].replace(/'/g,"\\'")}', '${q}')"
-            style="--qcolor:${cfg.color}">
-            ${cfg.label}
-          </button>`;
+        return `<button class="quality-btn" data-quality="${q}"
+          onclick="loadVideo('${langData[q].replace(/'/g,"\\'")}', '${q}', '${lang}')"
+          style="--qcolor:${cfg.color}">
+          ${cfg.label}
+        </button>`;
       }).join('');
 
-      // Prev / Next episode
+      // Auto load best quality
+      const best = getBestQuality(langData);
+      if (best && langData[best]) {
+        loadVideo(langData[best], best, lang);
+        // Mark best as active
+        setTimeout(() => {
+          document.querySelectorAll('.quality-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.quality === best);
+          });
+        }, 50);
+      }
+    }
+
+    function renderPlayer(anime, season, episode, allEpisodes, seasonId, animeId) {
+      const languages = getEpisodeLangs(episode);
+      const langKeys  = Object.keys(languages);
+      const defaultLang = langKeys.includes('Japanese') ? 'Japanese' : langKeys[0] || '';
+
+      // Language buttons
+      const langBtnsHTML = langKeys.map(lang => {
+        const flag = langFlags[lang] || '🌐';
+        return `<button class="lang-btn ${lang===defaultLang?'active':''}"
+          data-lang="${lang}"
+          onclick="switchLanguage('${lang}', ${JSON.stringify(languages[lang]).replace(/"/g,'&quot;')})">
+          ${flag} ${lang}
+        </button>`;
+      }).join('');
+
+      // Get initial qualities
+      const initLangData = defaultLang ? languages[defaultLang] : {};
+      const initQualities = qualityOrder.filter(q => initLangData[q] && initLangData[q].trim());
+      const initBest = getBestQuality(initLangData);
+
+      const qualityBtnsHTML = initQualities.map(q => {
+        const cfg = qualityConfig[q] || { label: q, color: '#888' };
+        return `<button class="quality-btn ${q===initBest?'active':''}" data-quality="${q}"
+          onclick="loadVideo('${initLangData[q]?.replace(/'/g,"\\'")||''}', '${q}', '${defaultLang}')"
+          style="--qcolor:${cfg.color}">
+          ${cfg.label}
+        </button>`;
+      }).join('');
+
+      // Prev / Next
       const currIdx = allEpisodes.findIndex(e => e.id === episode.id);
-      const prevEp = currIdx > 0 ? allEpisodes[currIdx - 1] : null;
-      const nextEp = currIdx < allEpisodes.length - 1 ? allEpisodes[currIdx + 1] : null;
+      const prevEp  = currIdx > 0 ? allEpisodes[currIdx - 1] : null;
+      const nextEp  = currIdx < allEpisodes.length - 1 ? allEpisodes[currIdx + 1] : null;
 
       const prevBtn = prevEp
         ? `<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${prevEp.id}"
               class="btn-outline" style="font-size:13px;text-decoration:none">
             <i class="fas fa-backward"></i> Prev
            </a>`
-        : `<button class="btn-outline" disabled style="opacity:0.4;font-size:13px;cursor:not-allowed">
+        : `<button class="btn-outline" disabled style="opacity:0.4;font-size:13px">
             <i class="fas fa-backward"></i> Prev
            </button>`;
 
@@ -202,44 +231,42 @@
               class="btn-primary" style="font-size:13px;text-decoration:none">
             Next <i class="fas fa-forward"></i>
            </a>`
-        : `<button class="btn-primary" disabled style="opacity:0.4;font-size:13px;cursor:not-allowed">
+        : `<button class="btn-primary" disabled style="opacity:0.4;font-size:13px">
             Next <i class="fas fa-forward"></i>
            </button>`;
 
-      const main = document.getElementById('watchMain');
-      main.innerHTML = `
+      document.getElementById('watchMain').innerHTML = `
 
-        <!-- VIDEO PLAYER -->
+        <!-- PLAYER -->
         <div class="player-wrapper">
           <div id="playerContainer" style="width:100%;height:100%">
             <div class="no-video-msg">
-              <i class="fas fa-spinner fa-spin" style="font-size:32px"></i>
-              <span>Loading video...</span>
+              <i class="fas fa-spinner fa-spin" style="font-size:28px"></i>
+              <span>Loading...</span>
             </div>
           </div>
         </div>
 
-        <!-- QUALITY SELECTOR -->
-        ${qualityKeys.length > 1 ? `
-        <div class="quality-selector">
-          <span class="quality-label">
-            <i class="fas fa-sliders-h"></i> Quality:
-          </span>
-          <div class="quality-btns">
-            ${qualityBtnsHTML}
+        <!-- LANGUAGE SELECTOR -->
+        ${langKeys.length > 0 ? `
+        <div class="lang-quality-box">
+          ${langKeys.length > 0 ? `
+          <div class="lq-row">
+            <span class="lq-label"><i class="fas fa-language"></i> Language</span>
+            <div class="lang-btns">${langBtnsHTML}</div>
+          </div>` : ''}
+          <div class="lq-row">
+            <span class="lq-label"><i class="fas fa-sliders-h"></i> Quality</span>
+            <div class="quality-btns" id="qualityBtnsContainer">${qualityBtnsHTML}</div>
           </div>
-        </div>` : qualityKeys.length === 1 ? `
-        <div class="quality-selector">
-          <span class="quality-label"><i class="fas fa-sliders-h"></i> Quality:</span>
-          <div class="quality-btns">${qualityBtnsHTML}</div>
         </div>` : `
         <div style="text-align:center;padding:12px;color:var(--text2);font-size:13px;
           background:var(--card-bg);border-radius:8px;border:1px solid var(--border);margin-top:12px">
           <i class="fas fa-exclamation-triangle" style="color:var(--accent)"></i>
-          Video abhi available nahi hai.
+          Video not available yet.
         </div>`}
 
-        <!-- PREV / EPISODES / NEXT -->
+        <!-- NAV -->
         <div class="ep-nav">
           ${prevBtn}
           <a href="anime.html?id=${animeId}" class="btn-outline"
@@ -249,90 +276,82 @@
           ${nextBtn}
         </div>
 
-        <!-- EPISODE INFO -->
+        <!-- INFO -->
         <div class="watch-info">
           <div class="anime-ep-label">
             ${anime.title} · ${season.title} · Episode ${episode.id}
           </div>
           <h2>${episode.title}</h2>
-          <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;align-items:center">
+          <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">
             <span class="info-chip" style="font-size:12px;color:var(--text2)">
-              <i class="fas fa-clock" style="color:var(--accent)"></i>
-              ${episode.duration || 'N/A'}
+              <i class="fas fa-clock" style="color:var(--accent)"></i> ${episode.duration || 'N/A'}
             </span>
-            ${defaultQuality ? `
+            ${langKeys.length > 0 ? `
             <span class="info-chip" style="font-size:12px;color:var(--text2)">
-              <i class="fas fa-film" style="color:var(--accent)"></i>
-              ${qualityKeys.length} quality${qualityKeys.length > 1 ? 's' : ''} available
+              <i class="fas fa-language" style="color:var(--accent)"></i>
+              ${langKeys.length} language${langKeys.length>1?'s':''}
             </span>` : ''}
           </div>
           ${episode.description
             ? `<p style="font-size:13px;color:var(--text2);line-height:1.7;margin-top:10px">
-                ${episode.description}
-               </p>`
-            : ''}
+                ${episode.description}</p>` : ''}
         </div>
 
         <!-- OTHER EPISODES -->
         <div style="margin-top:24px">
-          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text)">
-            📋 ${season.title} — All Episodes
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">
+            ${season.title} — All Episodes
           </h3>
           <div class="episodes-list" id="otherEps"></div>
         </div>
       `;
 
-      // Auto-load default quality
-      if (defaultQuality && qualities[defaultQuality]) {
-        setTimeout(() => {
-          loadQuality(qualities[defaultQuality], defaultQuality);
-        }, 100);
+      // Auto-load default language
+      if (defaultLang && languages[defaultLang]) {
+        currentLanguage = defaultLang;
+        currentLangData = languages[defaultLang];
+        if (initBest && initLangData[initBest]) {
+          setTimeout(() => loadVideo(initLangData[initBest], initBest, defaultLang), 100);
+        }
       }
 
-      // Render other episodes list
+      // Render other episodes
       const otherEps = document.getElementById('otherEps');
       allEpisodes.forEach(ep => {
-        const isActive = ep.id === episode.id;
-        const epQualities = getAvailableQualities(ep);
-        const epQualityCount = Object.keys(epQualities).length;
+        const isActive   = ep.id === episode.id;
+        const epLangs    = getEpisodeLangs(ep);
+        const epLangCount= Object.keys(epLangs).length;
 
         const item = document.createElement('div');
         item.className = 'episode-item';
-        if (isActive) {
-          item.style.borderColor = 'var(--accent)';
-          item.style.background = 'var(--bg3)';
-        }
+        if (isActive) { item.style.borderColor = 'var(--accent)'; item.style.background = 'var(--bg3)'; }
         item.innerHTML = `
           <div class="ep-thumb" style="position:relative;overflow:hidden">
-            <img
-              src="${ep.thumbnail || ''}"
-              alt="Ep ${ep.id}"
-              style="width:100%;height:100%;object-fit:cover;border-radius:8px;background:var(--bg3);display:block"
-              onerror="this.style.background='var(--bg3)';this.style.display='block'"/>
+            <img src="${ep.thumbnail||''}" alt="Ep ${ep.id}"
+              style="width:100%;height:100%;object-fit:cover;border-radius:8px;background:var(--bg3)"
+              onerror="this.style.background='var(--bg3)'"/>
             <div class="ep-play-icon"
-              style="${isActive ? 'opacity:1;background:rgba(200,119,64,0.75)' : ''}">
-              <i class="fas fa-${isActive ? 'pause' : 'play'}"></i>
+              style="${isActive?'opacity:1;background:rgba(200,119,64,0.75)':''}">
+              <i class="fas fa-${isActive?'pause':'play'}"></i>
             </div>
           </div>
           <div class="ep-info">
-            <div class="ep-num" style="${isActive ? 'color:var(--accent)' : ''}">
-              Ep ${ep.id} ${isActive ? '▶ Now Playing' : ''}
+            <div class="ep-num" style="${isActive?'color:var(--accent)':''}">
+              Ep ${ep.id} ${isActive?'▶ Playing':''}
             </div>
             <div class="ep-title">${ep.title}</div>
-            <div style="display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:3px;align-items:center">
               <span class="ep-duration">
-                <i class="fas fa-clock" style="font-size:9px"></i> ${ep.duration || ''}
+                <i class="fas fa-clock" style="font-size:9px"></i> ${ep.duration||''}
               </span>
-              ${epQualityCount > 0 ? `
+              ${epLangCount>0?`
               <span style="font-size:10px;color:var(--accent);font-weight:600">
-                ${epQualityCount} quality${epQualityCount > 1 ? 's' : ''}
-              </span>` : `
-              <span style="font-size:10px;color:#888">No video</span>`}
+                <i class="fas fa-language"></i> ${epLangCount} lang${epLangCount>1?'s':''}
+              </span>`:`<span style="font-size:10px;color:#888">No video</span>`}
             </div>
           </div>
         `;
-
-        if (!isActive) {
+        if (!isActive && epLangCount > 0) {
           item.style.cursor = 'pointer';
           item.addEventListener('click', () => {
             window.location.href = `watch.html?id=${animeId}&season=${seasonId}&ep=${ep.id}`;
@@ -342,40 +361,38 @@
       });
     }
 
-    // ===== INIT =====
+    // INIT
     loadTheme();
+    const params  = new URLSearchParams(window.location.search);
+    const animeId = params.get('id');
+    const seasonId= parseInt(params.get('season'));
+    const epId    = parseInt(params.get('ep'));
 
-    const params = new URLSearchParams(window.location.search);
-    const animeId  = parseInt(params.get('id'));
-    const seasonId = parseInt(params.get('season'));
-    const epId     = parseInt(params.get('ep'));
-
-    const all   = getAllAnime();
-    const anime = all.find(a => a.id === animeId);
-
-    if (!anime) {
-      document.getElementById('watchMain').innerHTML = `
-        <div class="empty-state">
-          <i class="fas fa-exclamation-circle"></i>
-          <h2>Anime nahi mila!</h2>
-          <p><a href="index.html" style="color:var(--accent)">Home pe wapas jao</a></p>
-        </div>`;
-    } else {
-      const season  = anime.seasons.find(s => s.id === seasonId);
-      const episode = season && season.episodes.find(e => e.id === epId);
-
+    db.collection('anime').doc(animeId).get().then(doc => {
+      if (!doc.exists) {
+        document.getElementById('watchMain').innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-exclamation-circle"></i>
+            <h2>Anime not found!</h2>
+            <p><a href="index.html" style="color:var(--accent)">Go home</a></p>
+          </div>`;
+        return;
+      }
+      const anime   = { ...doc.data(), firestoreId: doc.id };
+      const season  = anime.seasons && anime.seasons.find(s => s.id === seasonId);
+      const episode = season && season.episodes && season.episodes.find(e => e.id === epId);
       if (!season || !episode) {
         document.getElementById('watchMain').innerHTML = `
           <div class="empty-state">
             <i class="fas fa-film"></i>
-            <h2>Episode nahi mila!</h2>
-            <p><a href="anime.html?id=${animeId}" style="color:var(--accent)">Anime page pe wapas jao</a></p>
+            <h2>Episode not found!</h2>
+            <p><a href="anime.html?id=${animeId}" style="color:var(--accent)">Back to anime</a></p>
           </div>`;
-      } else {
-        document.title = `${episode.title} — Anime Verse`;
-        renderPlayer(anime, season, episode, season.episodes, seasonId, animeId);
+        return;
       }
-    }
+      document.title = `${episode.title} — Anime Verse`;
+      renderPlayer(anime, season, episode, season.episodes, seasonId, animeId);
+    });
   </script>
 </body>
 </html>
