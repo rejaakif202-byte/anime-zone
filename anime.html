@@ -26,8 +26,9 @@
 
   <main class="main" id="detailMain">
     <div class="empty-state" style="min-height:60vh">
-      <i class="fas fa-spinner fa-spin"></i>
-      <h2>Loading...</h2>
+      <i class="fas fa-circle-notch fa-spin"
+        style="font-size:40px;color:var(--accent)"></i>
+      <h2 style="margin-top:16px">Loading...</h2>
     </div>
   </main>
 
@@ -37,9 +38,10 @@
   <script src="firebase-config.js"></script>
   <script src="data.js"></script>
   <script>
+    // ===== THEME =====
     function toggleTheme() {
-      const html = document.documentElement;
-      const btn  = document.getElementById('themeBtn');
+      const html   = document.documentElement;
+      const btn    = document.getElementById('themeBtn');
       const isDark = html.getAttribute('data-theme') === 'dark';
       html.setAttribute('data-theme', isDark ? 'light' : 'dark');
       btn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
@@ -53,6 +55,7 @@
         ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
     }
 
+    // ===== FIREBASE =====
     async function getAnime(id) {
       try {
         const doc = await db.collection('anime').doc(id).get();
@@ -61,6 +64,7 @@
       return null;
     }
 
+    // ===== WATCHLIST =====
     async function toggleWatchlist(id) {
       const user = auth.currentUser;
       const btn  = document.getElementById('watchlistBtn');
@@ -93,71 +97,198 @@
       }
     }
 
+    // ===== QUALITY CONFIG =====
+    const qualityOrder = ['4k', '1080p', '720p', '480p'];
+    const qualityConfig = {
+      '480p':  { label: '480p SD',   color: '#666' },
+      '720p':  { label: '720p HD',   color: '#2a6dd9' },
+      '1080p': { label: '1080p FHD', color: '#27ae60' },
+      '4k':    { label: '4K UHD',    color: '#C87740' },
+    };
+
+    // ===== BUILD SEASON TELEGRAM PACK HTML =====
+    function buildSeasonTgPackHTML(season, animeId) {
+      const hasTgLinks = season.telegramLinks &&
+        Object.values(season.telegramLinks).some(v => v && v.trim());
+      const hasTgSingle = season.telegramUrl && season.telegramUrl.trim();
+
+      if (!hasTgLinks && !hasTgSingle) return '';
+
+      const epCount  = (season.episodes || []).length;
+      const range    = season.episodeRange
+        ? `Episodes ${season.episodeRange}`
+        : epCount > 0 ? `${epCount} Episodes` : 'Full Season';
+
+      let btnHTML = '';
+
+      if (hasTgSingle) {
+        btnHTML = `
+          <a href="${season.telegramUrl}" target="_blank" rel="noopener"
+            class="season-tg-btn-main">
+            <i class="fab fa-telegram"></i>
+            Watch ${range} on Telegram
+          </a>`;
+      } else if (hasTgLinks) {
+        const keys = qualityOrder.filter(q =>
+          season.telegramLinks[q] && season.telegramLinks[q].trim()
+        );
+        btnHTML = `
+          <div class="season-tg-quality-row">
+            ${keys.map(q => {
+              const cfg = qualityConfig[q] || { label: q, color: '#2ca5e0' };
+              return `
+                <a href="${season.telegramLinks[q]}"
+                  target="_blank" rel="noopener"
+                  class="season-tg-quality-btn"
+                  style="--tgcolor:${cfg.color}">
+                  <i class="fab fa-telegram"></i>
+                  ${cfg.label}
+                </a>`;
+            }).join('')}
+          </div>`;
+      }
+
+      return `
+        <div class="season-tg-pack">
+          <div class="season-tg-pack-header">
+            <div class="season-tg-pack-icon">
+              <i class="fab fa-telegram"></i>
+            </div>
+            <div>
+              <div class="season-tg-pack-title">
+                ${season.title} — Telegram Pack
+              </div>
+              <div class="season-tg-pack-sub">
+                <i class="fas fa-film" style="font-size:10px"></i>
+                ${range} available
+              </div>
+            </div>
+          </div>
+          ${btnHTML}
+        </div>`;
+    }
+
+    // ===== HAS VIDEO =====
+    function hasVideoContent(episode) {
+      const langs = episode.languages || {};
+      if (Object.values(langs).some(qMap =>
+        qMap && Object.values(qMap).some(u => u && u.trim())
+      )) return true;
+      if (episode.videoUrls && Object.values(episode.videoUrls).some(u => u && u.trim()))
+        return true;
+      if (episode.videoUrl && episode.videoUrl.trim()) return true;
+      return false;
+    }
+
+    // ===== SWITCH SEASON =====
     function switchSeason(animeId, seasonIndex, seasons) {
       document.querySelectorAll('.season-tab').forEach((t, i) => {
         t.classList.toggle('active', i === seasonIndex);
       });
-      renderEpisodes(animeId, seasons[seasonIndex]);
+      renderSeasonContent(animeId, seasons[seasonIndex], seasons);
     }
 
-    function getEpisodeLanguages(ep) {
-      if (ep.languages && Object.keys(ep.languages).length > 0) return ep.languages;
-      // Legacy support
-      if (ep.videoUrls) return { 'Japanese': ep.videoUrls };
-      if (ep.videoUrl)  return { 'Japanese': { '720p': ep.videoUrl } };
-      return {};
-    }
+    // ===== RENDER SEASON CONTENT =====
+    function renderSeasonContent(animeId, season, allSeasons) {
+      const container = document.getElementById('seasonContent');
+      const episodes  = season.episodes || [];
 
-    function renderEpisodes(animeId, season) {
-      const list = document.getElementById('episodesList');
-      list.innerHTML = '';
-      if (!season || !season.episodes || season.episodes.length === 0) {
-        list.innerHTML = '<p class="empty-msg">No episodes added yet.</p>';
-        return;
+      // Telegram pack HTML
+      const tgPackHTML = buildSeasonTgPackHTML(season, animeId);
+
+      // Episodes section
+      let episodesHTML = '';
+      if (episodes.length > 0) {
+        episodesHTML = `
+          <div class="episodes-section-title">
+            <i class="fas fa-play-circle"
+              style="color:var(--accent);font-size:15px"></i>
+            Watch Episodes
+          </div>
+          <div class="episodes-list" id="episodesList"></div>`;
+      } else if (!tgPackHTML) {
+        episodesHTML = `
+          <div class="empty-msg" style="padding:30px 0">
+            No episodes added yet.
+          </div>`;
       }
-      season.episodes.forEach(ep => {
-        const langs = getEpisodeLanguages(ep);
-        const langCount = Object.keys(langs).length;
-        const hasVideo  = langCount > 0;
 
-        const item = document.createElement('div');
-        item.className = 'episode-item';
-        item.innerHTML = `
-          <div class="ep-thumb" style="position:relative">
-            <img src="${ep.thumbnail || ''}" alt="Ep ${ep.id}"
-              style="width:100%;height:100%;object-fit:cover;border-radius:8px;background:var(--bg3)"
-              onerror="this.style.background='var(--bg3)'"/>
-            <div class="ep-play-icon"><i class="fas fa-play"></i></div>
-          </div>
-          <div class="ep-info">
-            <div class="ep-num">Episode ${ep.id}</div>
-            <div class="ep-title">${ep.title}</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:3px">
-              <span class="ep-duration">
-                <i class="fas fa-clock" style="font-size:9px"></i> ${ep.duration || ''}
-              </span>
-              ${hasVideo ? `
-              <span style="font-size:10px;color:var(--accent);font-weight:600">
-                <i class="fas fa-language"></i> ${langCount} lang${langCount>1?'s':''}
-              </span>` : `
-              <span style="font-size:10px;color:#888">No video</span>`}
+      container.innerHTML = `
+        ${tgPackHTML}
+        ${episodesHTML}`;
+
+      // Render individual episodes
+      if (episodes.length > 0) {
+        const list = document.getElementById('episodesList');
+        episodes.forEach(ep => {
+          const hasVid = hasVideoContent(ep);
+          const hasTg  = !!(ep.telegramLinks || ep.telegramUrl);
+          const isClickable = hasVid || hasTg;
+
+          const item = document.createElement('div');
+          item.className = 'episode-item';
+          if (!isClickable) item.style.opacity = '0.6';
+          else item.style.cursor = 'pointer';
+
+          item.innerHTML = `
+            <div class="ep-thumb" style="position:relative;overflow:hidden">
+              <img src="${ep.thumbnail || ''}" alt="Ep ${ep.id}"
+                style="width:100%;height:100%;object-fit:cover;
+                  border-radius:8px;background:var(--bg3);display:block"
+                onerror="this.style.background='var(--bg3)'"/>
+              <div class="ep-play-icon">
+                <i class="fas fa-${isClickable ? 'play' : 'lock'}"></i>
+              </div>
+              ${hasTg && !hasVid ? `
+              <div style="position:absolute;bottom:4px;right:4px;
+                background:#2ca5e0;border-radius:4px;padding:2px 6px;
+                font-size:9px;color:#fff;font-weight:700">
+                <i class="fab fa-telegram"></i>
+              </div>` : ''}
             </div>
-          </div>
-        `;
-        if (hasVideo) {
-          item.style.cursor = 'pointer';
-          item.addEventListener('click', () => {
-            window.location.href = `watch.html?id=${animeId}&season=${season.id}&ep=${ep.id}`;
-          });
-        }
-        list.appendChild(item);
-      });
+            <div class="ep-info">
+              <div class="ep-num">Episode ${ep.id}</div>
+              <div class="ep-title">${ep.title}</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;
+                margin-top:3px;align-items:center">
+                ${ep.duration ? `
+                <span class="ep-duration">
+                  <i class="fas fa-clock" style="font-size:9px"></i>
+                  ${ep.duration}
+                </span>` : ''}
+                ${hasVid ? `
+                <span style="font-size:10px;color:var(--accent);font-weight:600">
+                  <i class="fas fa-play-circle"></i> Watch
+                </span>` : ''}
+                ${hasTg ? `
+                <span style="font-size:10px;color:#2ca5e0;font-weight:600">
+                  <i class="fab fa-telegram"></i> Telegram
+                </span>` : ''}
+                ${!hasVid && !hasTg ? `
+                <span style="font-size:10px;color:#888">
+                  <i class="fas fa-clock"></i> Coming soon
+                </span>` : ''}
+              </div>
+            </div>
+          `;
+
+          if (isClickable) {
+            item.addEventListener('click', () => {
+              window.location.href =
+                `watch.html?id=${animeId}&season=${season.id}&ep=${ep.id}`;
+            });
+          }
+          list.appendChild(item);
+        });
+      }
     }
 
+    // ===== RENDER DETAIL =====
     async function renderDetail(anime) {
       const animeId = anime.firestoreId;
       const user    = auth.currentUser;
       let isSaved   = false;
+
       if (user) {
         const doc = await db.collection('users').doc(user.uid).get();
         const wl  = doc.exists ? (doc.data().watchlist || []) : [];
@@ -167,15 +298,32 @@
         isSaved = local.includes(animeId);
       }
 
-      const firstSeason = anime.seasons && anime.seasons[0];
-      const firstEp     = firstSeason && firstSeason.episodes && firstSeason.episodes[0];
-      const watchUrl    = firstEp
-        ? `watch.html?id=${animeId}&season=${firstSeason.id}&ep=${firstEp.id}` : '#';
+      const seasons = anime.seasons || [];
 
-      const genres    = (anime.genre || []).map(g => `<span class="genre-tag">${g}</span>`).join('');
-      const seasonTabs= (anime.seasons || []).map((s, i) => `
-        <button class="season-tab ${i===0?'active':''}"
-          onclick="switchSeason('${animeId}', ${i}, animeSeasons)">
+      // Find first watchable episode for "Watch Now"
+      let watchUrl = '#';
+      for (const season of seasons) {
+        const eps = season.episodes || [];
+        for (const ep of eps) {
+          if (hasVideoContent(ep) || ep.telegramLinks || ep.telegramUrl) {
+            watchUrl = `watch.html?id=${animeId}&season=${season.id}&ep=${ep.id}`;
+            break;
+          }
+        }
+        if (watchUrl !== '#') break;
+        // If season has TG but no episodes, point to first ep if exists
+        if ((season.telegramLinks || season.telegramUrl) && eps.length > 0) {
+          watchUrl = `watch.html?id=${animeId}&season=${season.id}&ep=${eps[0].id}`;
+          break;
+        }
+      }
+
+      const genres    = (anime.genre || []).map(g =>
+        `<span class="genre-tag">${g}</span>`).join('');
+
+      const seasonTabs = seasons.map((s, i) => `
+        <button class="season-tab ${i === 0 ? 'active' : ''}"
+          onclick="switchSeason('${animeId}', ${i}, currentSeasons)">
           ${s.title}
         </button>`).join('');
 
@@ -187,7 +335,9 @@
 
         <div class="anime-detail-card">
           <div class="anime-detail-top">
-            <img class="anime-poster" src="${anime.thumbnail || ''}" alt="${anime.title}"
+            <img class="anime-poster"
+              src="${anime.thumbnail || ''}"
+              alt="${anime.title}"
               onerror="this.style.background='var(--bg3)'"/>
             <div class="anime-info">
               <h1>${anime.title}</h1>
@@ -201,7 +351,7 @@
                 </span>
                 <span class="info-chip">
                   <i class="fas fa-layer-group"></i>
-                  ${(anime.seasons||[]).length} Season${(anime.seasons||[]).length!==1?'s':''}
+                  ${seasons.length} Season${seasons.length !== 1 ? 's' : ''}
                 </span>
               </div>
               <div class="genre-tags">${genres}</div>
@@ -211,26 +361,43 @@
           <p class="anime-desc">${anime.description || ''}</p>
 
           <div class="action-btns">
-            <a href="${watchUrl}" class="btn-primary" style="text-decoration:none">
+            <a href="${watchUrl}" class="btn-primary"
+              style="text-decoration:none;${watchUrl === '#' ? 'opacity:0.5;pointer-events:none' : ''}">
               <i class="fas fa-play"></i> Watch Now
             </a>
-            <button class="btn-outline ${isSaved?'saved':''}" id="watchlistBtn"
+            <button class="btn-outline ${isSaved ? 'saved' : ''}"
+              id="watchlistBtn"
               onclick="toggleWatchlist('${animeId}')">
-              <i class="fas fa-heart"></i> ${isSaved?'Saved!':'Add to List'}
+              <i class="fas fa-heart"></i>
+              ${isSaved ? 'Saved!' : 'Add to List'}
             </button>
           </div>
         </div>
 
-        <div class="seasons-tabs">${seasonTabs}</div>
-        <div class="episodes-list" id="episodesList"></div>
+        <!-- SEASON TABS -->
+        <div class="seasons-tabs" id="seasonsTabs">
+          ${seasonTabs}
+        </div>
+
+        <!-- SEASON CONTENT (TG Pack + Episodes) -->
+        <div id="seasonContent"></div>
       `;
 
-      window.animeSeasons = anime.seasons || [];
-      if (firstSeason) renderEpisodes(animeId, firstSeason);
+      // Store seasons globally for tab switching
+      window.currentSeasons = seasons;
+
+      // Render first season
+      if (seasons.length > 0) {
+        renderSeasonContent(animeId, seasons[0], seasons);
+      } else {
+        document.getElementById('seasonContent').innerHTML =
+          '<p class="empty-msg" style="padding:30px 0">No seasons added yet.</p>';
+      }
     }
 
-    // INIT
+    // ===== INIT =====
     loadTheme();
+
     const params  = new URLSearchParams(window.location.search);
     const animeId = params.get('id');
 
@@ -243,7 +410,8 @@
           <div class="empty-state">
             <i class="fas fa-exclamation-circle"></i>
             <h2>Anime not found!</h2>
-            <p><a href="index.html" style="color:var(--accent)">Go back home</a></p>
+            <p><a href="index.html"
+              style="color:var(--accent)">Go back home</a></p>
           </div>`;
       }
     });
