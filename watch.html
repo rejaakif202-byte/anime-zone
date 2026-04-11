@@ -26,8 +26,8 @@
 
   <main class="main" id="watchMain">
     <div class="empty-state" style="min-height:60vh">
-      <i class="fas fa-spinner fa-spin"></i>
-      <h2>Loading player...</h2>
+      <i class="fas fa-circle-notch fa-spin" style="font-size:40px;color:var(--accent)"></i>
+      <h2 style="margin-top:16px">Loading player...</h2>
     </div>
   </main>
 
@@ -37,9 +37,10 @@
   <script src="firebase-config.js"></script>
   <script src="data.js"></script>
   <script>
+    // ===== THEME =====
     function toggleTheme() {
-      const html = document.documentElement;
-      const btn  = document.getElementById('themeBtn');
+      const html   = document.documentElement;
+      const btn    = document.getElementById('themeBtn');
       const isDark = html.getAttribute('data-theme') === 'dark';
       html.setAttribute('data-theme', isDark ? 'light' : 'dark');
       btn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
@@ -53,7 +54,7 @@
         ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
     }
 
-    // Language flags
+    // ===== LANGUAGE FLAGS =====
     const langFlags = {
       'Japanese':    '🇯🇵',
       'English Dub': '🇺🇸',
@@ -76,6 +77,7 @@
     let currentLanguage = '';
     let currentLangData = {};
 
+    // ===== GET EPISODE LANGUAGES =====
     function getEpisodeLangs(episode) {
       if (episode.languages && Object.keys(episode.languages).length > 0)
         return episode.languages;
@@ -84,47 +86,109 @@
       return {};
     }
 
-    function getBestQuality(qualityMap) {
-      for (const q of qualityOrder) {
-        if (qualityMap[q] && qualityMap[q].trim()) return q;
+    // ===== GET TELEGRAM LINKS =====
+    // Priority: episode-level → season-level
+    function getTelegramLinks(episode, season) {
+      if (episode.telegramLinks && Object.keys(episode.telegramLinks).some(k => episode.telegramLinks[k])) {
+        return { type: 'episode', links: episode.telegramLinks };
       }
-      return Object.keys(qualityMap)[0] || '';
+      if (season.telegramLinks && Object.keys(season.telegramLinks).some(k => season.telegramLinks[k])) {
+        return { type: 'season', links: season.telegramLinks };
+      }
+      // Single link fallback
+      if (episode.telegramUrl) return { type: 'single', links: { 'All Qualities': episode.telegramUrl } };
+      if (season.telegramUrl)  return { type: 'single', links: { 'All Qualities': season.telegramUrl } };
+      return null;
     }
 
+    // ===== BUILD TELEGRAM SECTION =====
+    function buildTelegramSection(episode, season) {
+      const tg = getTelegramLinks(episode, season);
+      if (!tg) return '';
+
+      const links  = tg.links;
+      const keys   = Object.keys(links).filter(k => links[k]);
+
+      if (keys.length === 0) return '';
+
+      // Single link or all-quality same link
+      if (keys.length === 1 || (keys.length > 0 && new Set(Object.values(links).filter(Boolean)).size === 1)) {
+        const url = links[keys[0]];
+        return `
+          <div class="tg-section">
+            <div class="tg-label">
+              <i class="fab fa-telegram"></i>
+              <span>Watch on Telegram</span>
+            </div>
+            <a href="${url}" target="_blank" rel="noopener" class="tg-btn-main">
+              <i class="fab fa-telegram"></i>
+              Open in Telegram
+            </a>
+          </div>`;
+      }
+
+      // Multiple quality links
+      const btnHTML = keys.map(q => {
+        const cfg = qualityConfig[q] || { label: q, color: '#2ca5e0' };
+        return `
+          <a href="${links[q]}" target="_blank" rel="noopener"
+            class="tg-quality-btn"
+            style="--tgcolor:${cfg.color}">
+            <i class="fab fa-telegram" style="font-size:13px"></i>
+            ${cfg.label || q}
+          </a>`;
+      }).join('');
+
+      return `
+        <div class="tg-section">
+          <div class="tg-label">
+            <i class="fab fa-telegram"></i>
+            <span>Watch on Telegram</span>
+            <span style="font-size:11px;color:var(--text2);font-weight:400">
+              — Select quality
+            </span>
+          </div>
+          <div class="tg-quality-row">${btnHTML}</div>
+        </div>`;
+    }
+
+    // ===== EMBED URL =====
     function getEmbedUrl(url) {
       if (!url || !url.trim()) return null;
       if (url.includes('youtube.com/watch')) {
         try {
           const id = new URL(url).searchParams.get('v');
-          return { type:'iframe', src:`https://www.youtube.com/embed/${id}?autoplay=1&rel=0` };
+          return { type: 'iframe', src: `https://www.youtube.com/embed/${id}?autoplay=1&rel=0` };
         } catch {}
       }
       if (url.includes('youtu.be/')) {
         const id = url.split('youtu.be/')[1].split('?')[0];
-        return { type:'iframe', src:`https://www.youtube.com/embed/${id}?autoplay=1&rel=0` };
+        return { type: 'iframe', src: `https://www.youtube.com/embed/${id}?autoplay=1&rel=0` };
       }
       if (url.includes('drive.google.com')) {
         const m1 = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
-        if (m1) return { type:'iframe', src:`https://drive.google.com/file/d/${m1[1]}/preview` };
+        if (m1) return { type: 'iframe', src: `https://drive.google.com/file/d/${m1[1]}/preview` };
         const m2 = url.match(/id=([a-zA-Z0-9_-]{10,})/);
-        if (m2) return { type:'iframe', src:`https://drive.google.com/file/d/${m2[1]}/preview` };
+        if (m2) return { type: 'iframe', src: `https://drive.google.com/file/d/${m2[1]}/preview` };
       }
-      if (url.match(/\.(mp4|webm|ogg|mkv)(\?|$)/i)) {
-        return { type:'video', src:url };
-      }
-      return { type:'iframe', src:url };
+      if (url.match(/\.(mp4|webm|ogg|mkv)(\?|$)/i)) return { type: 'video', src: url };
+      return { type: 'iframe', src: url };
     }
 
-    function loadVideo(url, quality, lang) {
-      currentLanguage = lang;
-      const embed = getEmbedUrl(url);
-      const container = document.getElementById('playerContainer');
+    function getBestQuality(langData) {
+      for (const q of qualityOrder) {
+        if (langData[q] && langData[q].trim()) return q;
+      }
+      return Object.keys(langData)[0] || '';
+    }
 
-      // Update quality buttons
+    // ===== LOAD VIDEO =====
+    function loadVideo(url, quality) {
+      const embed     = getEmbedUrl(url);
+      const container = document.getElementById('playerContainer');
       document.querySelectorAll('.quality-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.quality === quality);
       });
-
       if (!embed) {
         container.innerHTML = `
           <div class="no-video-msg">
@@ -133,7 +197,6 @@
           </div>`;
         return;
       }
-
       if (embed.type === 'iframe') {
         container.innerHTML = `
           <iframe src="${embed.src}"
@@ -148,34 +211,27 @@
       }
     }
 
+    // ===== SWITCH LANGUAGE =====
     function switchLanguage(lang, langData) {
       currentLanguage = lang;
       currentLangData = langData;
-
-      // Update language buttons
       document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.lang === lang);
       });
-
-      // Update quality buttons
       const qualityBtnsContainer = document.getElementById('qualityBtnsContainer');
-      const availableQualities = qualityOrder.filter(q => langData[q] && langData[q].trim());
-
-      qualityBtnsContainer.innerHTML = availableQualities.map(q => {
+      const available = qualityOrder.filter(q => langData[q] && langData[q].trim());
+      qualityBtnsContainer.innerHTML = available.map(q => {
         const cfg = qualityConfig[q] || { label: q, color: '#888' };
         return `<button class="quality-btn" data-quality="${q}"
-          onclick="loadVideo('${langData[q].replace(/'/g,"\\'")}', '${q}', '${lang}')"
+          onclick="loadVideo('${langData[q].replace(/'/g,"\\'")}', '${q}')"
           style="--qcolor:${cfg.color}">
           ${cfg.label}
         </button>`;
       }).join('');
-
-      // Auto load best quality
       const best = getBestQuality(langData);
       if (best && langData[best]) {
-        loadVideo(langData[best], best, lang);
-        // Mark best as active
         setTimeout(() => {
+          loadVideo(langData[best], best);
           document.querySelectorAll('.quality-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.quality === best);
           });
@@ -183,30 +239,31 @@
       }
     }
 
+    // ===== RENDER PLAYER =====
     function renderPlayer(anime, season, episode, allEpisodes, seasonId, animeId) {
-      const languages = getEpisodeLangs(episode);
-      const langKeys  = Object.keys(languages);
-      const defaultLang = langKeys.includes('Japanese') ? 'Japanese' : langKeys[0] || '';
+      const languages    = getEpisodeLangs(episode);
+      const langKeys     = Object.keys(languages);
+      const defaultLang  = langKeys.includes('Japanese') ? 'Japanese' : langKeys[0] || '';
+      const initLangData = defaultLang ? languages[defaultLang] : {};
+      const initBest     = getBestQuality(initLangData);
+      const initQualities= qualityOrder.filter(q => initLangData[q] && initLangData[q].trim());
 
       // Language buttons
       const langBtnsHTML = langKeys.map(lang => {
         const flag = langFlags[lang] || '🌐';
+        const safeData = JSON.stringify(languages[lang]).replace(/"/g, '&quot;');
         return `<button class="lang-btn ${lang===defaultLang?'active':''}"
           data-lang="${lang}"
-          onclick="switchLanguage('${lang}', ${JSON.stringify(languages[lang]).replace(/"/g,'&quot;')})">
+          onclick="switchLanguage('${lang}', ${safeData})">
           ${flag} ${lang}
         </button>`;
       }).join('');
 
-      // Get initial qualities
-      const initLangData = defaultLang ? languages[defaultLang] : {};
-      const initQualities = qualityOrder.filter(q => initLangData[q] && initLangData[q].trim());
-      const initBest = getBestQuality(initLangData);
-
+      // Quality buttons
       const qualityBtnsHTML = initQualities.map(q => {
         const cfg = qualityConfig[q] || { label: q, color: '#888' };
         return `<button class="quality-btn ${q===initBest?'active':''}" data-quality="${q}"
-          onclick="loadVideo('${initLangData[q]?.replace(/'/g,"\\'")||''}', '${q}', '${defaultLang}')"
+          onclick="loadVideo('${(initLangData[q]||'').replace(/'/g,"\\'")}', '${q}')"
           style="--qcolor:${cfg.color}">
           ${cfg.label}
         </button>`;
@@ -220,43 +277,50 @@
       const prevBtn = prevEp
         ? `<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${prevEp.id}"
               class="btn-outline" style="font-size:13px;text-decoration:none">
-            <i class="fas fa-backward"></i> Prev
+            <i class="fas fa-backward-step"></i> Prev
            </a>`
-        : `<button class="btn-outline" disabled style="opacity:0.4;font-size:13px">
-            <i class="fas fa-backward"></i> Prev
+        : `<button class="btn-outline" disabled style="opacity:0.4;font-size:13px;cursor:not-allowed">
+            <i class="fas fa-backward-step"></i> Prev
            </button>`;
 
       const nextBtn = nextEp
         ? `<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${nextEp.id}"
               class="btn-primary" style="font-size:13px;text-decoration:none">
-            Next <i class="fas fa-forward"></i>
+            Next <i class="fas fa-forward-step"></i>
            </a>`
-        : `<button class="btn-primary" disabled style="opacity:0.4;font-size:13px">
-            Next <i class="fas fa-forward"></i>
+        : `<button class="btn-primary" disabled style="opacity:0.4;font-size:13px;cursor:not-allowed">
+            Next <i class="fas fa-forward-step"></i>
            </button>`;
+
+      // Telegram section
+      const telegramHTML = buildTelegramSection(episode, season);
 
       document.getElementById('watchMain').innerHTML = `
 
-        <!-- PLAYER -->
+        <!-- VIDEO PLAYER -->
         <div class="player-wrapper">
           <div id="playerContainer" style="width:100%;height:100%">
             <div class="no-video-msg">
-              <i class="fas fa-spinner fa-spin" style="font-size:28px"></i>
-              <span>Loading...</span>
+              <i class="fas fa-circle-notch fa-spin" style="font-size:28px"></i>
+              <span>Loading video...</span>
             </div>
           </div>
         </div>
 
-        <!-- LANGUAGE SELECTOR -->
+        <!-- LANGUAGE + QUALITY -->
         ${langKeys.length > 0 ? `
         <div class="lang-quality-box">
           ${langKeys.length > 0 ? `
           <div class="lq-row">
-            <span class="lq-label"><i class="fas fa-language"></i> Language</span>
+            <span class="lq-label">
+              <i class="fas fa-language"></i> Language
+            </span>
             <div class="lang-btns">${langBtnsHTML}</div>
           </div>` : ''}
           <div class="lq-row">
-            <span class="lq-label"><i class="fas fa-sliders-h"></i> Quality</span>
+            <span class="lq-label">
+              <i class="fas fa-sliders"></i> Quality
+            </span>
             <div class="quality-btns" id="qualityBtnsContainer">${qualityBtnsHTML}</div>
           </div>
         </div>` : `
@@ -266,7 +330,10 @@
           Video not available yet.
         </div>`}
 
-        <!-- NAV -->
+        <!-- TELEGRAM SECTION -->
+        ${telegramHTML}
+
+        <!-- PREV / EPISODES / NEXT -->
         <div class="ep-nav">
           ${prevBtn}
           <a href="anime.html?id=${animeId}" class="btn-outline"
@@ -276,20 +343,21 @@
           ${nextBtn}
         </div>
 
-        <!-- INFO -->
+        <!-- EPISODE INFO -->
         <div class="watch-info">
           <div class="anime-ep-label">
-            ${anime.title} · ${season.title} · Episode ${episode.id}
+            ${anime.title} &middot; ${season.title} &middot; Episode ${episode.id}
           </div>
           <h2>${episode.title}</h2>
-          <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">
+          <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;align-items:center">
             <span class="info-chip" style="font-size:12px;color:var(--text2)">
-              <i class="fas fa-clock" style="color:var(--accent)"></i> ${episode.duration || 'N/A'}
+              <i class="fas fa-clock" style="color:var(--accent)"></i>
+              ${episode.duration || 'N/A'}
             </span>
             ${langKeys.length > 0 ? `
             <span class="info-chip" style="font-size:12px;color:var(--text2)">
               <i class="fas fa-language" style="color:var(--accent)"></i>
-              ${langKeys.length} language${langKeys.length>1?'s':''}
+              ${langKeys.length} language${langKeys.length > 1 ? 's' : ''}
             </span>` : ''}
           </div>
           ${episode.description
@@ -299,55 +367,61 @@
 
         <!-- OTHER EPISODES -->
         <div style="margin-top:24px">
-          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text)">
             ${season.title} — All Episodes
           </h3>
           <div class="episodes-list" id="otherEps"></div>
         </div>
       `;
 
-      // Auto-load default language
-      if (defaultLang && languages[defaultLang]) {
+      // Auto-load
+      if (defaultLang && initBest && initLangData[initBest]) {
         currentLanguage = defaultLang;
-        currentLangData = languages[defaultLang];
-        if (initBest && initLangData[initBest]) {
-          setTimeout(() => loadVideo(initLangData[initBest], initBest, defaultLang), 100);
-        }
+        currentLangData = initLangData;
+        setTimeout(() => loadVideo(initLangData[initBest], initBest), 100);
       }
 
-      // Render other episodes
+      // Other episodes list
       const otherEps = document.getElementById('otherEps');
       allEpisodes.forEach(ep => {
-        const isActive   = ep.id === episode.id;
-        const epLangs    = getEpisodeLangs(ep);
-        const epLangCount= Object.keys(epLangs).length;
+        const isActive    = ep.id === episode.id;
+        const epLangs     = getEpisodeLangs(ep);
+        const epLangCount = Object.keys(epLangs).length;
+        const hasTg       = !!(ep.telegramLinks || ep.telegramUrl || season.telegramLinks || season.telegramUrl);
 
         const item = document.createElement('div');
         item.className = 'episode-item';
-        if (isActive) { item.style.borderColor = 'var(--accent)'; item.style.background = 'var(--bg3)'; }
+        if (isActive) {
+          item.style.borderColor = 'var(--accent)';
+          item.style.background  = 'var(--bg3)';
+        }
         item.innerHTML = `
           <div class="ep-thumb" style="position:relative;overflow:hidden">
-            <img src="${ep.thumbnail||''}" alt="Ep ${ep.id}"
+            <img src="${ep.thumbnail || ''}" alt="Ep ${ep.id}"
               style="width:100%;height:100%;object-fit:cover;border-radius:8px;background:var(--bg3)"
               onerror="this.style.background='var(--bg3)'"/>
             <div class="ep-play-icon"
-              style="${isActive?'opacity:1;background:rgba(200,119,64,0.75)':''}">
-              <i class="fas fa-${isActive?'pause':'play'}"></i>
+              style="${isActive ? 'opacity:1;background:rgba(200,119,64,0.75)' : ''}">
+              <i class="fas fa-${isActive ? 'pause' : 'play'}"></i>
             </div>
           </div>
           <div class="ep-info">
-            <div class="ep-num" style="${isActive?'color:var(--accent)':''}">
-              Ep ${ep.id} ${isActive?'▶ Playing':''}
+            <div class="ep-num" style="${isActive ? 'color:var(--accent)' : ''}">
+              Ep ${ep.id} ${isActive ? '&#9654; Playing' : ''}
             </div>
             <div class="ep-title">${ep.title}</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:3px;align-items:center">
               <span class="ep-duration">
-                <i class="fas fa-clock" style="font-size:9px"></i> ${ep.duration||''}
+                <i class="fas fa-clock" style="font-size:9px"></i> ${ep.duration || ''}
               </span>
-              ${epLangCount>0?`
+              ${epLangCount > 0 ? `
               <span style="font-size:10px;color:var(--accent);font-weight:600">
-                <i class="fas fa-language"></i> ${epLangCount} lang${epLangCount>1?'s':''}
-              </span>`:`<span style="font-size:10px;color:#888">No video</span>`}
+                <i class="fas fa-language"></i> ${epLangCount} lang${epLangCount > 1 ? 's' : ''}
+              </span>` : `<span style="font-size:10px;color:#888">No video</span>`}
+              ${hasTg ? `
+              <span style="font-size:10px;color:#2ca5e0;font-weight:600">
+                <i class="fab fa-telegram"></i> TG
+              </span>` : ''}
             </div>
           </div>
         `;
@@ -361,12 +435,13 @@
       });
     }
 
-    // INIT
+    // ===== INIT =====
     loadTheme();
-    const params  = new URLSearchParams(window.location.search);
-    const animeId = params.get('id');
-    const seasonId= parseInt(params.get('season'));
-    const epId    = parseInt(params.get('ep'));
+
+    const params   = new URLSearchParams(window.location.search);
+    const animeId  = params.get('id');
+    const seasonId = parseInt(params.get('season'));
+    const epId     = parseInt(params.get('ep'));
 
     db.collection('anime').doc(animeId).get().then(doc => {
       if (!doc.exists) {
@@ -381,6 +456,7 @@
       const anime   = { ...doc.data(), firestoreId: doc.id };
       const season  = anime.seasons && anime.seasons.find(s => s.id === seasonId);
       const episode = season && season.episodes && season.episodes.find(e => e.id === epId);
+
       if (!season || !episode) {
         document.getElementById('watchMain').innerHTML = `
           <div class="empty-state">
