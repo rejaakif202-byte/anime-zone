@@ -14,22 +14,23 @@
   <div id="loginScreen" class="admin-login">
     <div class="login-card">
       <span class="logo">ANIME <span style="color:var(--accent)">VERSE</span></span>
-      <p style="color:var(--text2);font-size:13px;margin-bottom:20px">Admin Panel — Restricted Access 🔐</p>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:20px">Admin Panel — Restricted Access</p>
       <div class="form-group">
         <label>PASSWORD</label>
         <div style="position:relative">
           <input type="password" id="adminPass" placeholder="Enter admin password"
-            style="padding-right:44px"/>
+            style="padding-right:44px" onkeydown="if(event.key==='Enter') checkLogin()"/>
           <button onclick="togglePassView()"
-            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px">
+            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
+              background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px">
             <i class="fas fa-eye" id="eyeIcon"></i>
           </button>
         </div>
       </div>
       <div id="loginError"
-        style="color:#e50914;font-size:12px;margin-bottom:12px;display:none;
-          background:rgba(229,9,20,0.1);padding:8px 12px;border-radius:6px;border:1px solid #e50914">
-        ❌ Wrong password!
+        style="display:none;background:rgba(229,9,20,0.1);border:1px solid #e50914;
+          color:#e50914;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:12px">
+        Wrong password!
       </div>
       <button class="btn-primary" onclick="checkLogin()" style="width:100%">
         <i class="fas fa-lock"></i> Login
@@ -50,10 +51,10 @@
         </button>
         <a href="index.html" class="icon-btn"
           style="display:flex;align-items:center;justify-content:center;width:38px;height:38px">
-          <i class="fas fa-home"></i>
+          <i class="fas fa-house"></i>
         </a>
         <button class="icon-btn" onclick="logout()">
-          <i class="fas fa-sign-out-alt"></i>
+          <i class="fas fa-right-from-bracket"></i>
         </button>
       </div>
     </header>
@@ -78,18 +79,28 @@
 
       <!-- TABS -->
       <div class="admin-tabs">
-        <button class="admin-tab active" onclick="switchTab('add',this)">➕ Add</button>
-        <button class="admin-tab" onclick="switchTab('manage',this)">📋 Manage</button>
-        <button class="admin-tab" onclick="switchTab('episode',this)">🎬 Episode</button>
-        <button class="admin-tab" onclick="switchTab('guide',this)">📖 Guide</button>
+        <button class="admin-tab active" onclick="switchTab('add',this)">
+          <i class="fas fa-plus"></i> Add
+        </button>
+        <button class="admin-tab" onclick="switchTab('manage',this)">
+          <i class="fas fa-list"></i> Manage
+        </button>
+        <button class="admin-tab" onclick="switchTab('episode',this)">
+          <i class="fas fa-film"></i> Episode
+        </button>
+        <button class="admin-tab" onclick="switchTab('guide',this)">
+          <i class="fas fa-book"></i> Guide
+        </button>
       </div>
 
-      <!-- TAB: ADD -->
+      <!-- TAB: ADD ANIME -->
       <div class="admin-panel active" id="tab-add">
         <div class="admin-card">
-          <h3>➕ Add New Anime / Movie</h3>
-          <div id="addSuccess" class="success-msg">✅ Added successfully!</div>
-          <div id="addError" style="display:none;background:rgba(229,9,20,0.1);border:1px solid #e50914;color:#e50914;padding:8px 12px;border-radius:8px;font-size:12px;margin-bottom:14px"></div>
+          <h3><i class="fas fa-plus" style="color:var(--accent)"></i> Add New Anime / Movie</h3>
+          <div id="addSuccess" class="success-msg">Added successfully!</div>
+          <div id="addError" style="display:none;background:rgba(229,9,20,0.1);
+            border:1px solid #e50914;color:#e50914;padding:8px 12px;
+            border-radius:8px;font-size:12px;margin-bottom:14px"></div>
 
           <div class="form-group"><label>TITLE *</label>
             <input type="text" id="a_title" placeholder="e.g. Demon Slayer"/></div>
@@ -115,10 +126,7 @@
           <div class="form-group"><label>STUDIO</label>
             <input type="text" id="a_studio" placeholder="e.g. ufotable"/></div>
           <div class="form-group"><label>COVER IMAGE URL *</label>
-            <input type="url" id="a_thumb" placeholder="https://..."/>
-            <p style="font-size:11px;color:var(--text2);margin-top:4px">
-              💡 Drive: Share → Anyone with link → Copy
-            </p></div>
+            <input type="url" id="a_thumb" placeholder="https://..."/></div>
           <div class="form-group"><label>BANNER URL (Wide)</label>
             <input type="url" id="a_banner" placeholder="https://... (optional)"/></div>
           <div class="form-group"><label>DESCRIPTION</label>
@@ -126,11 +134,11 @@
 
           <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap">
             <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
-              <input type="checkbox" id="a_trending"/> 🔥 Trending</label>
+              <input type="checkbox" id="a_trending"/> Trending</label>
             <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
-              <input type="checkbox" id="a_latest"/> 🆕 Latest</label>
+              <input type="checkbox" id="a_latest"/> Latest</label>
             <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
-              <input type="checkbox" id="a_top10"/> 🏆 Top 10</label>
+              <input type="checkbox" id="a_top10"/> Top 10</label>
           </div>
           <div class="form-group" id="top10RankField" style="display:none">
             <label>TOP 10 RANK (1-10)</label>
@@ -145,9 +153,10 @@
       <!-- TAB: MANAGE -->
       <div class="admin-panel" id="tab-manage">
         <div class="admin-card">
-          <h3>📋 All Anime</h3>
+          <h3><i class="fas fa-list" style="color:var(--accent)"></i> All Anime</h3>
           <div id="manageList"></div>
-          <div id="manageEmpty" style="color:var(--text2);font-size:13px;text-align:center;padding:20px">
+          <div id="manageEmpty"
+            style="color:var(--text2);font-size:13px;text-align:center;padding:20px">
             No anime added yet.
           </div>
         </div>
@@ -156,9 +165,11 @@
       <!-- TAB: EPISODE -->
       <div class="admin-panel" id="tab-episode">
         <div class="admin-card">
-          <h3>🎬 Add Episode</h3>
-          <div id="epSuccess" class="success-msg">✅ Episode added!</div>
-          <div id="epError" style="display:none;background:rgba(229,9,20,0.1);border:1px solid #e50914;color:#e50914;padding:8px 12px;border-radius:8px;font-size:12px;margin-bottom:14px"></div>
+          <h3><i class="fas fa-film" style="color:var(--accent)"></i> Add Season / Episode</h3>
+          <div id="epSuccess" class="success-msg">Episode added!</div>
+          <div id="epError" style="display:none;background:rgba(229,9,20,0.1);
+            border:1px solid #e50914;color:#e50914;padding:8px 12px;
+            border-radius:8px;font-size:12px;margin-bottom:14px"></div>
 
           <div class="form-group"><label>SELECT ANIME *</label>
             <select id="ep_anime" onchange="loadAnimeSeasons()">
@@ -167,14 +178,59 @@
           <div class="form-group"><label>SEASON *</label>
             <select id="ep_season" onchange="checkNewSeason()">
               <option value="">-- Select Season --</option>
-              <option value="new">➕ Add New Season</option>
+              <option value="new">+ Add New Season</option>
             </select></div>
+
           <div id="newSeasonFields" style="display:none">
             <div class="form-group"><label>SEASON TITLE</label>
               <input type="text" id="new_season_title" placeholder="Season 2"/></div>
             <div class="form-group"><label>SEASON YEAR</label>
               <input type="number" id="new_season_year" placeholder="2024"/></div>
+
+            <!-- SEASON-WISE TELEGRAM LINKS -->
+            <div style="background:linear-gradient(135deg,rgba(44,165,224,0.08),rgba(44,165,224,0.03));
+              border:1px solid rgba(44,165,224,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-weight:700;font-size:14px">
+                <i class="fab fa-telegram" style="color:#2ca5e0;font-size:18px"></i>
+                Season-wise Telegram Links
+              </div>
+              <p style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">
+                If all episodes of this season are in one Telegram folder/post — add quality-wise links here. These will show on ALL episodes of this season.
+              </p>
+              <div class="form-group">
+                <label style="display:flex;align-items:center;gap:6px">
+                  <span style="background:#555;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">480p</span>
+                </label>
+                <input type="url" id="stg_480" placeholder="Telegram link (480p season)"/>
+              </div>
+              <div class="form-group">
+                <label style="display:flex;align-items:center;gap:6px">
+                  <span style="background:#2a6dd9;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">720p</span>
+                </label>
+                <input type="url" id="stg_720" placeholder="Telegram link (720p season)"/>
+              </div>
+              <div class="form-group">
+                <label style="display:flex;align-items:center;gap:6px">
+                  <span style="background:#27ae60;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">1080p</span>
+                </label>
+                <input type="url" id="stg_1080" placeholder="Telegram link (1080p season)"/>
+              </div>
+              <div class="form-group">
+                <label style="display:flex;align-items:center;gap:6px">
+                  <span style="background:#C87740;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">4K</span>
+                </label>
+                <input type="url" id="stg_4k" placeholder="Telegram link (4K season)"/>
+              </div>
+              <div class="form-group">
+                <label>SINGLE LINK (all qualities same link)</label>
+                <input type="url" id="stg_single" placeholder="One Telegram link for all qualities"/>
+                <p style="font-size:11px;color:var(--text2);margin-top:4px">
+                  If you have only one link for all qualities, use this.
+                </p>
+              </div>
+            </div>
           </div>
+
           <div class="form-group"><label>EPISODE NUMBER *</label>
             <input type="number" id="ep_num" placeholder="1"/></div>
           <div class="form-group"><label>EPISODE TITLE *</label>
@@ -186,24 +242,24 @@
           <div class="form-group"><label>THUMBNAIL URL</label>
             <input type="url" id="ep_thumb" placeholder="https://..."/></div>
 
-          <!-- MULTI LANGUAGE + QUALITY -->
+          <!-- VIDEO URLS (Multi Language + Quality) -->
           <div style="background:var(--bg3);border-radius:12px;padding:14px;border:1px solid var(--border);margin-bottom:16px">
             <div style="font-weight:700;font-size:14px;margin-bottom:6px;color:var(--text)">
-              🌐 Video — Language & Quality
+              <i class="fas fa-play-circle" style="color:var(--accent)"></i>
+              Video — Language & Quality
             </div>
             <p style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.6">
-              Add video URLs for each language and quality. At least 1 URL required.
+              Add video URLs per language and quality. At least 1 required.
             </p>
 
-            <!-- Language tabs -->
-            <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none;margin-bottom:14px" id="langTabsBar">
-              <button class="season-tab active" onclick="switchLangTab('Japanese',this)" style="flex-shrink:0">🇯🇵 Japanese</button>
-              <button class="season-tab" onclick="switchLangTab('English Dub',this)" style="flex-shrink:0">🇺🇸 English Dub</button>
-              <button class="season-tab" onclick="switchLangTab('Hindi Dub',this)" style="flex-shrink:0">🇮🇳 Hindi Dub</button>
-              <button class="season-tab" onclick="switchLangTab('Custom',this)" style="flex-shrink:0">➕ Custom</button>
+            <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;
+              scrollbar-width:none;margin-bottom:14px" id="langTabsBar">
+              <button class="season-tab active" onclick="switchLangTab('Japanese',this)" style="flex-shrink:0">Japanese</button>
+              <button class="season-tab" onclick="switchLangTab('English Dub',this)" style="flex-shrink:0">English Dub</button>
+              <button class="season-tab" onclick="switchLangTab('Hindi Dub',this)" style="flex-shrink:0">Hindi Dub</button>
+              <button class="season-tab" onclick="switchLangTab('Custom',this)" style="flex-shrink:0">+ Custom</button>
             </div>
 
-            <!-- Custom language name -->
             <div id="customLangField" style="display:none;margin-bottom:12px">
               <div class="form-group" style="margin-bottom:0">
                 <label>CUSTOM LANGUAGE NAME</label>
@@ -211,40 +267,75 @@
               </div>
             </div>
 
-            <!-- Quality fields (same for all languages, content stored per-lang) -->
-            <div id="langQualityFields">
-              <div class="form-group">
-                <label style="display:flex;align-items:center;gap:6px">
-                  <span style="background:#555;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">480p</span> SD
-                </label>
-                <input type="url" id="lq_480" placeholder="Video URL (480p)"/>
-              </div>
-              <div class="form-group">
-                <label style="display:flex;align-items:center;gap:6px">
-                  <span style="background:#2a6dd9;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">720p</span> HD
-                </label>
-                <input type="url" id="lq_720" placeholder="Video URL (720p)"/>
-              </div>
-              <div class="form-group">
-                <label style="display:flex;align-items:center;gap:6px">
-                  <span style="background:#27ae60;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">1080p</span> Full HD
-                </label>
-                <input type="url" id="lq_1080" placeholder="Video URL (1080p)"/>
-              </div>
-              <div class="form-group">
-                <label style="display:flex;align-items:center;gap:6px">
-                  <span style="background:#C87740;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">4K</span> Ultra HD
-                </label>
-                <input type="url" id="lq_4k" placeholder="Video URL (4K)"/>
-              </div>
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:6px">
+                <span style="background:#555;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">480p</span> SD
+              </label>
+              <input type="url" id="lq_480" placeholder="Video URL (480p)"/>
+            </div>
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:6px">
+                <span style="background:#2a6dd9;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">720p</span> HD
+              </label>
+              <input type="url" id="lq_720" placeholder="Video URL (720p)"/>
+            </div>
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:6px">
+                <span style="background:#27ae60;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">1080p</span> Full HD
+              </label>
+              <input type="url" id="lq_1080" placeholder="Video URL (1080p)"/>
+            </div>
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:6px">
+                <span style="background:#C87740;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">4K</span> Ultra HD
+              </label>
+              <input type="url" id="lq_4k" placeholder="Video URL (4K)"/>
             </div>
 
             <button class="btn-outline" onclick="saveLangUrls()" style="width:100%;margin-bottom:8px">
-              <i class="fas fa-save"></i> Save This Language's URLs
+              <i class="fas fa-floppy-disk"></i> Save This Language's URLs
             </button>
-
-            <!-- Saved languages preview -->
             <div id="savedLangsPreview" style="margin-top:10px"></div>
+          </div>
+
+          <!-- EPISODE-WISE TELEGRAM LINKS -->
+          <div style="background:linear-gradient(135deg,rgba(44,165,224,0.08),rgba(44,165,224,0.03));
+            border:1px solid rgba(44,165,224,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-weight:700;font-size:14px">
+              <i class="fab fa-telegram" style="color:#2ca5e0;font-size:18px"></i>
+              Episode-wise Telegram Links
+            </div>
+            <p style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">
+              If this specific episode has its own Telegram links — add here. These override season-wise links for this episode.
+            </p>
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:6px">
+                <span style="background:#555;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">480p</span>
+              </label>
+              <input type="url" id="etg_480" placeholder="Telegram link (480p this episode)"/>
+            </div>
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:6px">
+                <span style="background:#2a6dd9;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">720p</span>
+              </label>
+              <input type="url" id="etg_720" placeholder="Telegram link (720p this episode)"/>
+            </div>
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:6px">
+                <span style="background:#27ae60;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">1080p</span>
+              </label>
+              <input type="url" id="etg_1080" placeholder="Telegram link (1080p this episode)"/>
+            </div>
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:6px">
+                <span style="background:#C87740;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">4K</span>
+              </label>
+              <input type="url" id="etg_4k" placeholder="Telegram link (4K this episode)"/>
+            </div>
+            <div class="form-group">
+              <label>SINGLE LINK (all qualities)</label>
+              <input type="url" id="etg_single" placeholder="One Telegram link for this episode"/>
+            </div>
           </div>
 
           <button class="btn-primary" id="addEpBtn" onclick="addEpisode()" style="width:100%">
@@ -256,50 +347,53 @@
       <!-- TAB: GUIDE -->
       <div class="admin-panel" id="tab-guide">
         <div class="admin-card">
-          <h3>📖 Upload Guide</h3>
+          <h3><i class="fas fa-book" style="color:var(--accent)"></i> Upload Guide</h3>
 
           <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:12px;border-left:3px solid #ff0000">
-            <div style="font-weight:700;margin-bottom:8px"><i class="fab fa-youtube" style="color:#ff0000"></i> YouTube (Easiest)</div>
+            <div style="font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+              <i class="fab fa-youtube" style="color:#ff0000"></i> YouTube
+            </div>
             <div style="font-size:13px;color:var(--text2);line-height:1.8">
-              1. Open YouTube Studio<br>
-              2. Upload video<br>
-              3. <strong style="color:var(--text)">Visibility → Unlisted</strong> (NOT public)<br>
-              4. Share → Copy link<br>
-              5. Paste in admin panel ✅
+              1. Upload video → Visibility: <strong style="color:var(--text)">Unlisted</strong><br>
+              2. Share → Copy link → Paste in admin panel
             </div>
           </div>
 
           <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:12px;border-left:3px solid #0f9d58">
-            <div style="font-weight:700;margin-bottom:8px"><i class="fab fa-google-drive" style="color:#0f9d58"></i> Google Drive</div>
+            <div style="font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+              <i class="fab fa-google-drive" style="color:#0f9d58"></i> Google Drive
+            </div>
             <div style="font-size:13px;color:var(--text2);line-height:1.8">
-              1. Upload video to Drive<br>
-              2. Right click → Share → Anyone with link<br>
-              3. Copy link → Paste in admin panel ✅
+              1. Upload → Right click → Share → <strong style="color:var(--text)">Anyone with link</strong><br>
+              2. Copy link → Paste in admin panel
             </div>
           </div>
 
-          <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:12px;border-left:3px solid #2ca5e0">
-            <div style="font-weight:700;margin-bottom:8px"><i class="fab fa-telegram" style="color:#2ca5e0"></i> Telegram (Bulk Files)</div>
-            <div style="font-size:13px;color:var(--text2);line-height:1.8">
-              Since you have anime files in Telegram:<br><br>
-              <strong style="color:var(--text)">Option 1 — Bot Direct Link:</strong><br>
-              1. Forward files to <strong>@filetolink_bot</strong> on Telegram<br>
-              2. Bot will give you a direct streamable link<br>
-              3. Paste that link in admin panel ✅<br><br>
-              <strong style="color:var(--text)">Option 2 — Streamtape (Free):</strong><br>
-              1. Go to streamtape.com<br>
-              2. Upload video<br>
-              3. Get embed link → Paste ✅<br><br>
-              <strong style="color:var(--text)">Option 3 — YouTube Bulk:</strong><br>
-              Use <strong>YouTube Studio → Upload</strong> — you can upload multiple videos. Set all as Unlisted. This is the most reliable for streaming.
+          <div style="background:linear-gradient(135deg,rgba(44,165,224,0.08),rgba(44,165,224,0.03));
+            border:1px solid rgba(44,165,224,0.3);border-radius:10px;padding:14px;margin-bottom:12px">
+            <div style="font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+              <i class="fab fa-telegram" style="color:#2ca5e0;font-size:16px"></i> Telegram Links Guide
+            </div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.9">
+              <strong style="color:var(--text)">Season-wise:</strong><br>
+              Agar ek season ke saare episodes ek Telegram channel/post mein hain — Season Telegram Links use karo. Ye link sab episodes pe dikhega.<br><br>
+              <strong style="color:var(--text)">Episode-wise:</strong><br>
+              Agar har episode ka alag Telegram link hai — Episode Telegram Links use karo. Ye season link ko override kar deta hai.<br><br>
+              <strong style="color:var(--text)">Quality-wise:</strong><br>
+              Alag alag quality ke alag Telegram messages/files hain to har quality field fill karo.<br>
+              Agar ek hi link sab ke liye hai to "Single Link" field use karo.
             </div>
           </div>
 
-          <div style="background:rgba(200,119,64,0.1);border:1px solid var(--accent);border-radius:8px;padding:12px">
-            <div style="font-size:13px;font-weight:700;margin-bottom:6px">💡 For Thumbnails:</div>
-            <div style="font-size:12px;color:var(--text2);line-height:1.7">
-              • Google Images → Right click image → Copy image address<br>
-              • Or upload to Google Drive → Share → Copy link
+          <div style="background:var(--bg3);border-radius:10px;padding:14px;border-left:3px solid var(--accent)">
+            <div style="font-weight:700;margin-bottom:8px">
+              <i class="fas fa-lightbulb" style="color:var(--accent)"></i> Telegram Link kaise milega?
+            </div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.8">
+              1. Telegram pe message/file pe long press karo<br>
+              2. "Copy link" ya "Share" option select karo<br>
+              3. Woh link yahan paste karo<br><br>
+              <strong style="color:var(--text)">Note:</strong> Channel/group public hona chahiye ya user ko join karna hoga.
             </div>
           </div>
         </div>
@@ -314,14 +408,14 @@
   <script src="firebase-config.js"></script>
   <script src="data.js"></script>
   <script>
-    const ADMIN_PASSWORD = 'AnimeVerse@123';
+    const ADMIN_PASSWORD  = 'AnimeVerse@123';
     let currentLangTab    = 'Japanese';
-    let episodeLangData   = {};   // { 'Japanese': {'720p':'url',...}, ... }
+    let episodeLangData   = {};
 
     // ===== THEME =====
     function toggleTheme() {
-      const html = document.documentElement;
-      const btn  = document.getElementById('themeBtn');
+      const html   = document.documentElement;
+      const btn    = document.getElementById('themeBtn');
       const isDark = html.getAttribute('data-theme') === 'dark';
       html.setAttribute('data-theme', isDark ? 'light' : 'dark');
       btn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
@@ -345,9 +439,9 @@
     function checkLogin() {
       const pass = document.getElementById('adminPass').value;
       if (pass === ADMIN_PASSWORD) {
-        document.getElementById('loginScreen').style.display  = 'none';
+        document.getElementById('loginScreen').style.display    = 'none';
         document.getElementById('adminDashboard').style.display = 'block';
-        document.getElementById('loginError').style.display  = 'none';
+        document.getElementById('loginError').style.display     = 'none';
         sessionStorage.setItem('av_admin', '1');
         initDashboard();
       } else {
@@ -369,9 +463,9 @@
       if (tab === 'manage') renderManageList();
     }
 
-    // ===== FIRESTORE HELPERS =====
+    // ===== FIRESTORE =====
     async function getAllAnimeFromDB() {
-      const snap = await db.collection('anime').orderBy('createdAt','desc').get();
+      const snap = await db.collection('anime').orderBy('createdAt', 'desc').get();
       const data = [];
       snap.forEach(doc => data.push({ ...doc.data(), firestoreId: doc.id }));
       return data;
@@ -380,8 +474,8 @@
     async function updateStats() {
       const all = await getAllAnimeFromDB();
       document.getElementById('statTotal').textContent  = all.length;
-      document.getElementById('statAnime').textContent  = all.filter(a => a.type==='anime').length;
-      document.getElementById('statMovies').textContent = all.filter(a => a.type==='movie').length;
+      document.getElementById('statAnime').textContent  = all.filter(a => a.type === 'anime').length;
+      document.getElementById('statMovies').textContent = all.filter(a => a.type === 'movie').length;
     }
 
     // ===== ADD ANIME =====
@@ -392,14 +486,14 @@
       if (!thumb) { alert('Cover image URL is required!'); return; }
 
       const btn = document.getElementById('addAnimeBtn');
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+      btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Saving...';
       btn.disabled  = true;
 
       const isTop10 = document.getElementById('a_top10').checked;
       const anime   = {
         title,
         type:        document.getElementById('a_type').value,
-        genre:       document.getElementById('a_genre').value.split(',').map(g=>g.trim()).filter(Boolean),
+        genre:       document.getElementById('a_genre').value.split(',').map(g => g.trim()).filter(Boolean),
         rating:      parseFloat(document.getElementById('a_rating').value) || 0,
         year:        parseInt(document.getElementById('a_year').value) || new Date().getFullYear(),
         status:      document.getElementById('a_status').value,
@@ -410,7 +504,7 @@
         trending:    document.getElementById('a_trending').checked,
         latest:      document.getElementById('a_latest').checked,
         top10:       isTop10,
-        top10rank:   isTop10 ? (parseInt(document.getElementById('a_top10rank').value)||0) : 0,
+        top10rank:   isTop10 ? (parseInt(document.getElementById('a_top10rank').value) || 0) : 0,
         seasons:     [],
         createdAt:   firebase.firestore.FieldValue.serverTimestamp()
       };
@@ -445,18 +539,18 @@
       if (list.length === 0) { empty.style.display = 'block'; return; }
       empty.style.display = 'none';
       list.forEach(anime => {
-        const totalEps = (anime.seasons||[]).reduce((s,sec)=>s+(sec.episodes||[]).length, 0);
+        const totalEps = (anime.seasons || []).reduce((s, sec) => s + (sec.episodes || []).length, 0);
         const item = document.createElement('div');
         item.className = 'anime-manage-item';
         item.innerHTML = `
-          <img class="anime-manage-thumb" src="${anime.thumbnail||''}" alt="${anime.title}"
+          <img class="anime-manage-thumb" src="${anime.thumbnail || ''}" alt="${anime.title}"
             onerror="this.style.background='var(--bg3)'"/>
           <div class="anime-manage-info">
             <strong>${anime.title}</strong>
-            <span>${(anime.type||'').toUpperCase()} · ${anime.year||''} · ${(anime.seasons||[]).length} season(s) · ${totalEps} ep(s)</span>
+            <span>${(anime.type || '').toUpperCase()} · ${anime.year || ''} · ${(anime.seasons || []).length} season(s) · ${totalEps} ep(s)</span>
           </div>
           <div class="anime-manage-actions">
-            <button class="btn-sm delete" onclick="deleteAnime('${anime.firestoreId}','${anime.title}')">
+            <button class="btn-sm delete" onclick="deleteAnime('${anime.firestoreId}','${anime.title.replace(/'/g,"\\'")}')">
               <i class="fas fa-trash"></i>
             </button>
           </div>
@@ -466,21 +560,19 @@
     }
 
     async function deleteAnime(id, title) {
-      if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+      if (!confirm(`Delete "${title}"?\nThis cannot be undone.`)) return;
       await db.collection('anime').doc(id).delete();
       renderManageList();
       updateStats();
       populateAnimeDropdown();
     }
 
-    // ===== EPISODE — LANGUAGE TABS =====
+    // ===== EPISODE — LANGUAGE =====
     function switchLangTab(lang, btn) {
-      // Save current fields before switching
       currentLangTab = lang;
       document.querySelectorAll('#langTabsBar .season-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('customLangField').style.display = lang === 'Custom' ? 'block' : 'none';
-      // Load saved values for this lang
       const saved = episodeLangData[lang] || {};
       document.getElementById('lq_480').value  = saved['480p']  || '';
       document.getElementById('lq_720').value  = saved['720p']  || '';
@@ -495,39 +587,35 @@
         if (!custom) { alert('Enter custom language name!'); return; }
         lang = custom;
       }
-
       const urls = {
         '480p':  document.getElementById('lq_480').value.trim(),
         '720p':  document.getElementById('lq_720').value.trim(),
         '1080p': document.getElementById('lq_1080').value.trim(),
         '4k':    document.getElementById('lq_4k').value.trim()
       };
-
-      const hasAny = Object.values(urls).some(v => v);
-      if (!hasAny) { alert('Add at least one video URL for this language!'); return; }
-
+      if (!Object.values(urls).some(v => v)) {
+        alert('Add at least one video URL for this language!');
+        return;
+      }
       episodeLangData[lang] = urls;
       updateSavedLangsPreview();
-
-      // Clear fields
       ['lq_480','lq_720','lq_1080','lq_4k'].forEach(id => {
         document.getElementById(id).value = '';
       });
-      alert(`✅ ${lang} URLs saved! Add another language or submit the episode.`);
+      alert(`✓ ${lang} URLs saved!`);
     }
 
     function updateSavedLangsPreview() {
       const container = document.getElementById('savedLangsPreview');
       const langs = Object.keys(episodeLangData);
       if (langs.length === 0) { container.innerHTML = ''; return; }
-
       container.innerHTML = `
         <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:600">
-          ✅ Saved Languages:
+          Saved Languages:
         </div>
         ${langs.map(lang => {
           const urls = episodeLangData[lang];
-          const qualities = Object.entries(urls).filter(([,v])=>v).map(([q])=>q).join(', ');
+          const qualities = Object.entries(urls).filter(([,v]) => v).map(([q]) => q).join(', ');
           return `
             <div style="display:flex;justify-content:space-between;align-items:center;
               background:var(--bg3);border-radius:6px;padding:8px 10px;margin-bottom:6px;
@@ -550,10 +638,9 @@
       updateSavedLangsPreview();
     }
 
-    // ===== POPULATE DROPDOWN =====
     async function populateAnimeDropdown() {
-      const sel  = document.getElementById('ep_anime');
-      const all  = await getAllAnimeFromDB();
+      const sel = document.getElementById('ep_anime');
+      const all = await getAllAnimeFromDB();
       sel.innerHTML = '<option value="">-- Select Anime --</option>';
       all.forEach(a => {
         const opt = document.createElement('option');
@@ -571,7 +658,7 @@
     async function loadAnimeSeasons() {
       const id  = document.getElementById('ep_anime').value;
       const sel = document.getElementById('ep_season');
-      sel.innerHTML = '<option value="">-- Select Season --</option><option value="new">➕ New Season</option>';
+      sel.innerHTML = '<option value="">-- Select Season --</option><option value="new">+ New Season</option>';
       document.getElementById('newSeasonFields').style.display = 'none';
       if (!id) return;
       const doc = await db.collection('anime').doc(id).get();
@@ -597,13 +684,18 @@
       if (!epNum)     { alert('Enter episode number!'); return; }
       if (!epTitle)   { alert('Enter episode title!'); return; }
       if (Object.keys(episodeLangData).length === 0) {
-        alert('Add at least one language video URL using "Save This Language\'s URLs" button!');
-        return;
+        if (!confirm('No video URLs added. Add episode without video?')) return;
       }
 
-      const btn = document.getElementById('addEpBtn');
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-      btn.disabled  = true;
+      // Episode-wise telegram links
+      const etg = {
+        '480p':  document.getElementById('etg_480').value.trim(),
+        '720p':  document.getElementById('etg_720').value.trim(),
+        '1080p': document.getElementById('etg_1080').value.trim(),
+        '4k':    document.getElementById('etg_4k').value.trim(),
+      };
+      const etgSingle = document.getElementById('etg_single').value.trim();
+      const hasEtg    = Object.values(etg).some(v => v) || etgSingle;
 
       const episode = {
         id:          epNum,
@@ -614,6 +706,19 @@
         languages:   { ...episodeLangData }
       };
 
+      // Add episode telegram links if any
+      if (hasEtg) {
+        if (etgSingle) {
+          episode.telegramUrl = etgSingle;
+        } else {
+          episode.telegramLinks = etg;
+        }
+      }
+
+      const btn = document.getElementById('addEpBtn');
+      btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Saving...';
+      btn.disabled  = true;
+
       try {
         const ref  = db.collection('anime').doc(animeId);
         const doc  = await ref.get();
@@ -622,26 +727,50 @@
         let seasons = doc.data().seasons || [];
 
         if (seasonVal === 'new') {
-          const newId = seasons.length > 0 ? Math.max(...seasons.map(s=>s.id))+1 : 1;
-          seasons.push({
+          const newId = seasons.length > 0 ? Math.max(...seasons.map(s => s.id)) + 1 : 1;
+
+          // Season-wise telegram links
+          const stg = {
+            '480p':  document.getElementById('stg_480').value.trim(),
+            '720p':  document.getElementById('stg_720').value.trim(),
+            '1080p': document.getElementById('stg_1080').value.trim(),
+            '4k':    document.getElementById('stg_4k').value.trim(),
+          };
+          const stgSingle = document.getElementById('stg_single').value.trim();
+          const hasStg    = Object.values(stg).some(v => v) || stgSingle;
+
+          const newSeason = {
             id:       newId,
             title:    document.getElementById('new_season_title').value.trim() || `Season ${newId}`,
             year:     parseInt(document.getElementById('new_season_year').value) || new Date().getFullYear(),
             episodes: [episode]
-          });
+          };
+
+          if (hasStg) {
+            if (stgSingle) {
+              newSeason.telegramUrl = stgSingle;
+            } else {
+              newSeason.telegramLinks = stg;
+            }
+          }
+
+          seasons.push(newSeason);
         } else {
           const sIdx = seasons.findIndex(s => s.id === parseInt(seasonVal));
           if (sIdx === -1) throw new Error('Season not found!');
-          seasons[sIdx].episodes = seasons[sIdx].episodes.filter(e => e.id !== epNum);
+          seasons[sIdx].episodes = (seasons[sIdx].episodes || []).filter(e => e.id !== epNum);
           seasons[sIdx].episodes.push(episode);
-          seasons[sIdx].episodes.sort((a,b) => a.id - b.id);
+          seasons[sIdx].episodes.sort((a, b) => a.id - b.id);
         }
 
         await ref.update({ seasons });
 
         // Reset form
         ['ep_num','ep_title','ep_desc','ep_duration','ep_thumb',
-         'lq_480','lq_720','lq_1080','lq_4k','customLangName','new_season_title','new_season_year']
+         'lq_480','lq_720','lq_1080','lq_4k','customLangName',
+         'new_season_title','new_season_year',
+         'stg_480','stg_720','stg_1080','stg_4k','stg_single',
+         'etg_480','etg_720','etg_1080','etg_4k','etg_single']
           .forEach(id => { document.getElementById(id).value = ''; });
 
         episodeLangData = {};
@@ -669,7 +798,7 @@
 
     loadTheme();
     if (sessionStorage.getItem('av_admin') === '1') {
-      document.getElementById('loginScreen').style.display  = 'none';
+      document.getElementById('loginScreen').style.display    = 'none';
       document.getElementById('adminDashboard').style.display = 'block';
       initDashboard();
     }
