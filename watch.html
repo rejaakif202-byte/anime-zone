@@ -27,7 +27,7 @@
   <main class="main" id="watchMain">
     <div class="empty-state" style="min-height:60vh">
       <i class="fas fa-circle-notch fa-spin" style="font-size:40px;color:var(--accent)"></i>
-      <h2 style="margin-top:16px">Loading player...</h2>
+      <h2 style="margin-top:16px">Loading...</h2>
     </div>
   </main>
 
@@ -54,18 +54,13 @@
         ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
     }
 
-    // ===== LANGUAGE FLAGS =====
+    // ===== CONFIGS =====
     const langFlags = {
-      'Japanese':    '🇯🇵',
-      'English Dub': '🇺🇸',
-      'Hindi Dub':   '🇮🇳',
-      'Korean':      '🇰🇷',
-      'Chinese':     '🇨🇳',
-      'Portuguese':  '🇧🇷',
-      'Spanish':     '🇪🇸',
-      'French':      '🇫🇷',
+      'Japanese': '🇯🇵', 'English Dub': '🇺🇸',
+      'Hindi Dub': '🇮🇳', 'Korean': '🇰🇷',
+      'Chinese': '🇨🇳', 'Portuguese': '🇧🇷',
+      'Spanish': '🇪🇸', 'French': '🇫🇷',
     };
-
     const qualityConfig = {
       '480p':  { label: '480p SD',   color: '#666' },
       '720p':  { label: '720p HD',   color: '#2a6dd9' },
@@ -74,82 +69,137 @@
     };
     const qualityOrder = ['4k', '1080p', '720p', '480p'];
 
-    let currentLanguage = '';
-    let currentLangData = {};
-
-    // ===== GET EPISODE LANGUAGES =====
-    function getEpisodeLangs(episode) {
-      if (episode.languages && Object.keys(episode.languages).length > 0)
-        return episode.languages;
-      if (episode.videoUrls) return { 'Japanese': episode.videoUrls };
-      if (episode.videoUrl)  return { 'Japanese': { '720p': episode.videoUrl } };
-      return {};
+    // ===== CHECK CONTENT AVAILABILITY =====
+    function hasVideoContent(episode) {
+      // Check languages object
+      const langs = episode.languages || {};
+      const hasLangs = Object.values(langs).some(qualMap =>
+        qualMap && Object.values(qualMap).some(url => url && url.trim())
+      );
+      if (hasLangs) return true;
+      // Legacy
+      if (episode.videoUrls && Object.values(episode.videoUrls).some(u => u && u.trim()))
+        return true;
+      if (episode.videoUrl && episode.videoUrl.trim()) return true;
+      return false;
     }
 
-    // ===== GET TELEGRAM LINKS =====
-    // Priority: episode-level → season-level
-    function getTelegramLinks(episode, season) {
-      if (episode.telegramLinks && Object.keys(episode.telegramLinks).some(k => episode.telegramLinks[k])) {
-        return { type: 'episode', links: episode.telegramLinks };
+    function getTelegramData(episode, season) {
+      // Episode-level takes priority
+      if (episode.telegramLinks && Object.keys(episode.telegramLinks).length > 0) {
+        return {
+          source: 'episode',
+          links: episode.telegramLinks,
+          range: null
+        };
       }
-      if (season.telegramLinks && Object.keys(season.telegramLinks).some(k => season.telegramLinks[k])) {
-        return { type: 'season', links: season.telegramLinks };
+      if (episode.telegramUrl) {
+        return {
+          source: 'episode',
+          single: episode.telegramUrl,
+          range: null
+        };
       }
-      // Single link fallback
-      if (episode.telegramUrl) return { type: 'single', links: { 'All Qualities': episode.telegramUrl } };
-      if (season.telegramUrl)  return { type: 'single', links: { 'All Qualities': season.telegramUrl } };
+      // Season-level
+      if (season.telegramLinks && Object.keys(season.telegramLinks).length > 0) {
+        return {
+          source: 'season',
+          links: season.telegramLinks,
+          range: season.episodeRange || null
+        };
+      }
+      if (season.telegramUrl) {
+        return {
+          source: 'season',
+          single: season.telegramUrl,
+          range: season.episodeRange || null
+        };
+      }
       return null;
     }
 
-    // ===== BUILD TELEGRAM SECTION =====
-    function buildTelegramSection(episode, season) {
-      const tg = getTelegramLinks(episode, season);
-      if (!tg) return '';
+    // ===== BUILD TELEGRAM SECTION HTML =====
+    function buildTelegramHTML(tgData, episode) {
+      if (!tgData) return '';
 
-      const links  = tg.links;
-      const keys   = Object.keys(links).filter(k => links[k]);
+      const rangeText = tgData.range
+        ? `Episodes ${tgData.range}`
+        : tgData.source === 'season' ? 'Full Season' : null;
 
-      if (keys.length === 0) return '';
+      let buttonsHTML = '';
 
-      // Single link or all-quality same link
-      if (keys.length === 1 || (keys.length > 0 && new Set(Object.values(links).filter(Boolean)).size === 1)) {
-        const url = links[keys[0]];
-        return `
-          <div class="tg-section">
-            <div class="tg-label">
-              <i class="fab fa-telegram"></i>
-              <span>Watch on Telegram</span>
-            </div>
-            <a href="${url}" target="_blank" rel="noopener" class="tg-btn-main">
-              <i class="fab fa-telegram"></i>
-              Open in Telegram
-            </a>
+      if (tgData.single) {
+        // Single button
+        buttonsHTML = `
+          <a href="${tgData.single}" target="_blank" rel="noopener"
+            class="tg-btn-main">
+            <i class="fab fa-telegram"></i>
+            ${rangeText ? `Watch ${rangeText}` : 'Open in Telegram'}
+          </a>`;
+      } else if (tgData.links) {
+        // Quality-wise buttons
+        const keys = qualityOrder.filter(q => tgData.links[q]);
+        if (keys.length === 0) return '';
+        buttonsHTML = `
+          <div class="tg-quality-row">
+            ${keys.map(q => {
+              const cfg = qualityConfig[q] || { label: q, color: '#2ca5e0' };
+              const label = rangeText
+                ? `${cfg.label} — ${rangeText}`
+                : cfg.label;
+              return `
+                <a href="${tgData.links[q]}" target="_blank" rel="noopener"
+                  class="tg-quality-btn"
+                  style="--tgcolor:${cfg.color}">
+                  <i class="fab fa-telegram" style="font-size:12px"></i>
+                  ${label}
+                </a>`;
+            }).join('')}
           </div>`;
       }
 
-      // Multiple quality links
-      const btnHTML = keys.map(q => {
-        const cfg = qualityConfig[q] || { label: q, color: '#2ca5e0' };
-        return `
-          <a href="${links[q]}" target="_blank" rel="noopener"
-            class="tg-quality-btn"
-            style="--tgcolor:${cfg.color}">
-            <i class="fab fa-telegram" style="font-size:13px"></i>
-            ${cfg.label || q}
-          </a>`;
-      }).join('');
+      if (!buttonsHTML) return '';
 
       return `
         <div class="tg-section">
           <div class="tg-label">
             <i class="fab fa-telegram"></i>
             <span>Watch on Telegram</span>
-            <span style="font-size:11px;color:var(--text2);font-weight:400">
-              — Select quality
-            </span>
+            ${tgData.source === 'season' ? `
+            <span style="font-size:11px;color:var(--text2);font-weight:400;
+              background:var(--bg3);padding:2px 8px;border-radius:10px;
+              border:1px solid var(--border)">Season Pack</span>` : ''}
           </div>
-          <div class="tg-quality-row">${btnHTML}</div>
+          ${buttonsHTML}
         </div>`;
+    }
+
+    // ===== THUMBNAIL ONLY VIEW (no video, only telegram) =====
+    function buildThumbnailPlayerHTML(episode, tgHTML) {
+      const thumb = episode.thumbnail || '';
+      return `
+        <div class="tg-only-player">
+          ${thumb ? `
+          <div class="tg-only-thumb"
+            style="background-image:url('${thumb}')">
+            <div class="tg-only-overlay">
+              <i class="fab fa-telegram"
+                style="font-size:48px;color:#2ca5e0;opacity:0.9"></i>
+              <div style="color:#fff;font-size:14px;font-weight:600;
+                margin-top:10px;text-shadow:0 2px 8px rgba(0,0,0,0.8)">
+                Watch on Telegram
+              </div>
+            </div>
+          </div>` : `
+          <div class="tg-only-thumb tg-only-thumb-empty">
+            <i class="fab fa-telegram"
+              style="font-size:56px;color:#2ca5e0"></i>
+            <div style="color:#aaa;font-size:14px;margin-top:12px">
+              Available on Telegram
+            </div>
+          </div>`}
+        </div>
+        ${tgHTML}`;
     }
 
     // ===== EMBED URL =====
@@ -171,8 +221,17 @@
         const m2 = url.match(/id=([a-zA-Z0-9_-]{10,})/);
         if (m2) return { type: 'iframe', src: `https://drive.google.com/file/d/${m2[1]}/preview` };
       }
-      if (url.match(/\.(mp4|webm|ogg|mkv)(\?|$)/i)) return { type: 'video', src: url };
+      if (url.match(/\.(mp4|webm|ogg|mkv)(\?|$)/i))
+        return { type: 'video', src: url };
       return { type: 'iframe', src: url };
+    }
+
+    function getEpisodeLangs(episode) {
+      if (episode.languages && Object.keys(episode.languages).length > 0)
+        return episode.languages;
+      if (episode.videoUrls) return { 'Japanese': episode.videoUrls };
+      if (episode.videoUrl)  return { 'Japanese': { '720p': episode.videoUrl } };
+      return {};
     }
 
     function getBestQuality(langData) {
@@ -199,8 +258,7 @@
       }
       if (embed.type === 'iframe') {
         container.innerHTML = `
-          <iframe src="${embed.src}"
-            allowfullscreen
+          <iframe src="${embed.src}" allowfullscreen
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture">
           </iframe>`;
       } else {
@@ -213,14 +271,12 @@
 
     // ===== SWITCH LANGUAGE =====
     function switchLanguage(lang, langData) {
-      currentLanguage = lang;
-      currentLangData = langData;
       document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.lang === lang);
       });
-      const qualityBtnsContainer = document.getElementById('qualityBtnsContainer');
-      const available = qualityOrder.filter(q => langData[q] && langData[q].trim());
-      qualityBtnsContainer.innerHTML = available.map(q => {
+      const qContainer = document.getElementById('qualityBtnsContainer');
+      const available  = qualityOrder.filter(q => langData[q] && langData[q].trim());
+      qContainer.innerHTML = available.map(q => {
         const cfg = qualityConfig[q] || { label: q, color: '#888' };
         return `<button class="quality-btn" data-quality="${q}"
           onclick="loadVideo('${langData[q].replace(/'/g,"\\'")}', '${q}')"
@@ -239,8 +295,13 @@
       }
     }
 
-    // ===== RENDER PLAYER =====
+    // ===== MAIN RENDER =====
     function renderPlayer(anime, season, episode, allEpisodes, seasonId, animeId) {
+      const hasVideo  = hasVideoContent(episode);
+      const tgData    = getTelegramData(episode, season);
+      const hasTg     = !!tgData;
+      const tgHTML    = buildTelegramHTML(tgData, episode);
+
       const languages    = getEpisodeLangs(episode);
       const langKeys     = Object.keys(languages);
       const defaultLang  = langKeys.includes('Japanese') ? 'Japanese' : langKeys[0] || '';
@@ -250,8 +311,8 @@
 
       // Language buttons
       const langBtnsHTML = langKeys.map(lang => {
-        const flag = langFlags[lang] || '🌐';
-        const safeData = JSON.stringify(languages[lang]).replace(/"/g, '&quot;');
+        const flag     = langFlags[lang] || '🌐';
+        const safeData = JSON.stringify(languages[lang]).replace(/"/g,'&quot;');
         return `<button class="lang-btn ${lang===defaultLang?'active':''}"
           data-lang="${lang}"
           onclick="switchLanguage('${lang}', ${safeData})">
@@ -292,48 +353,66 @@
             Next <i class="fas fa-forward-step"></i>
            </button>`;
 
-      // Telegram section
-      const telegramHTML = buildTelegramSection(episode, season);
+      // ============================================================
+      // SMART DISPLAY LOGIC
+      // Video only → Player
+      // TG only → Thumbnail + TG buttons
+      // Both → Player + TG section below
+      // Neither → No content message
+      // ============================================================
 
-      document.getElementById('watchMain').innerHTML = `
+      let topSectionHTML = '';
 
-        <!-- VIDEO PLAYER -->
-        <div class="player-wrapper">
-          <div id="playerContainer" style="width:100%;height:100%">
-            <div class="no-video-msg">
-              <i class="fas fa-circle-notch fa-spin" style="font-size:28px"></i>
-              <span>Loading video...</span>
+      if (hasVideo) {
+        // Show video player
+        topSectionHTML = `
+          <!-- VIDEO PLAYER -->
+          <div class="player-wrapper">
+            <div id="playerContainer" style="width:100%;height:100%">
+              <div class="no-video-msg">
+                <i class="fas fa-circle-notch fa-spin" style="font-size:28px"></i>
+                <span>Loading video...</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- LANGUAGE + QUALITY -->
-        ${langKeys.length > 0 ? `
-        <div class="lang-quality-box">
+          <!-- LANGUAGE + QUALITY -->
           ${langKeys.length > 0 ? `
-          <div class="lq-row">
-            <span class="lq-label">
-              <i class="fas fa-language"></i> Language
-            </span>
-            <div class="lang-btns">${langBtnsHTML}</div>
+          <div class="lang-quality-box">
+            ${langKeys.length > 0 ? `
+            <div class="lq-row">
+              <span class="lq-label"><i class="fas fa-language"></i> Language</span>
+              <div class="lang-btns">${langBtnsHTML}</div>
+            </div>` : ''}
+            <div class="lq-row">
+              <span class="lq-label"><i class="fas fa-sliders"></i> Quality</span>
+              <div class="quality-btns" id="qualityBtnsContainer">
+                ${qualityBtnsHTML}
+              </div>
+            </div>
           </div>` : ''}
-          <div class="lq-row">
-            <span class="lq-label">
-              <i class="fas fa-sliders"></i> Quality
-            </span>
-            <div class="quality-btns" id="qualityBtnsContainer">${qualityBtnsHTML}</div>
-          </div>
-        </div>` : `
-        <div style="text-align:center;padding:12px;color:var(--text2);font-size:13px;
-          background:var(--card-bg);border-radius:8px;border:1px solid var(--border);margin-top:12px">
-          <i class="fas fa-exclamation-triangle" style="color:var(--accent)"></i>
-          Video not available yet.
-        </div>`}
 
-        <!-- TELEGRAM SECTION -->
-        ${telegramHTML}
+          <!-- TELEGRAM (if also has TG) -->
+          ${hasTg ? tgHTML : ''}`;
 
-        <!-- PREV / EPISODES / NEXT -->
+      } else if (hasTg) {
+        // Show thumbnail + TG buttons ONLY (no player)
+        topSectionHTML = buildThumbnailPlayerHTML(episode, tgHTML);
+      } else {
+        // Nothing
+        topSectionHTML = `
+          <div style="background:var(--card-bg);border:1px solid var(--border);
+            border-radius:12px;padding:30px 20px;text-align:center;color:var(--text2);
+            margin-bottom:14px">
+            <i class="fas fa-film" style="font-size:36px;opacity:0.3;margin-bottom:12px;display:block"></i>
+            Video not available yet.
+          </div>`;
+      }
+
+      document.getElementById('watchMain').innerHTML = `
+        ${topSectionHTML}
+
+        <!-- NAV -->
         <div class="ep-nav">
           ${prevBtn}
           <a href="anime.html?id=${animeId}" class="btn-outline"
@@ -359,13 +438,19 @@
               <i class="fas fa-language" style="color:var(--accent)"></i>
               ${langKeys.length} language${langKeys.length > 1 ? 's' : ''}
             </span>` : ''}
+            ${hasTg ? `
+            <span style="font-size:11px;font-weight:600;color:#2ca5e0;
+              display:flex;align-items:center;gap:4px">
+              <i class="fab fa-telegram"></i>
+              ${tgData.source === 'season' ? 'Season Pack' : 'On Telegram'}
+            </span>` : ''}
           </div>
           ${episode.description
             ? `<p style="font-size:13px;color:var(--text2);line-height:1.7;margin-top:10px">
                 ${episode.description}</p>` : ''}
         </div>
 
-        <!-- OTHER EPISODES -->
+        <!-- ALL EPISODES -->
         <div style="margin-top:24px">
           <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text)">
             ${season.title} — All Episodes
@@ -374,20 +459,20 @@
         </div>
       `;
 
-      // Auto-load
-      if (defaultLang && initBest && initLangData[initBest]) {
-        currentLanguage = defaultLang;
-        currentLangData = initLangData;
+      // Auto-load video if has video
+      if (hasVideo && defaultLang && initBest && initLangData[initBest]) {
         setTimeout(() => loadVideo(initLangData[initBest], initBest), 100);
       }
 
-      // Other episodes list
+      // Render other episodes
       const otherEps = document.getElementById('otherEps');
       allEpisodes.forEach(ep => {
         const isActive    = ep.id === episode.id;
+        const epHasVideo  = hasVideoContent(ep);
+        const epTgData    = getTelegramData(ep, season);
+        const epHasTg     = !!epTgData;
         const epLangs     = getEpisodeLangs(ep);
         const epLangCount = Object.keys(epLangs).length;
-        const hasTg       = !!(ep.telegramLinks || ep.telegramUrl || season.telegramLinks || season.telegramUrl);
 
         const item = document.createElement('div');
         item.className = 'episode-item';
@@ -397,38 +482,53 @@
         }
         item.innerHTML = `
           <div class="ep-thumb" style="position:relative;overflow:hidden">
-            <img src="${ep.thumbnail || ''}" alt="Ep ${ep.id}"
-              style="width:100%;height:100%;object-fit:cover;border-radius:8px;background:var(--bg3)"
+            <img src="${ep.thumbnail||''}" alt="Ep ${ep.id}"
+              style="width:100%;height:100%;object-fit:cover;border-radius:8px;
+                background:var(--bg3)"
               onerror="this.style.background='var(--bg3)'"/>
             <div class="ep-play-icon"
               style="${isActive ? 'opacity:1;background:rgba(200,119,64,0.75)' : ''}">
               <i class="fas fa-${isActive ? 'pause' : 'play'}"></i>
             </div>
+            ${epHasTg && !epHasVideo ? `
+            <div style="position:absolute;bottom:4px;right:4px;
+              background:#2ca5e0;border-radius:4px;padding:2px 6px;
+              font-size:9px;color:#fff;font-weight:700">
+              <i class="fab fa-telegram"></i>
+            </div>` : ''}
           </div>
           <div class="ep-info">
             <div class="ep-num" style="${isActive ? 'color:var(--accent)' : ''}">
               Ep ${ep.id} ${isActive ? '&#9654; Playing' : ''}
             </div>
             <div class="ep-title">${ep.title}</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:3px;align-items:center">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;
+              margin-top:3px;align-items:center">
               <span class="ep-duration">
-                <i class="fas fa-clock" style="font-size:9px"></i> ${ep.duration || ''}
+                <i class="fas fa-clock" style="font-size:9px"></i>
+                ${ep.duration || ''}
               </span>
-              ${epLangCount > 0 ? `
+              ${epHasVideo && epLangCount > 0 ? `
               <span style="font-size:10px;color:var(--accent);font-weight:600">
-                <i class="fas fa-language"></i> ${epLangCount} lang${epLangCount > 1 ? 's' : ''}
-              </span>` : `<span style="font-size:10px;color:#888">No video</span>`}
-              ${hasTg ? `
-              <span style="font-size:10px;color:#2ca5e0;font-weight:600">
-                <i class="fab fa-telegram"></i> TG
+                <i class="fas fa-play-circle"></i>
+                ${epLangCount} lang${epLangCount > 1 ? 's' : ''}
               </span>` : ''}
+              ${epHasTg ? `
+              <span style="font-size:10px;color:#2ca5e0;font-weight:600">
+                <i class="fab fa-telegram"></i>
+                ${epTgData.source === 'season' ? 'Season' : 'TG'}
+              </span>` : ''}
+              ${!epHasVideo && !epHasTg ? `
+              <span style="font-size:10px;color:#888">No video</span>` : ''}
             </div>
           </div>
         `;
-        if (!isActive && epLangCount > 0) {
+
+        if (!isActive && (epHasVideo || epHasTg)) {
           item.style.cursor = 'pointer';
           item.addEventListener('click', () => {
-            window.location.href = `watch.html?id=${animeId}&season=${seasonId}&ep=${ep.id}`;
+            window.location.href =
+              `watch.html?id=${animeId}&season=${seasonId}&ep=${ep.id}`;
           });
         }
         otherEps.appendChild(item);
@@ -462,7 +562,8 @@
           <div class="empty-state">
             <i class="fas fa-film"></i>
             <h2>Episode not found!</h2>
-            <p><a href="anime.html?id=${animeId}" style="color:var(--accent)">Back to anime</a></p>
+            <p><a href="anime.html?id=${animeId}"
+              style="color:var(--accent)">Back to anime</a></p>
           </div>`;
         return;
       }
