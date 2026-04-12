@@ -240,7 +240,6 @@
       const hasPacks  = packsHTML.trim().length > 0;
 
       let episodesHTML = '';
-
       if (episodes.length > 0) {
         episodesHTML = `
           <div class="episodes-section-title">
@@ -251,12 +250,113 @@
           <div class="episodes-list" id="episodesList"></div>`;
       } else if (!hasPacks) {
         episodesHTML = `
-          <div class="empty-msg" style="padding:30px 0;text-align:center">
+          <div style="text-align:center;padding:30px 0;color:var(--text2)">
             No content added yet.
           </div>`;
       }
 
       container.innerHTML = `${packsHTML}${episodesHTML}`;
+
+      if (episodes.length === 0) return;
+
+      const list = document.getElementById('episodesList');
+      episodes.forEach(ep => {
+        const hasVid  = hasVideoContent(ep);
+        const hasEpTg = hasEpisodeTelegram(ep);
+
+        // ✅ FIXED: Episode is clickable if has video OR has its own TG link
+        // Season pack is shown separately — individual episodes need their own content
+        const clickable = hasVid || hasEpTg;
+
+        // Status badge
+        let statusBadge = '';
+        if (hasVid) {
+          statusBadge = `
+            <span style="font-size:10px;color:var(--accent);font-weight:600">
+              <i class="fas fa-play-circle"></i> Watch
+            </span>`;
+        } else if (hasEpTg) {
+          statusBadge = `
+            <span style="font-size:10px;color:#2ca5e0;font-weight:600">
+              <i class="fab fa-telegram"></i> Telegram
+            </span>`;
+        } else if (hasPacks) {
+          statusBadge = `
+            <span style="font-size:10px;color:#2ca5e0;font-weight:600">
+              <i class="fab fa-telegram"></i> Season Pack
+            </span>`;
+        } else {
+          statusBadge = `
+            <span style="font-size:10px;color:#888">
+              <i class="fas fa-clock"></i> Coming soon
+            </span>`;
+        }
+
+        // Thumbnail overlay icon
+        let thumbIcon = '';
+        if (hasVid) {
+          thumbIcon = `
+            <div class="ep-play-icon">
+              <i class="fas fa-play"></i>
+            </div>`;
+        } else if (hasEpTg) {
+          thumbIcon = `
+            <div class="ep-play-icon"
+              style="background:rgba(44,165,224,0.7)">
+              <i class="fab fa-telegram"></i>
+            </div>`;
+        } else if (hasPacks) {
+          // Has season pack — dim the lock, show TG color
+          thumbIcon = `
+            <div class="ep-play-icon"
+              style="background:rgba(44,165,224,0.3)">
+              <i class="fab fa-telegram" style="font-size:14px"></i>
+            </div>`;
+        } else {
+          thumbIcon = `
+            <div class="ep-play-icon"
+              style="background:rgba(0,0,0,0.4);opacity:0.5">
+              <i class="fas fa-lock" style="font-size:14px"></i>
+            </div>`;
+        }
+
+        const item = document.createElement('div');
+        item.className = 'episode-item';
+        if (clickable) item.style.cursor = 'pointer';
+        else if (!hasPacks) item.style.opacity = '0.6';
+
+        item.innerHTML = `
+          <div class="ep-thumb" style="position:relative;overflow:hidden">
+            <img src="${ep.thumbnail || ''}" alt="Ep ${ep.id}"
+              style="width:100%;height:100%;object-fit:cover;
+                border-radius:8px;background:var(--bg3);display:block"
+              onerror="this.style.background='var(--bg3)'"/>
+            ${thumbIcon}
+          </div>
+          <div class="ep-info">
+            <div class="ep-num">Episode ${ep.id}</div>
+            <div class="ep-title">${ep.title || 'Episode ' + ep.id}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;
+              margin-top:3px;align-items:center">
+              ${ep.duration ? `
+              <span class="ep-duration">
+                <i class="fas fa-clock" style="font-size:9px"></i>
+                ${ep.duration}
+              </span>` : ''}
+              ${statusBadge}
+            </div>
+          </div>
+        `;
+
+        if (clickable) {
+          item.addEventListener('click', () => {
+            window.location.href =
+              `watch.html?id=${animeId}&season=${season.id}&ep=${ep.id}`;
+          });
+        }
+        list.appendChild(item);
+      });
+    }
 
       // Render individual episodes
       if (episodes.length > 0) {
