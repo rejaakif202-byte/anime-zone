@@ -38,6 +38,7 @@
   <script src="firebase-config.js"></script>
   <script src="data.js"></script>
   <script>
+
     // ===== THEME =====
     function toggleTheme() {
       const html = document.documentElement;
@@ -64,13 +65,38 @@
       '4k':    { label:'4K UHD',    color:'#C87740' },
     };
 
+    // ===== SHOW ERROR =====
+    function showError(msg) {
+      document.getElementById('detailMain').innerHTML = `
+        <div class="empty-state" style="min-height:60vh">
+          <i class="fas fa-exclamation-circle"
+            style="font-size:40px;color:#e50914"></i>
+          <h2 style="margin-top:16px">Oops!</h2>
+          <p style="color:var(--text2);font-size:13px;margin-top:8px">${msg}</p>
+          <a href="index.html"
+            style="color:var(--accent);margin-top:16px;
+              display:inline-block;font-size:14px">
+            ← Go Home
+          </a>
+        </div>`;
+    }
+
     // ===== FIREBASE =====
     async function getAnime(id) {
+      if (!id) return null;
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out')), 10000)
+      );
       try {
-        const doc = await db.collection('anime').doc(id).get();
+        const fetchPromise = db.collection('anime').doc(id).get();
+        const doc = await Promise.race([fetchPromise, timeoutPromise]);
         if (doc.exists) return { ...doc.data(), firestoreId: doc.id };
-      } catch(e) { console.error(e); }
-      return null;
+        return null;
+      } catch(e) {
+        console.error('getAnime error:', e);
+        showError(e.message || 'Firebase se data load nahi hua.');
+        return null;
+      }
     }
 
     // ===== WATCHLIST =====
@@ -119,17 +145,11 @@
       }
       if (season.telegramLinks &&
         Object.values(season.telegramLinks).some(v => v && v.trim())) {
-        packs.push({
-          range: season.episodeRange || null,
-          links: season.telegramLinks
-        });
+        packs.push({ range: season.episodeRange || null, links: season.telegramLinks });
         return packs;
       }
       if (season.telegramUrl && season.telegramUrl.trim()) {
-        packs.push({
-          range: season.episodeRange || null,
-          single: season.telegramUrl
-        });
+        packs.push({ range: season.episodeRange || null, single: season.telegramUrl });
         return packs;
       }
       return packs;
@@ -162,8 +182,8 @@
       if (packs.length === 0) return '';
 
       return packs.map((pack, idx) => {
-        const epCount  = (season.episodes || []).length;
-        const range    = pack.range
+        const epCount = (season.episodes || []).length;
+        const range   = pack.range
           ? `Episodes ${pack.range}`
           : epCount > 0 ? `${epCount} Episodes` : 'Full Season';
 
@@ -183,14 +203,12 @@
           btnHTML = `
             <div class="season-tg-quality-row">
               ${keys.map(q => {
-                const cfg = qualityConfig[q] || { label:q, color:'#2ca5e0' };
+                const cfg = qualityConfig[q] || { label: q, color: '#2ca5e0' };
                 return `
-                  <a href="${pack.links[q]}"
-                    target="_blank" rel="noopener"
+                  <a href="${pack.links[q]}" target="_blank" rel="noopener"
                     class="season-tg-quality-btn"
                     style="--tgcolor:${cfg.color}">
-                    <i class="fab fa-telegram"></i>
-                    ${cfg.label}
+                    <i class="fab fa-telegram"></i> ${cfg.label}
                   </a>`;
               }).join('')}
             </div>`;
@@ -207,7 +225,7 @@
               <div>
                 <div class="season-tg-pack-title">
                   ${packs.length > 1
-                    ? `Pack ${idx+1}: ${range}`
+                    ? `Pack ${idx + 1}: ${range}`
                     : `${season.title} — Telegram Pack`}
                 </div>
                 <div class="season-tg-pack-sub">
@@ -253,62 +271,41 @@
       }
 
       container.innerHTML = `${packsHTML}${episodesHTML}`;
-
       if (episodes.length === 0) return;
 
       const list = document.getElementById('episodesList');
       episodes.forEach(ep => {
-        const hasVid  = hasVideoContent(ep);
-        const hasEpTg = hasEpisodeTelegram(ep);
+        const hasVid    = hasVideoContent(ep);
+        const hasEpTg   = hasEpisodeTelegram(ep);
         const clickable = hasVid || hasEpTg;
 
         let statusBadge = '';
         if (hasVid) {
-          statusBadge = `
-            <span style="font-size:10px;color:var(--accent);font-weight:600">
-              <i class="fas fa-play-circle"></i> Watch
-            </span>`;
+          statusBadge = `<span style="font-size:10px;color:var(--accent);font-weight:600">
+            <i class="fas fa-play-circle"></i> Watch</span>`;
         } else if (hasEpTg) {
-          statusBadge = `
-            <span style="font-size:10px;color:#2ca5e0;font-weight:600">
-              <i class="fab fa-telegram"></i> Telegram
-            </span>`;
+          statusBadge = `<span style="font-size:10px;color:#2ca5e0;font-weight:600">
+            <i class="fab fa-telegram"></i> Telegram</span>`;
         } else if (hasPacks) {
-          statusBadge = `
-            <span style="font-size:10px;color:#2ca5e0;font-weight:600">
-              <i class="fab fa-telegram"></i> Season Pack
-            </span>`;
+          statusBadge = `<span style="font-size:10px;color:#2ca5e0;font-weight:600">
+            <i class="fab fa-telegram"></i> Season Pack</span>`;
         } else {
-          statusBadge = `
-            <span style="font-size:10px;color:#888">
-              <i class="fas fa-clock"></i> Coming soon
-            </span>`;
+          statusBadge = `<span style="font-size:10px;color:#888">
+            <i class="fas fa-clock"></i> Coming soon</span>`;
         }
 
         let thumbIcon = '';
         if (hasVid) {
-          thumbIcon = `
-            <div class="ep-play-icon">
-              <i class="fas fa-play"></i>
-            </div>`;
+          thumbIcon = `<div class="ep-play-icon"><i class="fas fa-play"></i></div>`;
         } else if (hasEpTg) {
-          thumbIcon = `
-            <div class="ep-play-icon"
-              style="background:rgba(44,165,224,0.7)">
-              <i class="fab fa-telegram"></i>
-            </div>`;
+          thumbIcon = `<div class="ep-play-icon" style="background:rgba(44,165,224,0.7)">
+            <i class="fab fa-telegram"></i></div>`;
         } else if (hasPacks) {
-          thumbIcon = `
-            <div class="ep-play-icon"
-              style="background:rgba(44,165,224,0.3)">
-              <i class="fab fa-telegram" style="font-size:14px"></i>
-            </div>`;
+          thumbIcon = `<div class="ep-play-icon" style="background:rgba(44,165,224,0.3)">
+            <i class="fab fa-telegram" style="font-size:14px"></i></div>`;
         } else {
-          thumbIcon = `
-            <div class="ep-play-icon"
-              style="background:rgba(0,0,0,0.4);opacity:0.5">
-              <i class="fas fa-lock" style="font-size:14px"></i>
-            </div>`;
+          thumbIcon = `<div class="ep-play-icon" style="background:rgba(0,0,0,0.4);opacity:0.5">
+            <i class="fas fa-lock" style="font-size:14px"></i></div>`;
         }
 
         const item = document.createElement('div');
@@ -336,8 +333,7 @@
               </span>` : ''}
               ${statusBadge}
             </div>
-          </div>
-        `;
+          </div>`;
 
         if (clickable) {
           item.addEventListener('click', () => {
@@ -398,7 +394,6 @@
           src="${anime.banner || anime.thumbnail || ''}"
           alt="${anime.title}"
           onerror="this.style.background='var(--bg3)'"/>
-
         <div class="anime-detail-card">
           <div class="anime-detail-top">
             <img class="anime-poster"
@@ -423,9 +418,7 @@
               <div class="genre-tags">${genres}</div>
             </div>
           </div>
-
           <p class="anime-desc">${anime.description || ''}</p>
-
           <div class="action-btns">
             <a href="${watchUrl}" class="btn-primary"
               style="text-decoration:none;${watchUrl === '#'
@@ -440,14 +433,9 @@
             </button>
           </div>
         </div>
-
         ${seasons.length > 0 ? `
-        <div class="seasons-tabs">
-          ${seasonTabs}
-        </div>` : ''}
-
-        <div id="seasonContent" style="margin-top:4px"></div>
-      `;
+        <div class="seasons-tabs">${seasonTabs}</div>` : ''}
+        <div id="seasonContent" style="margin-top:4px"></div>`;
 
       window.currentSeasons = seasons;
 
@@ -464,20 +452,19 @@
     const params  = new URLSearchParams(window.location.search);
     const animeId = params.get('id');
 
-    getAnime(animeId).then(anime => {
-      if (anime) {
-        document.title = `${anime.title} — Anime Verse`;
-        renderDetail(anime);
-      } else {
-        document.getElementById('detailMain').innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-exclamation-circle"></i>
-            <h2>Anime not found!</h2>
-            <p><a href="index.html"
-              style="color:var(--accent)">Go home</a></p>
-          </div>`;
-      }
-    });
+    if (!animeId) {
+      showError('Anime ID nahi mila. Home se kisi anime pe click karo.');
+    } else {
+      getAnime(animeId).then(anime => {
+        if (anime) {
+          document.title = `${anime.title} — Anime Verse`;
+          renderDetail(anime);
+        } else {
+          showError('Anime nahi mila ya load nahi hua.');
+        }
+      });
+    }
+
   </script>
 </body>
 </html>
