@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -109,7 +110,6 @@
     // ===== GET SEASON PACKS =====
     function getSeasonPacks(season) {
       const packs = [];
-      // New format: telegramPacks array
       if (season.telegramPacks && season.telegramPacks.length > 0) {
         season.telegramPacks.forEach(p => {
           if (p && (p.single || (p.links && Object.values(p.links).some(v=>v)))) {
@@ -118,7 +118,6 @@
         });
         return packs;
       }
-      // Legacy: single telegramLinks object
       if (season.telegramLinks &&
         Object.values(season.telegramLinks).some(v => v && v.trim())) {
         packs.push({
@@ -127,7 +126,6 @@
         });
         return packs;
       }
-      // Legacy: single telegramUrl
       if (season.telegramUrl && season.telegramUrl.trim()) {
         packs.push({
           range: season.episodeRange || null,
@@ -263,12 +261,8 @@
       episodes.forEach(ep => {
         const hasVid  = hasVideoContent(ep);
         const hasEpTg = hasEpisodeTelegram(ep);
-
-        // ✅ FIXED: Episode is clickable if has video OR has its own TG link
-        // Season pack is shown separately — individual episodes need their own content
         const clickable = hasVid || hasEpTg;
 
-        // Status badge
         let statusBadge = '';
         if (hasVid) {
           statusBadge = `
@@ -292,7 +286,6 @@
             </span>`;
         }
 
-        // Thumbnail overlay icon
         let thumbIcon = '';
         if (hasVid) {
           thumbIcon = `
@@ -306,7 +299,6 @@
               <i class="fab fa-telegram"></i>
             </div>`;
         } else if (hasPacks) {
-          // Has season pack — dim the lock, show TG color
           thumbIcon = `
             <div class="ep-play-icon"
               style="background:rgba(44,165,224,0.3)">
@@ -358,100 +350,6 @@
       });
     }
 
-      // Render individual episodes
-      if (episodes.length > 0) {
-        const list = document.getElementById('episodesList');
-        episodes.forEach(ep => {
-          const hasVid   = hasVideoContent(ep);
-          const hasEpTg  = hasEpisodeTelegram(ep);
-          // Episode is clickable if it has video OR its own TG link
-          // Season pack doesn't make individual episodes clickable
-          const clickable = hasVid || hasEpTg;
-
-          const item = document.createElement('div');
-          item.className = 'episode-item';
-          if (clickable) item.style.cursor = 'pointer';
-          else item.style.opacity = '0.7';
-
-          // Status indicator
-          let statusBadge = '';
-          if (hasVid) {
-            statusBadge = `
-              <span style="font-size:10px;color:var(--accent);font-weight:600">
-                <i class="fas fa-play-circle"></i> Watch
-              </span>`;
-          } else if (hasEpTg) {
-            statusBadge = `
-              <span style="font-size:10px;color:#2ca5e0;font-weight:600">
-                <i class="fab fa-telegram"></i> Telegram
-              </span>`;
-          } else if (hasPacks) {
-            // Season pack available — show TG badge
-            statusBadge = `
-              <span style="font-size:10px;color:#2ca5e0;font-weight:600">
-                <i class="fab fa-telegram"></i> Season Pack
-              </span>`;
-          } else {
-            statusBadge = `
-              <span style="font-size:10px;color:#888">
-                <i class="fas fa-clock"></i> Coming soon
-              </span>`;
-          }
-
-          // Thumbnail overlay icon
-          let thumbIcon = '';
-          if (hasVid) {
-            thumbIcon = `
-              <div class="ep-play-icon">
-                <i class="fas fa-play"></i>
-              </div>`;
-          } else if (hasEpTg) {
-            thumbIcon = `
-              <div class="ep-play-icon"
-                style="background:rgba(44,165,224,0.6)">
-                <i class="fab fa-telegram"></i>
-              </div>`;
-          } else {
-            thumbIcon = `
-              <div class="ep-play-icon" style="background:rgba(0,0,0,0.4)">
-                <i class="fas fa-lock" style="font-size:14px"></i>
-              </div>`;
-          }
-
-          item.innerHTML = `
-            <div class="ep-thumb" style="position:relative;overflow:hidden">
-              <img src="${ep.thumbnail || ''}" alt="Ep ${ep.id}"
-                style="width:100%;height:100%;object-fit:cover;
-                  border-radius:8px;background:var(--bg3);display:block"
-                onerror="this.style.background='var(--bg3)'"/>
-              ${thumbIcon}
-            </div>
-            <div class="ep-info">
-              <div class="ep-num">Episode ${ep.id}</div>
-              <div class="ep-title">${ep.title}</div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;
-                margin-top:3px;align-items:center">
-                ${ep.duration ? `
-                <span class="ep-duration">
-                  <i class="fas fa-clock" style="font-size:9px"></i>
-                  ${ep.duration}
-                </span>` : ''}
-                ${statusBadge}
-              </div>
-            </div>
-          `;
-
-          if (clickable) {
-            item.addEventListener('click', () => {
-              window.location.href =
-                `watch.html?id=${animeId}&season=${season.id}&ep=${ep.id}`;
-            });
-          }
-          list.appendChild(item);
-        });
-      }
-    }
-
     // ===== RENDER DETAIL =====
     async function renderDetail(anime) {
       const animeId = anime.firestoreId;
@@ -471,7 +369,6 @@
 
       const seasons = anime.seasons || [];
 
-      // Find first watchable episode
       let watchUrl = '#';
       outer: for (const season of seasons) {
         const eps = season.episodes || [];
@@ -481,8 +378,6 @@
             break outer;
           }
         }
-        // Season has TG packs but episodes may not be individually watchable
-        // Still link to first episode if exists
         const packs = getSeasonPacks(season);
         if (packs.length > 0 && eps.length > 0) {
           watchUrl = `watch.html?id=${animeId}&season=${season.id}&ep=${eps[0].id}`;
@@ -547,13 +442,11 @@
           </div>
         </div>
 
-        <!-- SEASON TABS -->
         ${seasons.length > 0 ? `
         <div class="seasons-tabs">
           ${seasonTabs}
         </div>` : ''}
 
-        <!-- SEASON CONTENT -->
         <div id="seasonContent" style="margin-top:4px"></div>
       `;
 
