@@ -384,21 +384,22 @@
               <input type="url" id="ep_thumb" placeholder="https://..."/></div>
           </div>
 
-          <!-- VIDEO URLS -->
+          <!-- VIDEO URLS + GALLERY UPLOAD -->
           <div style="background:var(--bg3);border-radius:12px;padding:14px;
             border:1px solid var(--border);margin-bottom:16px">
             <div style="font-weight:700;font-size:14px;margin-bottom:4px;
               color:var(--text);display:flex;align-items:center;gap:6px">
               <i class="fas fa-play-circle" style="color:var(--accent)"></i>
               Video Player URLs
-              <span style="font-size:11px;font-weight:400;color:var(--text2)">
-                (optional)
-              </span>
+              <span style="font-size:11px;font-weight:400;
+                color:var(--text2)">(optional)</span>
             </div>
             <p style="font-size:11px;color:var(--text2);
               margin-bottom:14px;line-height:1.6">
-              YouTube / Drive / Direct MP4. Website pe play hoga.
+              YouTube / Drive link daalo — ya neeche gallery se video upload karo.
             </p>
+
+            <!-- Language Tabs -->
             <div style="display:flex;gap:8px;overflow-x:auto;
               padding-bottom:10px;scrollbar-width:none;margin-bottom:14px"
               id="langTabsBar">
@@ -415,37 +416,108 @@
                 onclick="switchLangTab('Custom',this)"
                 style="flex-shrink:0">+ Custom</button>
             </div>
+
             <div id="customLangField" style="display:none;margin-bottom:12px">
               <div class="form-group" style="margin-bottom:0">
                 <label>CUSTOM LANGUAGE NAME</label>
                 <input type="text" id="customLangName"
-                  placeholder="e.g. Korean..."/>
+                  placeholder="e.g. Korean, Spanish..."/>
               </div>
             </div>
+
+            <!-- Manual URL inputs -->
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
               <div class="form-group">
                 <label style="display:flex;align-items:center;gap:5px">
-                  <span class="q-badge q-480">480p</span> SD</label>
-                <input type="url" id="lq_480" placeholder="Video URL"/></div>
+                  <span class="q-badge q-480">480p</span></label>
+                <input type="url" id="lq_480" placeholder="Video URL"/>
+              </div>
               <div class="form-group">
                 <label style="display:flex;align-items:center;gap:5px">
-                  <span class="q-badge q-720">720p</span> HD</label>
-                <input type="url" id="lq_720" placeholder="Video URL"/></div>
+                  <span class="q-badge q-720">720p</span></label>
+                <input type="url" id="lq_720" placeholder="Video URL"/>
+              </div>
               <div class="form-group">
                 <label style="display:flex;align-items:center;gap:5px">
                   <span class="q-badge q-1080">1080p</span></label>
-                <input type="url" id="lq_1080" placeholder="Video URL"/></div>
+                <input type="url" id="lq_1080" placeholder="Video URL"/>
+              </div>
               <div class="form-group">
                 <label style="display:flex;align-items:center;gap:5px">
                   <span class="q-badge q-4k">4K</span></label>
-                <input type="url" id="lq_4k" placeholder="Video URL"/></div>
+                <input type="url" id="lq_4k" placeholder="Video URL"/>
+              </div>
             </div>
+
             <button class="btn-outline" onclick="saveLangUrls()"
-              style="width:100%;margin-bottom:8px">
+              style="width:100%;margin-bottom:12px">
               <i class="fas fa-floppy-disk"></i>
               Save This Language's URLs
             </button>
-            <div id="savedLangsPreview" style="margin-top:8px"></div>
+
+            <!-- ===== GALLERY UPLOAD ===== -->
+            <div style="border-top:1px solid var(--border);
+              padding-top:14px;margin-top:4px">
+              <div style="font-size:13px;font-weight:700;
+                color:var(--text);margin-bottom:6px;
+                display:flex;align-items:center;gap:6px">
+                <i class="fas fa-upload" style="color:var(--accent)"></i>
+                Upload from Gallery
+                <span style="font-size:11px;font-weight:400;
+                  color:var(--text2)">— uploads to GoFile</span>
+              </div>
+              <p style="font-size:11px;color:var(--text2);
+                margin-bottom:10px;line-height:1.5">
+                Select video file from device. Bot will upload to GoFile streaming server.
+                Quality auto-detected from filename.
+              </p>
+
+              <input type="file" id="adminVideoInput"
+                accept="video/*,.mkv,.mp4,.avi,.webm"
+                style="display:none"
+                onchange="handleAdminVideoUpload(this)"/>
+
+              <div id="uploadStatus" style="display:none;
+                background:var(--bg2);border:1px solid var(--border);
+                border-radius:10px;padding:12px;margin-bottom:10px">
+                <div style="display:flex;align-items:center;gap:10px;
+                  margin-bottom:8px">
+                  <i class="fas fa-circle-notch fa-spin"
+                    id="uploadIcon"
+                    style="color:var(--accent);font-size:18px;flex-shrink:0"></i>
+                  <div>
+                    <div style="font-size:13px;font-weight:600;
+                      color:var(--text)" id="uploadFileName">
+                      Uploading...
+                    </div>
+                    <div style="font-size:11px;color:var(--text2)"
+                      id="uploadSubText">
+                      Please wait...
+                    </div>
+                  </div>
+                </div>
+                <div style="height:6px;background:var(--bg3);
+                  border-radius:3px;overflow:hidden">
+                  <div id="uploadProgressBar"
+                    style="height:100%;background:var(--accent);
+                      border-radius:3px;width:0%;transition:width 0.3s"></div>
+                </div>
+                <div style="font-size:11px;color:var(--text2);
+                  text-align:right;margin-top:4px" id="uploadPercent">0%</div>
+              </div>
+
+              <button class="btn-primary"
+                onclick="document.getElementById('adminVideoInput').click()"
+                id="selectVideoBtn"
+                style="width:100%;background:var(--bg2);
+                  color:var(--text);border:1px solid var(--border)">
+                <i class="fas fa-folder-open"
+                  style="color:var(--accent)"></i>
+                Select Video File
+              </button>
+            </div>
+
+            <div id="savedLangsPreview" style="margin-top:10px"></div>
           </div>
 
           <!-- EPISODE TELEGRAM -->
@@ -559,7 +631,7 @@
     const ADMIN_PASSWORD = 'AnimeVerse@123';
     let currentLangTab  = 'Japanese';
     let episodeLangData = {};
-    let editingSeasonPacks = []; // for season edit
+    let editingSeasonPacks = [];
     let editingSeasonId   = null;
     let editingAnimeId    = null;
 
@@ -731,7 +803,6 @@
       const season  = seasons.find(s => s.id === editingSeasonId);
       if (!season) return;
 
-      // Collect existing packs
       editingSeasonPacks = [];
       if (season.telegramPacks && season.telegramPacks.length > 0) {
         editingSeasonPacks = JSON.parse(JSON.stringify(season.telegramPacks));
@@ -807,10 +878,7 @@
               ${['480p','720p','1080p','4k'].map(q => `
               <div class="form-group" style="margin-bottom:0">
                 <label style="display:flex;align-items:center;gap:4px">
-                  <span class="q-badge q-${q.replace('p','')}"
-                    style="${q==='4k'?'':''}">
-                    ${q}
-                  </span>
+                  <span class="q-badge q-${q.replace('p','')}">${q}</span>
                 </label>
                 <input type="url"
                   value="${(pack.links&&pack.links[q])||''}"
@@ -852,12 +920,9 @@
 
       editingSeasonPacks.push(pack);
       renderExistingPacks();
-
-      // Clear new pack fields
       ['new_pack_range','new_pack_480','new_pack_720',
        'new_pack_1080','new_pack_4k','new_pack_single']
         .forEach(id => { document.getElementById(id).value=''; });
-
       alert(`✓ Pack added! Click "Save All Season Changes" to save.`);
     }
 
@@ -881,15 +946,10 @@
         let seasons = doc.data().seasons || [];
         const sIdx = seasons.findIndex(s => s.id === editingSeasonId);
         if (sIdx === -1) throw new Error('Season not found!');
-
-        // Save as telegramPacks array
-        seasons[sIdx].telegramPacks = editingSeasonPacks
-          .filter(p => p.range);
-        // Clear legacy fields to avoid confusion
+        seasons[sIdx].telegramPacks = editingSeasonPacks.filter(p => p.range);
         delete seasons[sIdx].telegramLinks;
         delete seasons[sIdx].telegramUrl;
         delete seasons[sIdx].episodeRange;
-
         await ref.update({ seasons });
         showEpSuccess('✅ Season packs saved!');
       } catch(e) {
@@ -1035,6 +1095,125 @@
     function removeSavedLang(lang) {
       delete episodeLangData[lang];
       updateSavedLangsPreview();
+    }
+
+    // ===== GALLERY VIDEO UPLOAD TO GOFILE =====
+    async function handleAdminVideoUpload(input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      input.value = '';
+
+      const filename    = file.name;
+      const sizeMB      = (file.size / 1024 / 1024).toFixed(1);
+      const autoQuality = detectQualityFromFilename(filename);
+      const autoLang    = currentLangTab === 'Custom'
+        ? (document.getElementById('customLangName').value.trim() || 'Japanese')
+        : currentLangTab;
+
+      const statusEl   = document.getElementById('uploadStatus');
+      const fileNameEl = document.getElementById('uploadFileName');
+      const subTextEl  = document.getElementById('uploadSubText');
+      const progBar    = document.getElementById('uploadProgressBar');
+      const progPct    = document.getElementById('uploadPercent');
+      const uploadIcon = document.getElementById('uploadIcon');
+      const selectBtn  = document.getElementById('selectVideoBtn');
+
+      statusEl.style.display  = 'block';
+      selectBtn.disabled      = true;
+      fileNameEl.textContent  = filename;
+      subTextEl.textContent   = `${sizeMB} MB · ${autoLang} · ${autoQuality} · Getting server...`;
+      progBar.style.width     = '5%';
+      progPct.textContent     = '5%';
+      uploadIcon.className    = 'fas fa-circle-notch fa-spin';
+      uploadIcon.style.color  = 'var(--accent)';
+
+      try {
+        const serverResp = await fetch('https://api.gofile.io/servers');
+        const serverData = await serverResp.json();
+        const server     = serverData.data?.servers?.[0]?.name || 'store1';
+
+        subTextEl.textContent = `Uploading to ${server}.gofile.io...`;
+        progBar.style.width = '15%';
+        progPct.textContent = '15%';
+
+        const url = await new Promise((resolve, reject) => {
+          const formData = new FormData();
+          formData.append('file', file, filename);
+
+          const xhr = new XMLHttpRequest();
+          xhr.upload.addEventListener('progress', e => {
+            if (e.lengthComputable) {
+              const pct = Math.round(15 + (e.loaded / e.total) * 75);
+              progBar.style.width = pct + '%';
+              progPct.textContent = pct + '%';
+              const mbDone = (e.loaded / 1024 / 1024).toFixed(1);
+              subTextEl.textContent = `Uploading: ${mbDone} / ${sizeMB} MB`;
+            }
+          });
+          xhr.addEventListener('load', () => {
+            try {
+              const res = JSON.parse(xhr.responseText);
+              if (res.status === 'ok') {
+                const d         = res.data;
+                const folderId  = d.parentFolder || d.folderId || '';
+                const directUrl = `https://${server}.gofile.io/download/direct/${folderId}/${filename}`;
+                resolve(directUrl);
+              } else {
+                reject(new Error('GoFile upload failed: ' + JSON.stringify(res)));
+              }
+            } catch(e) { reject(e); }
+          });
+          xhr.addEventListener('error', () => reject(new Error('Network error')));
+          xhr.open('POST', `https://${server}.gofile.io/uploadFile`);
+          xhr.send(formData);
+        });
+
+        progBar.style.width    = '100%';
+        progPct.textContent    = '100%';
+        uploadIcon.className   = 'fas fa-circle-check';
+        uploadIcon.style.color = '#27ae60';
+        subTextEl.textContent  = `Done! URL auto-filled in ${autoQuality} field.`;
+        fileNameEl.textContent = `✅ ${filename}`;
+
+        const qFieldMap = {
+          '480p': 'lq_480', '720p': 'lq_720',
+          '1080p': 'lq_1080', '4k': 'lq_4k'
+        };
+        const fieldId = qFieldMap[autoQuality] || 'lq_720';
+        const fieldEl = document.getElementById(fieldId);
+        if (fieldEl) {
+          fieldEl.value = url;
+          fieldEl.style.borderColor = '#27ae60';
+          setTimeout(() => { fieldEl.style.borderColor = ''; }, 3000);
+        }
+
+        setTimeout(() => {
+          statusEl.style.display = 'none';
+          selectBtn.disabled = false;
+        }, 2000);
+
+      } catch(e) {
+        uploadIcon.className   = 'fas fa-circle-exclamation';
+        uploadIcon.style.color = '#e50914';
+        fileNameEl.textContent = 'Upload failed';
+        subTextEl.textContent  = e.message;
+        progBar.style.background = '#e50914';
+
+        setTimeout(() => {
+          statusEl.style.display = 'none';
+          selectBtn.disabled = false;
+          progBar.style.width = '0%';
+          progBar.style.background = 'var(--accent)';
+        }, 3000);
+      }
+    }
+
+    function detectQualityFromFilename(filename) {
+      const f = filename.toLowerCase();
+      if (f.includes('4k') || f.includes('2160')) return '4k';
+      if (f.includes('1080'))                       return '1080p';
+      if (f.includes('480'))                        return '480p';
+      return '720p';
     }
 
     // ===== DROPDOWN =====
