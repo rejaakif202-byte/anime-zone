@@ -408,11 +408,14 @@ async function getMyList() {
 }
 async function toggleMyList(id, btnEl) {
   id = String(id);
+
   if (currentUser) {
     try {
-      const ref  = db.collection('users').doc(currentUser.uid);
-      const doc  = await ref.get();
-      let list   = doc.exists ? (doc.data().watchlist || []) : [];
+      const ref = db.collection('users').doc(currentUser.uid);
+      const doc = await ref.get();
+
+      let list = doc.exists ? (doc.data().watchlist || []).map(String) : [];
+
       if (list.includes(id)) {
         list = list.filter(x => x !== id);
         if (btnEl) btnEl.classList.remove('saved');
@@ -420,8 +423,23 @@ async function toggleMyList(id, btnEl) {
         list.push(id);
         if (btnEl) btnEl.classList.add('saved');
       }
-      await ref.update({ watchlist: list });
-    } catch(e) { console.error(e); }
+
+      // Use SET with merge — works even if doc doesn't exist
+      await ref.set({ watchlist: list }, { merge: true });
+
+    } catch(e) {
+      console.error('Watchlist error:', e);
+      // Fallback to localStorage
+      let list = getMyListLocal().map(String);
+      if (list.includes(id)) {
+        list = list.filter(x => x !== id);
+        if (btnEl) btnEl.classList.remove('saved');
+      } else {
+        list.push(id);
+        if (btnEl) btnEl.classList.add('saved');
+      }
+      localStorage.setItem('av_mylist', JSON.stringify(list));
+    }
   } else {
     let list = getMyListLocal().map(String);
     if (list.includes(id)) {
