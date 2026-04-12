@@ -9,58 +9,43 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
     .av-wrapper {
-      position: relative;
-      width: 100%;
-      background: #000;
-      border-radius: 12px;
-      overflow: hidden;
-      aspect-ratio: 16/9;
+      position: relative; width: 100%;
+      background: #000; border-radius: 12px;
+      overflow: hidden; aspect-ratio: 16/9;
       user-select: none;
     }
     .av-wrapper.av-fullscreen {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      aspect-ratio: unset !important;
-      border-radius: 0 !important;
+      position: fixed !important; inset: 0 !important;
+      width: 100vw !important; height: 100vh !important;
+      aspect-ratio: unset !important; border-radius: 0 !important;
       z-index: 9999 !important;
     }
     .av-video {
       width: 100%; height: 100%;
-      display: block; object-fit: contain;
-      background: #000;
+      display: block; object-fit: contain; background: #000;
     }
-    .av-iframe {
-      width: 100%; height: 100%;
-      border: none; display: block;
-    }
+    .av-iframe { width: 100%; height: 100%; border: none; display: block; }
     .av-loader {
       position: absolute; inset: 0;
       display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.5);
-      z-index: 5;
-      pointer-events: none;
+      background: rgba(0,0,0,0.5); z-index: 5; pointer-events: none;
     }
     .av-loader.hidden { display: none; }
     .av-spin {
       width: 48px; height: 48px;
       border: 4px solid rgba(255,255,255,0.15);
-      border-top-color: #fff;
-      border-radius: 50%;
+      border-top-color: #fff; border-radius: 50%;
       animation: avSpin 0.8s linear infinite;
     }
     @keyframes avSpin { to { transform: rotate(360deg); } }
     .av-tap-feedback {
       position: absolute;
       display: flex; align-items: center; justify-content: center;
-      background: rgba(255,255,255,0.15);
-      border-radius: 50%;
+      background: rgba(255,255,255,0.15); border-radius: 50%;
       width: 72px; height: 72px;
       color: #fff; font-size: 22px;
       opacity: 0; pointer-events: none;
-      transition: opacity 0.15s;
-      z-index: 6;
+      transition: opacity 0.15s; z-index: 6;
     }
     .av-tap-feedback.left  { left: 15%; top: 50%; transform: translateY(-50%); }
     .av-tap-feedback.right { right: 15%; top: 50%; transform: translateY(-50%); }
@@ -69,15 +54,13 @@
       position: absolute; inset: 0;
       display: flex; align-items: center; justify-content: center;
       z-index: 4; cursor: pointer;
-      opacity: 0; transition: opacity 0.2s;
-      pointer-events: none;
+      opacity: 0; transition: opacity 0.2s; pointer-events: none;
     }
     .av-center-play.visible { opacity: 1; pointer-events: all; }
     .av-center-play-btn {
       width: 64px; height: 64px;
       background: rgba(255,255,255,0.15);
-      backdrop-filter: blur(4px);
-      border-radius: 50%;
+      backdrop-filter: blur(4px); border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       color: #fff; font-size: 24px;
       border: 2px solid rgba(255,255,255,0.3);
@@ -86,34 +69,23 @@
     .av-center-play-btn:active { transform: scale(0.9); }
     .av-controls {
       position: absolute; inset: 0;
-      display: flex; flex-direction: column;
-      justify-content: flex-end;
-      background: linear-gradient(
-        to bottom,
-        rgba(0,0,0,0) 0%,
-        rgba(0,0,0,0) 40%,
-        rgba(0,0,0,0.7) 100%
-      );
-      z-index: 7;
-      opacity: 1; transition: opacity 0.3s;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      background: linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 40%,rgba(0,0,0,0.7) 100%);
+      z-index: 7; opacity: 1; transition: opacity 0.3s;
     }
     .av-controls.hidden { opacity: 0; pointer-events: none; }
     .av-controls.iframe-mode { pointer-events: none; }
     .av-controls.iframe-mode .av-bottom-bar { pointer-events: all; }
     .av-top-bar {
       display: flex; align-items: center;
-      padding: 10px 12px 0;
-      gap: 10px;
+      padding: 10px 12px 0; gap: 10px;
     }
     .av-top-title {
-      font-size: 12px; color: #fff;
-      font-weight: 600; flex: 1;
+      font-size: 12px; color: #fff; font-weight: 600; flex: 1;
       text-shadow: 0 1px 4px rgba(0,0,0,0.8);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .av-bottom-bar {
-      padding: 0 10px 8px;
-    }
+    .av-bottom-bar { padding: 0 10px 8px; }
     .av-progress-wrap {
       position: relative; height: 18px;
       display: flex; align-items: center;
@@ -127,8 +99,7 @@
     .av-progress-buffered {
       position: absolute; height: 100%;
       background: rgba(255,255,255,0.35);
-      border-radius: 2px; width: 0%;
-      transition: width 0.3s;
+      border-radius: 2px; width: 0%; transition: width 0.3s;
     }
     .av-progress-fill {
       position: absolute; height: 100%;
@@ -136,10 +107,8 @@
       border-radius: 2px; width: 0%;
     }
     .av-seek {
-      position: absolute; inset: 0;
-      opacity: 0; cursor: pointer;
-      width: 100%; height: 100%;
-      margin: 0; padding: 0;
+      position: absolute; inset: 0; opacity: 0; cursor: pointer;
+      width: 100%; height: 100%; margin: 0; padding: 0;
     }
     .av-progress-thumb {
       position: absolute; top: 50%;
@@ -152,17 +121,13 @@
     }
     .av-progress-wrap:hover .av-progress-thumb { opacity: 1; }
     .av-progress-wrap:hover .av-progress-bg { height: 6px; }
-    .av-ctrl-row {
-      display: flex; align-items: center; gap: 4px;
-    }
+    .av-ctrl-row { display: flex; align-items: center; gap: 4px; }
     .av-ctrl-btn {
-      background: none; border: none;
-      color: #fff; cursor: pointer;
+      background: none; border: none; color: #fff; cursor: pointer;
       width: 36px; height: 36px;
       display: flex; align-items: center; justify-content: center;
       font-size: 16px; border-radius: 6px;
-      transition: background 0.15s;
-      flex-shrink: 0;
+      transition: background 0.15s; flex-shrink: 0;
     }
     .av-ctrl-btn:hover { background: rgba(255,255,255,0.1); }
     .av-ctrl-btn.sm { width: 30px; font-size: 13px; }
@@ -174,24 +139,16 @@
     .av-spacer { flex: 1; }
     .av-vol-wrap {
       display: flex; align-items: center; gap: 2px;
-      overflow: hidden; max-width: 0px;
-      transition: max-width 0.3s;
+      overflow: hidden; max-width: 0px; transition: max-width 0.3s;
     }
     .av-vol-wrap.show { max-width: 70px; }
     .av-vol-slider {
-      width: 60px; height: 4px;
-      -webkit-appearance: none;
-      background: linear-gradient(
-        to right,
-        #fff var(--vol, 100%),
-        rgba(255,255,255,0.3) var(--vol, 100%)
-      );
-      border-radius: 2px; outline: none;
-      cursor: pointer;
+      width: 60px; height: 4px; -webkit-appearance: none;
+      background: linear-gradient(to right,#fff var(--vol,100%),rgba(255,255,255,0.3) var(--vol,100%));
+      border-radius: 2px; outline: none; cursor: pointer;
     }
     .av-vol-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 12px; height: 12px;
+      -webkit-appearance: none; width: 12px; height: 12px;
       background: #fff; border-radius: 50%;
     }
     .av-speed-badge {
@@ -212,13 +169,12 @@
     }
     .av-speed-menu.show { display: block; }
     .av-speed-option {
-      padding: 8px 20px; font-size: 13px;
-      color: #fff; cursor: pointer;
-      font-family: 'Poppins', sans-serif;
+      padding: 8px 20px; font-size: 13px; color: #fff;
+      cursor: pointer; font-family: 'Poppins', sans-serif;
       transition: background 0.15s;
     }
     .av-speed-option:hover { background: rgba(255,255,255,0.1); }
-    .av-speed-option.active { color: var(--accent, #C87740); font-weight: 700; }
+    .av-speed-option.active { color: var(--accent,#C87740); font-weight: 700; }
     .av-iframe-fs-btn {
       position: absolute; bottom: 8px; right: 8px;
       background: rgba(0,0,0,0.7); border: none;
@@ -226,8 +182,7 @@
       width: 36px; height: 36px;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; font-size: 16px; z-index: 8;
-      backdrop-filter: blur(4px);
-      transition: background 0.2s;
+      backdrop-filter: blur(4px); transition: background 0.2s;
     }
     .av-iframe-fs-btn:hover { background: rgba(0,0,0,0.9); }
     .av-fs-exit-btn {
@@ -237,25 +192,46 @@
       width: 38px; height: 38px;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; font-size: 16px; z-index: 15;
-      backdrop-filter: blur(4px);
-      display: none;
+      backdrop-filter: blur(4px); display: none;
     }
     .av-wrapper.av-fullscreen .av-fs-exit-btn { display: flex; }
     .av-seek-left, .av-seek-right {
       position: absolute; top: 0; bottom: 48px;
       width: 33%; z-index: 3; cursor: pointer;
     }
-    .av-seek-left  { left: 0; }
+    .av-seek-left { left: 0; }
     .av-seek-right { right: 0; }
     .av-no-video {
       position: absolute; inset: 0;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      color: rgba(255,255,255,0.4); gap: 10px;
+      color: rgba(255,255,255,0.6); gap: 10px;
+      font-family: 'Poppins', sans-serif;
+      background: rgba(0,0,0,0.85);
+      padding: 20px; text-align: center;
+    }
+    .av-no-video i { font-size: 36px; }
+    .av-no-video span { font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.5); }
+    .av-download-btn {
+      margin-top: 10px;
+      background: var(--accent,#C87740); color: #fff;
+      border: none; border-radius: 8px;
+      padding: 8px 18px; font-size: 13px;
+      font-weight: 600; cursor: pointer;
+      text-decoration: none; display: inline-flex;
+      align-items: center; gap: 6px;
       font-family: 'Poppins', sans-serif;
     }
-    .av-no-video i { font-size: 40px; }
-    .av-no-video span { font-size: 13px; text-align: center; line-height: 1.6; }
+    /* MKV warning banner */
+    .mkv-banner {
+      background: rgba(200,119,64,0.12);
+      border: 1px solid rgba(200,119,64,0.3);
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 12px; color: var(--text2);
+      display: flex; align-items: flex-start; gap: 8px;
+      margin-bottom: 10px;
+    }
+    .mkv-banner i { color: var(--accent); margin-top: 1px; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -288,6 +264,7 @@
   <script src="firebase-config.js"></script>
   <script src="data.js"></script>
   <script>
+
     // ===== THEME =====
     function toggleTheme() {
       const html = document.documentElement;
@@ -312,37 +289,38 @@
       'Chinese':'🇨🇳','Portuguese':'🇧🇷','Spanish':'🇪🇸','French':'🇫🇷'
     };
     const qualityConfig = {
-      '480p':  { label:'480p SD',  color:'#666' },
-      '720p':  { label:'720p HD',  color:'#2a6dd9' },
-      '1080p': { label:'1080p FHD',color:'#27ae60' },
-      '4k':    { label:'4K UHD',   color:'#C87740' },
+      '480p':  { label:'480p SD',   color:'#666' },
+      '720p':  { label:'720p HD',   color:'#2a6dd9' },
+      '1080p': { label:'1080p FHD', color:'#27ae60' },
+      '4k':    { label:'4K UHD',    color:'#C87740' },
     };
     const qualityOrder = ['4k','1080p','720p','480p'];
 
     // ===== PLAYER STATE =====
     let playerState = {
-      type: 'none',
-      playing: false,
-      volume: 1,
-      muted: false,
-      speed: 1,
-      controlsTimer: null,
-      isFullscreen: false,
-      lastTap: 0,
-      tapTimer: null,
-      currentLang: '',
-      currentQuality: '',
+      type: 'none', playing: false,
+      volume: 1, muted: false, speed: 1,
+      controlsTimer: null, isFullscreen: false,
+      currentLang: '', currentQuality: '',
     };
 
-    // ===== URL DETECTION (FIXED) =====
+    // ===== URL TYPE DETECTION =====
+    function isMkv(url) {
+      return /\.mkv(\?|#|$)/i.test(url);
+    }
+
     function detectUrlType(url) {
       if (!url || !url.trim()) return 'none';
       if (url.includes('youtube.com/watch') || url.includes('youtu.be/') ||
           url.includes('youtube.com/embed'))
         return 'youtube';
+      // Google Drive — always use iframe (handles mkv transcoding too)
       if (url.includes('drive.google.com')) return 'drive';
-      if (url.match(/\.(mp4|webm|ogg|mkv|m3u8|mov|avi)(\?|#|$)/i)) return 'direct';
-      // Common video CDN hosts — treat as direct
+      // Direct video file extensions
+      if (url.match(/\.(mp4|webm|ogg|m3u8|mov)(\?|#|$)/i)) return 'direct';
+      // MKV — direct but needs special handling
+      if (url.match(/\.mkv(\?|#|$)/i)) return 'mkv';
+      // Common video CDNs
       if (url.includes('googlevideo.com') ||
           url.includes('cloudfront.net') ||
           url.includes('akamaized.net') ||
@@ -352,12 +330,11 @@
       return 'iframe';
     }
 
-    // ===== EMBED SRC (FIXED) =====
     function getEmbedSrc(url) {
       if (url.includes('youtube.com/watch')) {
         try {
           const id = new URL(url).searchParams.get('v');
-          return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
+          return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
         } catch {}
       }
       if (url.includes('youtu.be/')) {
@@ -365,17 +342,17 @@
         return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
       }
       if (url.includes('drive.google.com')) {
+        // Handle all Drive URL formats
         const m1 = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
-        const m2 = url.match(/id=([a-zA-Z0-9_-]{10,})/);
+        const m2 = url.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
         const id  = m1 ? m1[1] : (m2 ? m2[1] : null);
         if (id) return `https://drive.google.com/file/d/${id}/preview?usp=sharing`;
       }
       return url;
     }
 
-    // ===== FORMAT TIME =====
     function fmtTime(s) {
-      if (isNaN(s)) return '0:00';
+      if (isNaN(s) || !isFinite(s)) return '0:00';
       const h   = Math.floor(s / 3600);
       const m   = Math.floor((s % 3600) / 60);
       const sec = Math.floor(s % 60);
@@ -388,80 +365,56 @@
       if (el.requestFullscreen)            el.requestFullscreen();
       else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
       else if (el.mozRequestFullScreen)    el.mozRequestFullScreen();
-      else if (el.msRequestFullscreen)     el.msRequestFullscreen();
-      else {
-        el.classList.add('av-fullscreen');
-        playerState.isFullscreen = true;
-        document.body.style.overflow = 'hidden';
-      }
+      else { el.classList.add('av-fullscreen'); playerState.isFullscreen = true; document.body.style.overflow='hidden'; }
     }
     function exitFullscreen() {
       if (document.exitFullscreen)            document.exitFullscreen();
       else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
       else if (document.mozCancelFullScreen)  document.mozCancelFullScreen();
-      else if (document.msExitFullscreen)     document.msExitFullscreen();
       else {
         const el = document.querySelector('.av-fullscreen');
-        if (el) {
-          el.classList.remove('av-fullscreen');
-          document.body.style.overflow = '';
-        }
+        if (el) { el.classList.remove('av-fullscreen'); document.body.style.overflow=''; }
         playerState.isFullscreen = false;
       }
     }
-
     document.addEventListener('fullscreenchange', onFsChange);
     document.addEventListener('webkitfullscreenchange', onFsChange);
     document.addEventListener('mozfullscreenchange', onFsChange);
     function onFsChange() {
-      const isFs = !!(
-        document.fullscreenElement ||
-        document.webkitFullscreenElement ||
-        document.mozFullScreenElement
-      );
+      const isFs = !!(document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement);
       playerState.isFullscreen = isFs;
       const btn = document.getElementById('avFsBtn');
-      if (btn) btn.innerHTML = isFs
-        ? '<i class="fas fa-compress"></i>'
-        : '<i class="fas fa-expand"></i>';
+      if (btn) btn.innerHTML = isFs ? '<i class="fas fa-compress"></i>' : '<i class="fas fa-expand"></i>';
     }
 
     // ===== BUILD DIRECT VIDEO PLAYER =====
     function buildDirectPlayer(url, title) {
+      // Detect mime type
+      const isMp4  = /\.mp4(\?|#|$)/i.test(url);
+      const isWebm = /\.webm(\?|#|$)/i.test(url);
+      const mime   = isMp4 ? 'video/mp4' : isWebm ? 'video/webm' : 'video/mp4';
+
       return `
         <div class="av-wrapper" id="avWrapper">
           <video class="av-video" id="avVideo"
             playsinline webkit-playsinline
-            crossorigin="anonymous"
             preload="auto">
-            <source src="${url}" type="video/mp4"/>
+            <source src="${url}" type="${mime}"/>
             <source src="${url}"/>
           </video>
-
-          <div class="av-loader hidden" id="avLoader">
-            <div class="av-spin"></div>
-          </div>
-
+          <div class="av-loader hidden" id="avLoader"><div class="av-spin"></div></div>
           <div class="av-seek-left"  id="avSeekLeft"></div>
           <div class="av-seek-right" id="avSeekRight"></div>
-
-          <div class="av-tap-feedback left"  id="avTapLeft">
-            <i class="fas fa-backward"></i>
-          </div>
-          <div class="av-tap-feedback right" id="avTapRight">
-            <i class="fas fa-forward"></i>
-          </div>
-
+          <div class="av-tap-feedback left"  id="avTapLeft"><i class="fas fa-backward"></i></div>
+          <div class="av-tap-feedback right" id="avTapRight"><i class="fas fa-forward"></i></div>
           <div class="av-center-play visible" id="avCenterPlay">
             <div class="av-center-play-btn" id="avCenterBtn">
               <i class="fas fa-play"></i>
             </div>
           </div>
-
           <button class="av-fs-exit-btn" onclick="exitFullscreen()">
             <i class="fas fa-compress"></i>
           </button>
-
           <div class="av-controls" id="avControls">
             <div class="av-top-bar">
               <span class="av-top-title">${title}</span>
@@ -473,32 +426,27 @@
                   <div class="av-progress-fill"     id="avProgFill"></div>
                 </div>
                 <div class="av-progress-thumb" id="avProgThumb"></div>
-                <input type="range" class="av-seek" id="avSeekBar"
-                  min="0" max="100" step="0.01" value="0"/>
+                <input type="range" class="av-seek" id="avSeekBar" min="0" max="100" step="0.01" value="0"/>
               </div>
               <div class="av-ctrl-row">
                 <button class="av-ctrl-btn" id="avPlayBtn" onclick="togglePlay()">
                   <i class="fas fa-play"></i>
                 </button>
-                <button class="av-ctrl-btn sm" onclick="seekBy(-10)"
-                  title="-10s" style="position:relative">
+                <button class="av-ctrl-btn sm" onclick="seekBy(-10)" title="-10s" style="position:relative">
                   <i class="fas fa-rotate-left" style="font-size:11px"></i>
                   <span style="font-size:9px;position:absolute;margin-top:12px">10</span>
                 </button>
-                <button class="av-ctrl-btn sm" onclick="seekBy(10)"
-                  title="+10s" style="position:relative">
+                <button class="av-ctrl-btn sm" onclick="seekBy(10)" title="+10s" style="position:relative">
                   <i class="fas fa-rotate-right" style="font-size:11px"></i>
                   <span style="font-size:9px;position:absolute;margin-top:12px">10</span>
                 </button>
                 <span class="av-time" id="avTime">0:00 / 0:00</span>
                 <div class="av-spacer"></div>
-                <span class="av-speed-badge" id="avSpeedBadge"
-                  onclick="toggleSpeedMenu()">1x</span>
+                <span class="av-speed-badge" id="avSpeedBadge" onclick="toggleSpeedMenu()">1x</span>
                 <div style="position:relative">
                   <div class="av-speed-menu" id="avSpeedMenu">
-                    ${[0.5,0.75,1,1.25,1.5,2].map(s =>
-                      `<div class="av-speed-option ${s===1?'active':''}"
-                        onclick="setSpeed(${s})">${s}x</div>`
+                    ${[0.5,0.75,1,1.25,1.5,2].map(s=>
+                      `<div class="av-speed-option ${s===1?'active':''}" onclick="setSpeed(${s})">${s}x</div>`
                     ).join('')}
                   </div>
                 </div>
@@ -507,8 +455,7 @@
                 </button>
                 <div class="av-vol-wrap" id="avVolWrap">
                   <input type="range" class="av-vol-slider" id="avVolSlider"
-                    min="0" max="100" value="100"
-                    oninput="setVolume(this.value)"/>
+                    min="0" max="100" value="100" oninput="setVolume(this.value)"/>
                 </div>
                 <button class="av-ctrl-btn" id="avFsBtn" onclick="toggleFullscreen()">
                   <i class="fas fa-expand"></i>
@@ -519,28 +466,96 @@
         </div>`;
     }
 
+    // ===== BUILD MKV PLAYER (direct .mkv link) =====
+    // MKV not supported natively in mobile browsers.
+    // Show player attempt + download fallback.
+    function buildMkvPlayer(url, title) {
+      return `
+        <div class="av-wrapper" id="avWrapper">
+          <video class="av-video" id="avVideo"
+            playsinline webkit-playsinline preload="auto">
+            <source src="${url}" type="video/x-matroska"/>
+            <source src="${url}"/>
+          </video>
+          <div class="av-loader hidden" id="avLoader"><div class="av-spin"></div></div>
+          <div class="av-seek-left"  id="avSeekLeft"></div>
+          <div class="av-seek-right" id="avSeekRight"></div>
+          <div class="av-tap-feedback left"  id="avTapLeft"><i class="fas fa-backward"></i></div>
+          <div class="av-tap-feedback right" id="avTapRight"><i class="fas fa-forward"></i></div>
+          <div class="av-center-play visible" id="avCenterPlay">
+            <div class="av-center-play-btn" id="avCenterBtn">
+              <i class="fas fa-play"></i>
+            </div>
+          </div>
+          <button class="av-fs-exit-btn" onclick="exitFullscreen()">
+            <i class="fas fa-compress"></i>
+          </button>
+          <div class="av-controls" id="avControls">
+            <div class="av-top-bar">
+              <span class="av-top-title">${title}</span>
+            </div>
+            <div class="av-bottom-bar">
+              <div class="av-progress-wrap" id="avProgWrap">
+                <div class="av-progress-bg">
+                  <div class="av-progress-buffered" id="avBuffered"></div>
+                  <div class="av-progress-fill"     id="avProgFill"></div>
+                </div>
+                <div class="av-progress-thumb" id="avProgThumb"></div>
+                <input type="range" class="av-seek" id="avSeekBar" min="0" max="100" step="0.01" value="0"/>
+              </div>
+              <div class="av-ctrl-row">
+                <button class="av-ctrl-btn" id="avPlayBtn" onclick="togglePlay()">
+                  <i class="fas fa-play"></i>
+                </button>
+                <button class="av-ctrl-btn sm" onclick="seekBy(-10)" title="-10s" style="position:relative">
+                  <i class="fas fa-rotate-left" style="font-size:11px"></i>
+                  <span style="font-size:9px;position:absolute;margin-top:12px">10</span>
+                </button>
+                <button class="av-ctrl-btn sm" onclick="seekBy(10)" title="+10s" style="position:relative">
+                  <i class="fas fa-rotate-right" style="font-size:11px"></i>
+                  <span style="font-size:9px;position:absolute;margin-top:12px">10</span>
+                </button>
+                <span class="av-time" id="avTime">0:00 / 0:00</span>
+                <div class="av-spacer"></div>
+                <button class="av-ctrl-btn" id="avVolBtn" onclick="toggleMute()">
+                  <i class="fas fa-volume-high"></i>
+                </button>
+                <button class="av-ctrl-btn" id="avFsBtn" onclick="toggleFullscreen()">
+                  <i class="fas fa-expand"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mkv-banner">
+          <i class="fas fa-circle-info"></i>
+          <span>
+            <strong>.MKV file detected.</strong> If video doesn't play in browser,
+            upload it to Google Drive and use the Drive share link instead —
+            Drive transcodes MKV and plays it smoothly.
+            <a href="${url}" download
+              style="color:var(--accent);font-weight:600;margin-left:4px">
+              <i class="fas fa-download"></i> Download File
+            </a>
+          </span>
+        </div>`;
+    }
+
     // ===== BUILD IFRAME PLAYER =====
     function buildIframePlayer(url, title) {
       const src = getEmbedSrc(url);
       return `
         <div class="av-wrapper" id="avWrapper" style="aspect-ratio:16/9">
           <iframe class="av-iframe" id="avIframe"
-            src="${src}"
-            allowfullscreen
-            webkitallowfullscreen
-            mozallowfullscreen
+            src="${src}" allowfullscreen webkitallowfullscreen mozallowfullscreen
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
           ></iframe>
-
           <button class="av-fs-exit-btn" onclick="exitFullscreen()">
             <i class="fas fa-compress"></i>
           </button>
-
-          <button class="av-iframe-fs-btn" id="avFsBtn"
-            onclick="toggleFullscreen()" title="Fullscreen">
+          <button class="av-iframe-fs-btn" id="avFsBtn" onclick="toggleFullscreen()">
             <i class="fas fa-expand"></i>
           </button>
-
           <div class="av-controls iframe-mode" id="avControls">
             <div class="av-top-bar" style="padding-top:8px">
               <span class="av-top-title">${title}</span>
@@ -549,7 +564,7 @@
         </div>`;
     }
 
-    // ===== INIT DIRECT PLAYER EVENTS (FIXED) =====
+    // ===== INIT DIRECT PLAYER EVENTS =====
     function initDirectPlayer() {
       const video      = document.getElementById('avVideo');
       const wrapper    = document.getElementById('avWrapper');
@@ -565,10 +580,8 @@
       const timeEl     = document.getElementById('avTime');
       const volBtn     = document.getElementById('avVolBtn');
       const volWrap    = document.getElementById('avVolWrap');
-      const volSlider  = document.getElementById('avVolSlider');
       const tapLeft    = document.getElementById('avTapLeft');
       const tapRight   = document.getElementById('avTapRight');
-
       if (!video) return;
 
       function showControls() {
@@ -582,16 +595,13 @@
         }
       }
 
-      wrapper.addEventListener('touchstart', showControls, { passive: true });
+      wrapper.addEventListener('touchstart', showControls, { passive:true });
       wrapper.addEventListener('mousemove', showControls);
 
-      let lastTap  = 0;
-      let tapTimer = null;
+      let lastTap = 0, tapTimer = null;
 
       function handleWrapperTap(e) {
-        // Don't fire if tapping a button inside wrapper
-        if (e.target.closest('button, input, a, .av-ctrl-btn')) return;
-
+        if (e.target.closest('button,input,a,.av-ctrl-btn')) return;
         const now    = Date.now();
         const diff   = now - lastTap;
         const rect   = wrapper.getBoundingClientRect();
@@ -613,10 +623,9 @@
           }, 300);
         }
       }
-
       wrapper.addEventListener('click', handleWrapperTap);
 
-      // Center play button — direct click fix
+      // Center play button direct click
       centerBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         togglePlay();
@@ -630,15 +639,15 @@
       // Video events
       video.addEventListener('play', () => {
         playerState.playing = true;
-        playBtn.innerHTML    = '<i class="fas fa-pause"></i>';
-        centerBtn.innerHTML  = '<i class="fas fa-pause"></i>';
+        playBtn.innerHTML   = '<i class="fas fa-pause"></i>';
+        centerBtn.innerHTML = '<i class="fas fa-pause"></i>';
         centerPlay.classList.remove('visible');
         showControls();
       });
       video.addEventListener('pause', () => {
         playerState.playing = false;
-        playBtn.innerHTML    = '<i class="fas fa-play"></i>';
-        centerBtn.innerHTML  = '<i class="fas fa-play"></i>';
+        playBtn.innerHTML   = '<i class="fas fa-play"></i>';
+        centerBtn.innerHTML = '<i class="fas fa-play"></i>';
         centerPlay.classList.add('visible');
         controls.classList.remove('hidden');
         clearTimeout(playerState.controlsTimer);
@@ -649,27 +658,29 @@
         centerBtn.innerHTML = '<i class="fas fa-rotate-right"></i>';
         centerPlay.classList.add('visible');
       });
-      video.addEventListener('waiting', () => {
-        loader.classList.remove('hidden');
-      });
-      video.addEventListener('canplay', () => {
-        loader.classList.add('hidden');
-      });
-      video.addEventListener('loadedmetadata', () => {
-        loader.classList.add('hidden');
-      });
+      video.addEventListener('waiting', () => loader.classList.remove('hidden'));
+      video.addEventListener('canplay',  () => loader.classList.add('hidden'));
+      video.addEventListener('loadedmetadata', () => loader.classList.add('hidden'));
 
-      // Error handler
+      // Error: show helpful message + download button
       video.addEventListener('error', function() {
         loader.classList.add('hidden');
-        // Remove existing no-video div if any
         const existing = wrapper.querySelector('.av-no-video');
         if (existing) existing.remove();
+        const src = video.currentSrc || video.src || '';
         const errDiv = document.createElement('div');
         errDiv.className = 'av-no-video';
         errDiv.innerHTML = `
           <i class="fas fa-triangle-exclamation" style="color:#e50914"></i>
-          <span>Video failed to load.<br/>Check the URL or try another quality.</span>`;
+          <span>Video failed to load.<br/>
+            ${isMkv(src)
+              ? 'MKV files need Google Drive link to stream. Upload to Drive and use the share link.'
+              : 'Check the video URL or try a different quality.'
+            }
+          </span>
+          ${src ? `<a href="${src}" download class="av-download-btn">
+            <i class="fas fa-download"></i> Download File
+          </a>` : ''}`;
         wrapper.appendChild(errDiv);
       });
 
@@ -680,113 +691,97 @@
         progFill.style.width = pct + '%';
         progThumb.style.left = pct + '%';
         seekBar.value = pct;
-        timeEl.textContent =
-          `${fmtTime(video.currentTime)} / ${fmtTime(video.duration)}`;
+        timeEl.textContent = `${fmtTime(video.currentTime)} / ${fmtTime(video.duration)}`;
       });
 
-      // Buffered
       video.addEventListener('progress', () => {
         if (!video.duration || !video.buffered.length) return;
-        const pct =
-          (video.buffered.end(video.buffered.length - 1) / video.duration) * 100;
+        const pct = (video.buffered.end(video.buffered.length-1) / video.duration) * 100;
         buffered.style.width = pct + '%';
       });
 
-      // Seek bar
       seekBar.addEventListener('input', function() {
         if (!video.duration) return;
-        video.currentTime    = (this.value / 100) * video.duration;
+        video.currentTime    = (this.value/100) * video.duration;
         progFill.style.width = this.value + '%';
         progThumb.style.left = this.value + '%';
       });
 
       // Volume
-      volBtn.addEventListener('mouseenter', () => volWrap.classList.add('show'));
-      volBtn.addEventListener('touchstart', () =>
-        volWrap.classList.toggle('show'), { passive: true });
-      wrapper.addEventListener('mouseleave', () => {
-        volWrap.classList.remove('show');
-      });
+      volBtn.addEventListener('mouseenter', () => volWrap && volWrap.classList.add('show'));
+      volBtn.addEventListener('touchstart',  () => volWrap && volWrap.classList.toggle('show'), { passive:true });
+      wrapper.addEventListener('mouseleave', () => volWrap && volWrap.classList.remove('show'));
 
       // Auto-play
-      video.play().catch(() => {
-        centerPlay.classList.add('visible');
-      });
+      video.play().catch(() => centerPlay.classList.add('visible'));
     }
 
     // ===== PLAYER CONTROLS =====
     window.togglePlay = function() {
-      const video = document.getElementById('avVideo');
-      if (!video) return;
-      if (video.paused) video.play();
-      else video.pause();
+      const v = document.getElementById('avVideo');
+      if (!v) return;
+      v.paused ? v.play() : v.pause();
     };
-
     window.seekBy = function(sec) {
-      const video = document.getElementById('avVideo');
-      if (!video) return;
-      video.currentTime =
-        Math.max(0, Math.min(video.duration || 0, video.currentTime + sec));
+      const v = document.getElementById('avVideo');
+      if (!v) return;
+      v.currentTime = Math.max(0, Math.min(v.duration||0, v.currentTime+sec));
     };
-
     window.setVolume = function(val) {
-      const video = document.getElementById('avVideo');
-      if (!video) return;
-      const v = val / 100;
-      video.volume = v;
-      playerState.volume = v;
-      playerState.muted  = v === 0;
-      updateVolIcon(v);
-      const slider = document.getElementById('avVolSlider');
-      if (slider) slider.style.setProperty('--vol', val + '%');
+      const v = document.getElementById('avVideo');
+      if (!v) return;
+      const vol = val/100;
+      v.volume = vol; playerState.volume = vol; playerState.muted = vol===0;
+      updateVolIcon(vol);
+      const sl = document.getElementById('avVolSlider');
+      if (sl) sl.style.setProperty('--vol', val+'%');
     };
-
     window.toggleMute = function() {
-      const video = document.getElementById('avVideo');
-      if (!video) return;
-      video.muted = !video.muted;
-      playerState.muted = video.muted;
-      const volSlider = document.getElementById('avVolSlider');
-      if (volSlider) {
-        volSlider.value = video.muted ? 0 : playerState.volume * 100;
-      }
-      updateVolIcon(video.muted ? 0 : playerState.volume);
+      const v = document.getElementById('avVideo');
+      if (!v) return;
+      v.muted = !v.muted; playerState.muted = v.muted;
+      const sl = document.getElementById('avVolSlider');
+      if (sl) sl.value = v.muted ? 0 : playerState.volume*100;
+      updateVolIcon(v.muted ? 0 : playerState.volume);
     };
-
-    function updateVolIcon(v) {
+    function updateVolIcon(vol) {
       const btn = document.getElementById('avVolBtn');
       if (!btn) return;
-      if (v === 0)      btn.innerHTML = '<i class="fas fa-volume-xmark"></i>';
-      else if (v < 0.5) btn.innerHTML = '<i class="fas fa-volume-low"></i>';
+      if (vol===0)      btn.innerHTML = '<i class="fas fa-volume-xmark"></i>';
+      else if (vol<0.5) btn.innerHTML = '<i class="fas fa-volume-low"></i>';
       else              btn.innerHTML = '<i class="fas fa-volume-high"></i>';
     }
-
     window.toggleSpeedMenu = function() {
-      document.getElementById('avSpeedMenu').classList.toggle('show');
+      document.getElementById('avSpeedMenu')?.classList.toggle('show');
     };
-
     window.setSpeed = function(s) {
-      const video = document.getElementById('avVideo');
-      if (video) video.playbackRate = s;
+      const v = document.getElementById('avVideo');
+      if (v) v.playbackRate = s;
       playerState.speed = s;
-      document.getElementById('avSpeedBadge').textContent = s + 'x';
-      document.querySelectorAll('.av-speed-option').forEach(el => {
-        el.classList.toggle('active', parseFloat(el.textContent) === s);
-      });
-      document.getElementById('avSpeedMenu').classList.remove('show');
+      document.getElementById('avSpeedBadge').textContent = s+'x';
+      document.querySelectorAll('.av-speed-option').forEach(el =>
+        el.classList.toggle('active', parseFloat(el.textContent)===s));
+      document.getElementById('avSpeedMenu')?.classList.remove('show');
     };
-
     window.toggleFullscreen = function() {
-      const wrapper = document.getElementById('avWrapper');
-      if (!wrapper) return;
-      if (playerState.isFullscreen) exitFullscreen();
-      else enterFullscreen(wrapper);
+      const w = document.getElementById('avWrapper');
+      if (!w) return;
+      playerState.isFullscreen ? exitFullscreen() : enterFullscreen(w);
     };
 
     // ===== EPISODE DATA HELPERS =====
     function getEpisodeLangs(episode) {
-      if (episode.languages && Object.keys(episode.languages).length > 0)
-        return episode.languages;
+      // Primary: languages object from admin
+      if (episode.languages && Object.keys(episode.languages).length > 0) {
+        // Filter out languages with all empty URLs
+        const filtered = {};
+        Object.entries(episode.languages).forEach(([lang, qMap]) => {
+          if (qMap && Object.values(qMap).some(u => u && u.trim())) {
+            filtered[lang] = qMap;
+          }
+        });
+        if (Object.keys(filtered).length > 0) return filtered;
+      }
       if (episode.videoUrls) return { 'Japanese': episode.videoUrls };
       if (episode.videoUrl)  return { 'Japanese': { '720p': episode.videoUrl } };
       return {};
@@ -807,18 +802,17 @@
       for (const q of qualityOrder) {
         if (langData[q] && langData[q].trim()) return q;
       }
-      return Object.keys(langData)[0] || '';
+      const firstKey = Object.keys(langData || {})[0];
+      return firstKey || '';
     }
 
     function getTelegramData(episode, season) {
-      if (episode.telegramLinks &&
-        Object.values(episode.telegramLinks).some(v => v))
+      if (episode.telegramLinks && Object.values(episode.telegramLinks).some(v=>v))
         return { source:'episode', links: episode.telegramLinks };
       if (episode.telegramUrl)
         return { source:'episode', single: episode.telegramUrl };
       const packs = getSeasonPacks(season);
-      if (packs.length > 0)
-        return { source:'season', packs };
+      if (packs.length > 0) return { source:'season', packs };
       return null;
     }
 
@@ -827,162 +821,118 @@
       if (season.telegramPacks && season.telegramPacks.length > 0) {
         season.telegramPacks.forEach(p => packs.push(p));
       } else {
-        if (season.telegramLinks &&
-          Object.values(season.telegramLinks).some(v => v)) {
-          packs.push({
-            range: season.episodeRange || null,
-            links: season.telegramLinks
-          });
+        if (season.telegramLinks && Object.values(season.telegramLinks).some(v=>v)) {
+          packs.push({ range: season.episodeRange||null, links: season.telegramLinks });
         } else if (season.telegramUrl) {
-          packs.push({
-            range: season.episodeRange || null,
-            single: season.telegramUrl
-          });
+          packs.push({ range: season.episodeRange||null, single: season.telegramUrl });
         }
       }
       return packs;
     }
 
-    // ===== LOAD VIDEO URL INTO PLAYER =====
+    // ===== LOAD VIDEO URL (quality switch) =====
     function loadVideoUrl(url, quality, lang) {
       playerState.currentQuality = quality;
       playerState.currentLang    = lang;
-
-      document.querySelectorAll('.quality-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.quality === quality);
-      });
+      document.querySelectorAll('.quality-btn').forEach(btn =>
+        btn.classList.toggle('active', btn.dataset.quality === quality));
 
       const type          = detectUrlType(url);
       const playerSection = document.getElementById('playerSection');
-      const epTitle       = playerSection.dataset.title || '';
+      const epTitle       = playerSection?.dataset.title || '';
 
-      if (type === 'direct') {
+      if (type === 'direct' || type === 'mkv') {
         const video = document.getElementById('avVideo');
         if (video) {
-          const wasPlaying  = !video.paused;
-          const currentTime = video.currentTime;
-          // Remove old error overlay if any
-          const errDiv = document.getElementById('avWrapper')
-            ?.querySelector('.av-no-video');
-          if (errDiv) errDiv.remove();
+          const wasPlaying = !video.paused;
+          const ct = video.currentTime;
+          // Clear error overlay
+          document.getElementById('avWrapper')?.querySelector('.av-no-video')?.remove();
           video.src = url;
           video.load();
           if (wasPlaying) {
-            video.currentTime = currentTime;
-            video.play().catch(() => {});
+            video.currentTime = ct;
+            video.play().catch(()=>{});
           }
         }
       } else {
-        playerSection.innerHTML = buildIframePlayer(url, epTitle);
+        if (playerSection) playerSection.innerHTML = buildIframePlayer(url, epTitle);
       }
     }
 
     // ===== SWITCH LANGUAGE =====
     window.switchLanguage = function(lang, langDataStr) {
-      const langData = JSON.parse(langDataStr.replace(/&quot;/g, '"'));
-      document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.lang === lang);
-      });
+      const langData = JSON.parse(langDataStr.replace(/&quot;/g,'"'));
+      document.querySelectorAll('.lang-btn').forEach(btn =>
+        btn.classList.toggle('active', btn.dataset.lang===lang));
       const qContainer = document.getElementById('qualityBtnsContainer');
       if (!qContainer) return;
       const available = qualityOrder.filter(q => langData[q] && langData[q].trim());
       qContainer.innerHTML = available.map(q => {
-        const cfg = qualityConfig[q] || { label:q, color:'#888' };
+        const cfg = qualityConfig[q]||{label:q,color:'#888'};
         return `<button class="quality-btn" data-quality="${q}"
           onclick="loadVideoUrl('${langData[q].replace(/'/g,"\\'")}','${q}','${lang}')"
-          style="--qcolor:${cfg.color}">
-          ${cfg.label}
-        </button>`;
+          style="--qcolor:${cfg.color}">${cfg.label}</button>`;
       }).join('');
       const best = getBestQuality(langData);
-      if (best && langData[best]) {
-        setTimeout(() => loadVideoUrl(langData[best], best, lang), 50);
-      }
+      if (best && langData[best]) setTimeout(()=>loadVideoUrl(langData[best],best,lang),50);
     };
 
-    // ===== BUILD TELEGRAM SECTION =====
+    // ===== TELEGRAM HTML =====
     function buildTelegramHTML(tgData) {
       if (!tgData) return '';
-
       if (tgData.source === 'episode') {
-        if (tgData.single) {
-          return `
-            <div class="tg-section">
-              <div class="tg-label">
-                <i class="fab fa-telegram"></i>
-                <span>Watch on Telegram</span>
-              </div>
-              <a href="${tgData.single}" target="_blank"
-                rel="noopener" class="tg-btn-main">
-                <i class="fab fa-telegram"></i>
-                Open in Telegram
-              </a>
-            </div>`;
-        }
+        if (tgData.single) return `
+          <div class="tg-section">
+            <div class="tg-label"><i class="fab fa-telegram"></i><span>Watch on Telegram</span></div>
+            <a href="${tgData.single}" target="_blank" rel="noopener" class="tg-btn-main">
+              <i class="fab fa-telegram"></i> Open in Telegram
+            </a>
+          </div>`;
         if (tgData.links) {
-          const keys = qualityOrder.filter(q => tgData.links[q]);
+          const keys = qualityOrder.filter(q=>tgData.links[q]);
           if (!keys.length) return '';
           return `
             <div class="tg-section">
-              <div class="tg-label">
-                <i class="fab fa-telegram"></i>
-                <span>Watch on Telegram</span>
-              </div>
+              <div class="tg-label"><i class="fab fa-telegram"></i><span>Watch on Telegram</span></div>
               <div class="tg-quality-row">
-                ${keys.map(q => {
-                  const cfg = qualityConfig[q]||{label:q,color:'#2ca5e0'};
-                  return `<a href="${tgData.links[q]}" target="_blank"
-                    rel="noopener" class="tg-quality-btn"
-                    style="--tgcolor:${cfg.color}">
-                    <i class="fab fa-telegram"></i> ${cfg.label}
-                  </a>`;
+                ${keys.map(q=>{const cfg=qualityConfig[q]||{label:q,color:'#2ca5e0'};
+                  return `<a href="${tgData.links[q]}" target="_blank" rel="noopener"
+                    class="tg-quality-btn" style="--tgcolor:${cfg.color}">
+                    <i class="fab fa-telegram"></i> ${cfg.label}</a>`;
                 }).join('')}
               </div>
             </div>`;
         }
       }
-
-      if (tgData.source === 'season' && tgData.packs) {
-        return tgData.packs.map(pack => {
-          const rangeText = pack.range
-            ? `Episodes ${pack.range}` : 'Full Season';
-          if (pack.single) {
-            return `
-              <div class="tg-section">
-                <div class="tg-label">
-                  <i class="fab fa-telegram"></i>
-                  <span>Season Pack</span>
-                  <span style="font-size:11px;color:var(--text2);
-                    background:var(--bg3);padding:2px 8px;
-                    border-radius:10px;border:1px solid var(--border)">
-                    ${rangeText}
-                  </span>
-                </div>
-                <a href="${pack.single}" target="_blank" rel="noopener"
-                  class="tg-btn-main">
-                  <i class="fab fa-telegram"></i>
-                  Watch ${rangeText}
-                </a>
-              </div>`;
-          }
+      if (tgData.source==='season' && tgData.packs) {
+        return tgData.packs.map(pack=>{
+          const rangeText = pack.range ? `Episodes ${pack.range}` : 'Full Season';
+          if (pack.single) return `
+            <div class="tg-section">
+              <div class="tg-label">
+                <i class="fab fa-telegram"></i><span>Season Pack</span>
+                <span style="font-size:11px;color:var(--text2);background:var(--bg3);
+                  padding:2px 8px;border-radius:10px;border:1px solid var(--border)">
+                  ${rangeText}</span>
+              </div>
+              <a href="${pack.single}" target="_blank" rel="noopener" class="tg-btn-main">
+                <i class="fab fa-telegram"></i> Watch ${rangeText}
+              </a>
+            </div>`;
           if (pack.links) {
-            const keys = qualityOrder.filter(q => pack.links[q]);
+            const keys = qualityOrder.filter(q=>pack.links[q]);
             if (!keys.length) return '';
             return `
               <div class="tg-section">
                 <div class="tg-label">
-                  <i class="fab fa-telegram"></i>
-                  <span>Season Pack — ${rangeText}</span>
+                  <i class="fab fa-telegram"></i><span>Season Pack — ${rangeText}</span>
                 </div>
                 <div class="tg-quality-row">
-                  ${keys.map(q => {
-                    const cfg = qualityConfig[q]||{label:q,color:'#2ca5e0'};
-                    return `<a href="${pack.links[q]}" target="_blank"
-                      rel="noopener" class="tg-quality-btn"
-                      style="--tgcolor:${cfg.color}">
-                      <i class="fab fa-telegram"></i>
-                      ${cfg.label}
-                    </a>`;
+                  ${keys.map(q=>{const cfg=qualityConfig[q]||{label:q,color:'#2ca5e0'};
+                    return `<a href="${pack.links[q]}" target="_blank" rel="noopener"
+                      class="tg-quality-btn" style="--tgcolor:${cfg.color}">
+                      <i class="fab fa-telegram"></i> ${cfg.label}</a>`;
                   }).join('')}
                 </div>
               </div>`;
@@ -993,35 +943,28 @@
       return '';
     }
 
-    // ===== THUMBNAIL + TG (no video) =====
+    // ===== THUMBNAIL PLAYER (no video, only telegram) =====
     function buildThumbnailPlayerHTML(episode, tgData, tgHTML) {
       const thumb = episode.thumbnail || '';
-
-      // Get first available link for thumbnail click
       let firstLink = '#';
       if (tgData) {
-        if (tgData.source === 'episode') {
+        if (tgData.source==='episode') {
           firstLink = tgData.single || (tgData.links
-            ? (tgData.links[qualityOrder.find(q => tgData.links[q])] || '#')
-            : '#');
-        } else if (tgData.source === 'season' && tgData.packs && tgData.packs[0]) {
+            ? (tgData.links[qualityOrder.find(q=>tgData.links[q])]||'#') : '#');
+        } else if (tgData.source==='season' && tgData.packs?.[0]) {
           const p = tgData.packs[0];
           firstLink = p.single || (p.links
-            ? (p.links[qualityOrder.find(q => p.links[q])] || '#')
-            : '#');
+            ? (p.links[qualityOrder.find(q=>p.links[q])]||'#') : '#');
         }
       }
-
       return `
         <div class="tg-only-player">
           <a href="${firstLink}" target="_blank" rel="noopener"
             style="display:block;text-decoration:none">
             ${thumb
-              ? `<div class="tg-only-thumb"
-                  style="background-image:url('${thumb}')">
+              ? `<div class="tg-only-thumb" style="background-image:url('${thumb}')">
                   <div class="tg-only-overlay">
-                    <i class="fab fa-telegram"
-                      style="font-size:48px;color:#2ca5e0;opacity:0.9"></i>
+                    <i class="fab fa-telegram" style="font-size:48px;color:#2ca5e0;opacity:0.9"></i>
                     <div style="color:#fff;font-size:14px;font-weight:600;
                       margin-top:10px;text-shadow:0 2px 8px rgba(0,0,0,0.8)">
                       Watch on Telegram
@@ -1029,11 +972,8 @@
                   </div>
                 </div>`
               : `<div class="tg-only-thumb tg-only-thumb-empty">
-                  <i class="fab fa-telegram"
-                    style="font-size:56px;color:#2ca5e0"></i>
-                  <div style="color:#aaa;font-size:14px;margin-top:12px">
-                    Available on Telegram
-                  </div>
+                  <i class="fab fa-telegram" style="font-size:56px;color:#2ca5e0"></i>
+                  <div style="color:#aaa;font-size:14px;margin-top:12px">Available on Telegram</div>
                 </div>`}
           </a>
         </div>
@@ -1050,7 +990,7 @@
       const languages   = getEpisodeLangs(episode);
       const langKeys    = Object.keys(languages);
       const defaultLang = langKeys.includes('Japanese') ? 'Japanese' : langKeys[0] || '';
-      const initLD      = defaultLang ? languages[defaultLang] : {};
+      const initLD      = defaultLang ? (languages[defaultLang] || {}) : {};
       const initBest    = getBestQuality(initLD);
       const initQuals   = qualityOrder.filter(q => initLD[q] && initLD[q].trim());
 
@@ -1059,7 +999,7 @@
         const safe = JSON.stringify(languages[lang]).replace(/"/g,'&quot;');
         return `<button class="lang-btn ${lang===defaultLang?'active':''}"
           data-lang="${lang}"
-          onclick="switchLanguage('${lang}', '${safe}')">
+          onclick="switchLanguage('${lang}','${safe}')">
           ${flag} ${lang}
         </button>`;
       }).join('');
@@ -1069,9 +1009,7 @@
         return `<button class="quality-btn ${q===initBest?'active':''}"
           data-quality="${q}"
           onclick="loadVideoUrl('${(initLD[q]||'').replace(/'/g,"\\'")}','${q}','${defaultLang}')"
-          style="--qcolor:${cfg.color}">
-          ${cfg.label}
-        </button>`;
+          style="--qcolor:${cfg.color}">${cfg.label}</button>`;
       }).join('');
 
       const currIdx = allEpisodes.findIndex(e => e.id === episode.id);
@@ -1082,50 +1020,44 @@
         ? `<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${prevEp.id}"
               class="btn-outline" style="font-size:13px;text-decoration:none">
             <i class="fas fa-backward-step"></i> Prev</a>`
-        : `<button class="btn-outline" disabled
-              style="opacity:0.4;font-size:13px;cursor:not-allowed">
+        : `<button class="btn-outline" disabled style="opacity:0.4;font-size:13px;cursor:not-allowed">
             <i class="fas fa-backward-step"></i> Prev</button>`;
 
       const nextBtn = nextEp
         ? `<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${nextEp.id}"
               class="btn-primary" style="font-size:13px;text-decoration:none">
             Next <i class="fas fa-forward-step"></i></a>`
-        : `<button class="btn-primary" disabled
-              style="opacity:0.4;font-size:13px;cursor:not-allowed">
+        : `<button class="btn-primary" disabled style="opacity:0.4;font-size:13px;cursor:not-allowed">
             Next <i class="fas fa-forward-step"></i></button>`;
 
-      let topHTML  = '';
       const epTitle = `${anime.title} · ${season.title} · Ep ${episode.id}`;
+      let topHTML   = '';
+      let playerType = 'none'; // track for initDirectPlayer
 
       if (hasVid && initBest && initLD[initBest]) {
         const url  = initLD[initBest];
         const type = detectUrlType(url);
+        playerType = type;
 
-        topHTML = `
-          <div id="playerSection" data-title="${epTitle}">
-            ${type === 'direct'
-              ? buildDirectPlayer(url, epTitle)
-              : buildIframePlayer(url, epTitle)}
-          </div>`;
+        let playerHTML = '';
+        if (type === 'direct')        playerHTML = buildDirectPlayer(url, epTitle);
+        else if (type === 'mkv')      playerHTML = buildMkvPlayer(url, epTitle);
+        else                          playerHTML = buildIframePlayer(url, epTitle);
+
+        topHTML = `<div id="playerSection" data-title="${epTitle}">${playerHTML}</div>`;
 
         if (langKeys.length > 0 || initQuals.length > 1) {
           topHTML += `
             <div class="lang-quality-box">
               ${langKeys.length > 0 ? `
               <div class="lq-row">
-                <span class="lq-label">
-                  <i class="fas fa-language"></i> Language
-                </span>
+                <span class="lq-label"><i class="fas fa-language"></i> Language</span>
                 <div class="lang-btns">${langBtnsHTML}</div>
               </div>` : ''}
               ${initQuals.length > 0 ? `
               <div class="lq-row">
-                <span class="lq-label">
-                  <i class="fas fa-sliders"></i> Quality
-                </span>
-                <div class="quality-btns" id="qualityBtnsContainer">
-                  ${qualBtnsHTML}
-                </div>
+                <span class="lq-label"><i class="fas fa-sliders"></i> Quality</span>
+                <div class="quality-btns" id="qualityBtnsContainer">${qualBtnsHTML}</div>
               </div>` : ''}
             </div>`;
         }
@@ -1138,15 +1070,13 @@
           <div style="background:var(--card-bg);border:1px solid var(--border);
             border-radius:12px;padding:30px;text-align:center;
             color:var(--text2);margin-bottom:14px">
-            <i class="fas fa-film"
-              style="font-size:36px;opacity:0.3;margin-bottom:12px;display:block"></i>
+            <i class="fas fa-film" style="font-size:36px;opacity:0.3;margin-bottom:12px;display:block"></i>
             Video not available yet.
           </div>`;
       }
 
       document.getElementById('watchMain').innerHTML = `
         ${topHTML}
-
         <div class="ep-nav">
           ${prevBtn}
           <a href="anime.html?id=${animeId}" class="btn-outline"
@@ -1155,18 +1085,15 @@
           </a>
           ${nextBtn}
         </div>
-
         <div class="watch-info">
           <div class="anime-ep-label">
             ${anime.title} &middot; ${season.title} &middot; Episode ${episode.id}
           </div>
           <h2>${episode.title}</h2>
-          <div style="display:flex;gap:12px;margin-top:8px;
-            flex-wrap:wrap;align-items:center">
+          <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;align-items:center">
             ${episode.duration ? `
             <span class="info-chip" style="font-size:12px;color:var(--text2)">
-              <i class="fas fa-clock" style="color:var(--accent)"></i>
-              ${episode.duration}
+              <i class="fas fa-clock" style="color:var(--accent)"></i> ${episode.duration}
             </span>` : ''}
             ${langKeys.length > 0 ? `
             <span class="info-chip" style="font-size:12px;color:var(--text2)">
@@ -1181,59 +1108,49 @@
             </span>` : ''}
           </div>
           ${episode.description ? `
-          <p style="font-size:13px;color:var(--text2);
-            line-height:1.7;margin-top:10px">
+          <p style="font-size:13px;color:var(--text2);line-height:1.7;margin-top:10px">
             ${episode.description}
           </p>` : ''}
         </div>
-
         <div style="margin-top:24px">
-          <h3 style="font-size:15px;font-weight:700;
-            margin-bottom:12px;color:var(--text)">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text)">
             ${season.title} — All Episodes
           </h3>
           <div class="episodes-list" id="otherEps"></div>
-        </div>
-      `;
+        </div>`;
 
-      // Init direct player after DOM render
-      if (hasVid && initBest && initLD[initBest]) {
-        const type = detectUrlType(initLD[initBest]);
-        if (type === 'direct') {
-          setTimeout(initDirectPlayer, 100);
-        }
+      // Init direct/mkv player after DOM
+      if (hasVid && initBest && initLD[initBest] &&
+          (playerType === 'direct' || playerType === 'mkv')) {
+        setTimeout(initDirectPlayer, 100);
       }
 
       // Other episodes list
       const otherEps = document.getElementById('otherEps');
       allEpisodes.forEach(ep => {
-        const isActive  = ep.id === episode.id;
-        const epHasVid  = hasVideoContent(ep);
-        const epTgData  = getTelegramData(ep, season);
-        const epHasTg   = !!epTgData;
-        const epLangs   = getEpisodeLangs(ep);
-        const epLC      = Object.keys(epLangs).length;
+        const isActive = ep.id === episode.id;
+        const epHasVid = hasVideoContent(ep);
+        const epTgData = getTelegramData(ep, season);
+        const epHasTg  = !!epTgData;
+        const epLangs  = getEpisodeLangs(ep);
+        const epLC     = Object.keys(epLangs).length;
 
         const item = document.createElement('div');
         item.className = 'episode-item';
-        if (isActive) {
-          item.style.borderColor = 'var(--accent)';
-          item.style.background  = 'var(--bg3)';
-        }
+        if (isActive) { item.style.borderColor='var(--accent)'; item.style.background='var(--bg3)'; }
+
         item.innerHTML = `
           <div class="ep-thumb" style="position:relative;overflow:hidden">
             <img src="${ep.thumbnail||''}" alt="Ep ${ep.id}"
-              style="width:100%;height:100%;object-fit:cover;
-                border-radius:8px;background:var(--bg3)"
+              style="width:100%;height:100%;object-fit:cover;border-radius:8px;background:var(--bg3)"
               onerror="this.style.background='var(--bg3)'"/>
             <div class="ep-play-icon"
               style="${isActive?'opacity:1;background:rgba(200,119,64,0.75)':''}">
               <i class="fas fa-${isActive?'pause':'play'}"></i>
             </div>
             ${epHasTg&&!epHasVid ? `
-            <div style="position:absolute;bottom:4px;right:4px;
-              background:#2ca5e0;border-radius:4px;padding:2px 6px;
-              font-size:9px;color:#fff;font-weight:700">
+            <div style="position:absolute;bottom:4px;right:4px;background:#2ca5e0;
+              border-radius:4px;padding:2px 6px;font-size:9px;color:#fff;font-weight:700">
               <i class="fab fa-telegram"></i>
             </div>` : ''}
           </div>
@@ -1242,26 +1159,24 @@
               Ep ${ep.id} ${isActive?'&#9654; Playing':''}
             </div>
             <div class="ep-title">${ep.title}</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;
-              margin-top:3px;align-items:center">
-              ${ep.duration ? `
-              <span class="ep-duration">
-                <i class="fas fa-clock" style="font-size:9px"></i>
-                ${ep.duration}
-              </span>` : ''}
-              ${epHasVid&&epLC>0 ? `
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:3px;align-items:center">
+              ${ep.duration?`<span class="ep-duration">
+                <i class="fas fa-clock" style="font-size:9px"></i> ${ep.duration}
+              </span>`:''}
+              ${epHasVid&&epLC>0?`
               <span style="font-size:10px;color:var(--accent);font-weight:600">
                 <i class="fas fa-play-circle"></i> ${epLC} lang${epLC>1?'s':''}
-              </span>` : ''}
-              ${epHasTg ? `
+              </span>`:''}
+              ${epHasTg?`
               <span style="font-size:10px;color:#2ca5e0;font-weight:600">
                 <i class="fab fa-telegram"></i>
                 ${epTgData.source==='season'?'Season':'TG'}
-              </span>` : ''}
-              ${!epHasVid&&!epHasTg ? `
-              <span style="font-size:10px;color:#888">Coming soon</span>` : ''}
+              </span>`:''}
+              ${!epHasVid&&!epHasTg?`
+              <span style="font-size:10px;color:#888">Coming soon</span>`:''}
             </div>
           </div>`;
+
         if (!isActive && (epHasVid||epHasTg)) {
           item.style.cursor = 'pointer';
           item.addEventListener('click', () => {
@@ -1292,9 +1207,8 @@
         return;
       }
       const anime   = { ...doc.data(), firestoreId: doc.id };
-      const season  = anime.seasons && anime.seasons.find(s => s.id === seasonId);
-      const episode = season && season.episodes &&
-        season.episodes.find(e => e.id === epId);
+      const season  = anime.seasons?.find(s => s.id === seasonId);
+      const episode = season?.episodes?.find(e => e.id === epId);
 
       if (!season || !episode) {
         document.getElementById('watchMain').innerHTML = `
@@ -1308,6 +1222,17 @@
       }
       document.title = `${episode.title} — Anime Verse`;
       renderPlayer(anime, season, episode, season.episodes, seasonId, animeId);
+    }).catch(err => {
+      document.getElementById('watchMain').innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-wifi" style="opacity:0.4"></i>
+          <h2>Failed to load</h2>
+          <p style="color:var(--text2);font-size:13px">${err.message}</p>
+          <a href="javascript:location.reload()"
+            style="color:var(--accent);margin-top:10px;display:inline-block">
+            Retry
+          </a>
+        </div>`;
     });
   </script>
 </body>
