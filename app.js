@@ -2,6 +2,14 @@
 // ANIME VERSE — Main App Logic (Firebase)
 // ============================================
 
+function goToProfile() {
+  if (currentUser) {
+    window.location.href = 'profile.html';
+  } else {
+    openAuthModal();
+  }
+}
+
 let allAnimeCache = [];
 let currentUser   = null;
 
