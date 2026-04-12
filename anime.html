@@ -94,7 +94,7 @@
         return null;
       } catch(e) {
         console.error('getAnime error:', e);
-        showError(e.message || 'Firebase se data load nahi hua.');
+        showError(e.message || 'Failed to load data from Firebase.');
         return null;
       }
     }
@@ -271,41 +271,67 @@
       }
 
       container.innerHTML = `${packsHTML}${episodesHTML}`;
+
       if (episodes.length === 0) return;
 
       const list = document.getElementById('episodesList');
       episodes.forEach(ep => {
-        const hasVid    = hasVideoContent(ep);
-        const hasEpTg   = hasEpisodeTelegram(ep);
+        const hasVid  = hasVideoContent(ep);
+        const hasEpTg = hasEpisodeTelegram(ep);
+
+        // Episode is clickable if it has video OR its own Telegram link
+        // Season pack is shown separately — individual episodes need their own content
         const clickable = hasVid || hasEpTg;
 
+        // Status badge
         let statusBadge = '';
         if (hasVid) {
-          statusBadge = `<span style="font-size:10px;color:var(--accent);font-weight:600">
-            <i class="fas fa-play-circle"></i> Watch</span>`;
+          statusBadge = `
+            <span style="font-size:10px;color:var(--accent);font-weight:600">
+              <i class="fas fa-play-circle"></i> Watch
+            </span>`;
         } else if (hasEpTg) {
-          statusBadge = `<span style="font-size:10px;color:#2ca5e0;font-weight:600">
-            <i class="fab fa-telegram"></i> Telegram</span>`;
+          statusBadge = `
+            <span style="font-size:10px;color:#2ca5e0;font-weight:600">
+              <i class="fab fa-telegram"></i> Telegram
+            </span>`;
         } else if (hasPacks) {
-          statusBadge = `<span style="font-size:10px;color:#2ca5e0;font-weight:600">
-            <i class="fab fa-telegram"></i> Season Pack</span>`;
+          statusBadge = `
+            <span style="font-size:10px;color:#2ca5e0;font-weight:600">
+              <i class="fab fa-telegram"></i> Season Pack
+            </span>`;
         } else {
-          statusBadge = `<span style="font-size:10px;color:#888">
-            <i class="fas fa-clock"></i> Coming soon</span>`;
+          statusBadge = `
+            <span style="font-size:10px;color:#888">
+              <i class="fas fa-clock"></i> Coming soon
+            </span>`;
         }
 
+        // Thumbnail overlay icon
         let thumbIcon = '';
         if (hasVid) {
-          thumbIcon = `<div class="ep-play-icon"><i class="fas fa-play"></i></div>`;
+          thumbIcon = `
+            <div class="ep-play-icon">
+              <i class="fas fa-play"></i>
+            </div>`;
         } else if (hasEpTg) {
-          thumbIcon = `<div class="ep-play-icon" style="background:rgba(44,165,224,0.7)">
-            <i class="fab fa-telegram"></i></div>`;
+          thumbIcon = `
+            <div class="ep-play-icon"
+              style="background:rgba(44,165,224,0.7)">
+              <i class="fab fa-telegram"></i>
+            </div>`;
         } else if (hasPacks) {
-          thumbIcon = `<div class="ep-play-icon" style="background:rgba(44,165,224,0.3)">
-            <i class="fab fa-telegram" style="font-size:14px"></i></div>`;
+          thumbIcon = `
+            <div class="ep-play-icon"
+              style="background:rgba(44,165,224,0.3)">
+              <i class="fab fa-telegram" style="font-size:14px"></i>
+            </div>`;
         } else {
-          thumbIcon = `<div class="ep-play-icon" style="background:rgba(0,0,0,0.4);opacity:0.5">
-            <i class="fas fa-lock" style="font-size:14px"></i></div>`;
+          thumbIcon = `
+            <div class="ep-play-icon"
+              style="background:rgba(0,0,0,0.4);opacity:0.5">
+              <i class="fas fa-lock" style="font-size:14px"></i>
+            </div>`;
         }
 
         const item = document.createElement('div');
@@ -333,7 +359,8 @@
               </span>` : ''}
               ${statusBadge}
             </div>
-          </div>`;
+          </div>
+        `;
 
         if (clickable) {
           item.addEventListener('click', () => {
@@ -453,14 +480,14 @@
     const animeId = params.get('id');
 
     if (!animeId) {
-      showError('Anime ID nahi mila. Home se kisi anime pe click karo.');
+      showError('Anime ID not found. Please click on an anime from the home page.');
     } else {
       getAnime(animeId).then(anime => {
         if (anime) {
           document.title = `${anime.title} — Anime Verse`;
           renderDetail(anime);
         } else {
-          showError('Anime nahi mila ya load nahi hua.');
+          showError('Anime not found or failed to load.');
         }
       });
     }
