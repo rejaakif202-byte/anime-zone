@@ -40,12 +40,12 @@
   <script>
     // ===== THEME =====
     function toggleTheme() {
-      const html   = document.documentElement;
-      const btn    = document.getElementById('themeBtn');
-      const isDark = html.getAttribute('data-theme') === 'dark';
-      html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-      btn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-      localStorage.setItem('av_theme', isDark ? 'light' : 'dark');
+      const html = document.documentElement;
+      const btn  = document.getElementById('themeBtn');
+      const dark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', dark ? 'light' : 'dark');
+      btn.innerHTML = dark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+      localStorage.setItem('av_theme', dark ? 'light' : 'dark');
     }
     function loadTheme() {
       const saved = localStorage.getItem('av_theme') || 'dark';
@@ -55,12 +55,21 @@
         ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
     }
 
+    // ===== QUALITY CONFIG =====
+    const qualityOrder  = ['4k','1080p','720p','480p'];
+    const qualityConfig = {
+      '480p':  { label:'480p SD',   color:'#666' },
+      '720p':  { label:'720p HD',   color:'#2a6dd9' },
+      '1080p': { label:'1080p FHD', color:'#27ae60' },
+      '4k':    { label:'4K UHD',    color:'#C87740' },
+    };
+
     // ===== FIREBASE =====
     async function getAnime(id) {
       try {
         const doc = await db.collection('anime').doc(id).get();
         if (doc.exists) return { ...doc.data(), firestoreId: doc.id };
-      } catch(e) {}
+      } catch(e) { console.error(e); }
       return null;
     }
 
@@ -97,82 +106,44 @@
       }
     }
 
-    // ===== QUALITY CONFIG =====
-    const qualityOrder = ['4k', '1080p', '720p', '480p'];
-    const qualityConfig = {
-      '480p':  { label: '480p SD',   color: '#666' },
-      '720p':  { label: '720p HD',   color: '#2a6dd9' },
-      '1080p': { label: '1080p FHD', color: '#27ae60' },
-      '4k':    { label: '4K UHD',    color: '#C87740' },
-    };
-
-    // ===== BUILD SEASON TELEGRAM PACK HTML =====
-    function buildSeasonTgPackHTML(season, animeId) {
-      const hasTgLinks = season.telegramLinks &&
-        Object.values(season.telegramLinks).some(v => v && v.trim());
-      const hasTgSingle = season.telegramUrl && season.telegramUrl.trim();
-
-      if (!hasTgLinks && !hasTgSingle) return '';
-
-      const epCount  = (season.episodes || []).length;
-      const range    = season.episodeRange
-        ? `Episodes ${season.episodeRange}`
-        : epCount > 0 ? `${epCount} Episodes` : 'Full Season';
-
-      let btnHTML = '';
-
-      if (hasTgSingle) {
-        btnHTML = `
-          <a href="${season.telegramUrl}" target="_blank" rel="noopener"
-            class="season-tg-btn-main">
-            <i class="fab fa-telegram"></i>
-            Watch ${range} on Telegram
-          </a>`;
-      } else if (hasTgLinks) {
-        const keys = qualityOrder.filter(q =>
-          season.telegramLinks[q] && season.telegramLinks[q].trim()
-        );
-        btnHTML = `
-          <div class="season-tg-quality-row">
-            ${keys.map(q => {
-              const cfg = qualityConfig[q] || { label: q, color: '#2ca5e0' };
-              return `
-                <a href="${season.telegramLinks[q]}"
-                  target="_blank" rel="noopener"
-                  class="season-tg-quality-btn"
-                  style="--tgcolor:${cfg.color}">
-                  <i class="fab fa-telegram"></i>
-                  ${cfg.label}
-                </a>`;
-            }).join('')}
-          </div>`;
+    // ===== GET SEASON PACKS =====
+    function getSeasonPacks(season) {
+      const packs = [];
+      // New format: telegramPacks array
+      if (season.telegramPacks && season.telegramPacks.length > 0) {
+        season.telegramPacks.forEach(p => {
+          if (p && (p.single || (p.links && Object.values(p.links).some(v=>v)))) {
+            packs.push(p);
+          }
+        });
+        return packs;
       }
-
-      return `
-        <div class="season-tg-pack">
-          <div class="season-tg-pack-header">
-            <div class="season-tg-pack-icon">
-              <i class="fab fa-telegram"></i>
-            </div>
-            <div>
-              <div class="season-tg-pack-title">
-                ${season.title} — Telegram Pack
-              </div>
-              <div class="season-tg-pack-sub">
-                <i class="fas fa-film" style="font-size:10px"></i>
-                ${range} available
-              </div>
-            </div>
-          </div>
-          ${btnHTML}
-        </div>`;
+      // Legacy: single telegramLinks object
+      if (season.telegramLinks &&
+        Object.values(season.telegramLinks).some(v => v && v.trim())) {
+        packs.push({
+          range: season.episodeRange || null,
+          links: season.telegramLinks
+        });
+        return packs;
+      }
+      // Legacy: single telegramUrl
+      if (season.telegramUrl && season.telegramUrl.trim()) {
+        packs.push({
+          range: season.episodeRange || null,
+          single: season.telegramUrl
+        });
+        return packs;
+      }
+      return packs;
     }
 
     // ===== HAS VIDEO =====
     function hasVideoContent(episode) {
+      if (!episode) return false;
       const langs = episode.languages || {};
-      if (Object.values(langs).some(qMap =>
-        qMap && Object.values(qMap).some(u => u && u.trim())
+      if (Object.values(langs).some(qm =>
+        qm && Object.values(qm).some(u => u && u.trim())
       )) return true;
       if (episode.videoUrls && Object.values(episode.videoUrls).some(u => u && u.trim()))
         return true;
@@ -180,24 +151,96 @@
       return false;
     }
 
+    function hasEpisodeTelegram(episode) {
+      if (!episode) return false;
+      if (episode.telegramLinks &&
+        Object.values(episode.telegramLinks).some(v => v)) return true;
+      if (episode.telegramUrl && episode.telegramUrl.trim()) return true;
+      return false;
+    }
+
+    // ===== BUILD SEASON TELEGRAM PACK HTML =====
+    function buildSeasonPacksHTML(season) {
+      const packs = getSeasonPacks(season);
+      if (packs.length === 0) return '';
+
+      return packs.map((pack, idx) => {
+        const epCount  = (season.episodes || []).length;
+        const range    = pack.range
+          ? `Episodes ${pack.range}`
+          : epCount > 0 ? `${epCount} Episodes` : 'Full Season';
+
+        let btnHTML = '';
+        if (pack.single) {
+          btnHTML = `
+            <a href="${pack.single}" target="_blank" rel="noopener"
+              class="season-tg-btn-main">
+              <i class="fab fa-telegram"></i>
+              Watch ${range} on Telegram
+            </a>`;
+        } else if (pack.links) {
+          const keys = qualityOrder.filter(q =>
+            pack.links[q] && pack.links[q].trim()
+          );
+          if (keys.length === 0) return '';
+          btnHTML = `
+            <div class="season-tg-quality-row">
+              ${keys.map(q => {
+                const cfg = qualityConfig[q] || { label:q, color:'#2ca5e0' };
+                return `
+                  <a href="${pack.links[q]}"
+                    target="_blank" rel="noopener"
+                    class="season-tg-quality-btn"
+                    style="--tgcolor:${cfg.color}">
+                    <i class="fab fa-telegram"></i>
+                    ${cfg.label}
+                  </a>`;
+              }).join('')}
+            </div>`;
+        }
+
+        if (!btnHTML) return '';
+
+        return `
+          <div class="season-tg-pack" style="${idx > 0 ? 'margin-top:10px' : ''}">
+            <div class="season-tg-pack-header">
+              <div class="season-tg-pack-icon">
+                <i class="fab fa-telegram"></i>
+              </div>
+              <div>
+                <div class="season-tg-pack-title">
+                  ${packs.length > 1
+                    ? `Pack ${idx+1}: ${range}`
+                    : `${season.title} — Telegram Pack`}
+                </div>
+                <div class="season-tg-pack-sub">
+                  <i class="fas fa-film" style="font-size:10px"></i>
+                  ${range} available
+                </div>
+              </div>
+            </div>
+            ${btnHTML}
+          </div>`;
+      }).join('');
+    }
+
     // ===== SWITCH SEASON =====
     function switchSeason(animeId, seasonIndex, seasons) {
       document.querySelectorAll('.season-tab').forEach((t, i) => {
         t.classList.toggle('active', i === seasonIndex);
       });
-      renderSeasonContent(animeId, seasons[seasonIndex], seasons);
+      renderSeasonContent(animeId, seasons[seasonIndex]);
     }
 
     // ===== RENDER SEASON CONTENT =====
-    function renderSeasonContent(animeId, season, allSeasons) {
+    function renderSeasonContent(animeId, season) {
       const container = document.getElementById('seasonContent');
       const episodes  = season.episodes || [];
+      const packsHTML = buildSeasonPacksHTML(season);
+      const hasPacks  = packsHTML.trim().length > 0;
 
-      // Telegram pack HTML
-      const tgPackHTML = buildSeasonTgPackHTML(season, animeId);
-
-      // Episodes section
       let episodesHTML = '';
+
       if (episodes.length > 0) {
         episodesHTML = `
           <div class="episodes-section-title">
@@ -206,29 +249,74 @@
             Watch Episodes
           </div>
           <div class="episodes-list" id="episodesList"></div>`;
-      } else if (!tgPackHTML) {
+      } else if (!hasPacks) {
         episodesHTML = `
-          <div class="empty-msg" style="padding:30px 0">
-            No episodes added yet.
+          <div class="empty-msg" style="padding:30px 0;text-align:center">
+            No content added yet.
           </div>`;
       }
 
-      container.innerHTML = `
-        ${tgPackHTML}
-        ${episodesHTML}`;
+      container.innerHTML = `${packsHTML}${episodesHTML}`;
 
       // Render individual episodes
       if (episodes.length > 0) {
         const list = document.getElementById('episodesList');
         episodes.forEach(ep => {
-          const hasVid = hasVideoContent(ep);
-          const hasTg  = !!(ep.telegramLinks || ep.telegramUrl);
-          const isClickable = hasVid || hasTg;
+          const hasVid   = hasVideoContent(ep);
+          const hasEpTg  = hasEpisodeTelegram(ep);
+          // Episode is clickable if it has video OR its own TG link
+          // Season pack doesn't make individual episodes clickable
+          const clickable = hasVid || hasEpTg;
 
           const item = document.createElement('div');
           item.className = 'episode-item';
-          if (!isClickable) item.style.opacity = '0.6';
-          else item.style.cursor = 'pointer';
+          if (clickable) item.style.cursor = 'pointer';
+          else item.style.opacity = '0.7';
+
+          // Status indicator
+          let statusBadge = '';
+          if (hasVid) {
+            statusBadge = `
+              <span style="font-size:10px;color:var(--accent);font-weight:600">
+                <i class="fas fa-play-circle"></i> Watch
+              </span>`;
+          } else if (hasEpTg) {
+            statusBadge = `
+              <span style="font-size:10px;color:#2ca5e0;font-weight:600">
+                <i class="fab fa-telegram"></i> Telegram
+              </span>`;
+          } else if (hasPacks) {
+            // Season pack available — show TG badge
+            statusBadge = `
+              <span style="font-size:10px;color:#2ca5e0;font-weight:600">
+                <i class="fab fa-telegram"></i> Season Pack
+              </span>`;
+          } else {
+            statusBadge = `
+              <span style="font-size:10px;color:#888">
+                <i class="fas fa-clock"></i> Coming soon
+              </span>`;
+          }
+
+          // Thumbnail overlay icon
+          let thumbIcon = '';
+          if (hasVid) {
+            thumbIcon = `
+              <div class="ep-play-icon">
+                <i class="fas fa-play"></i>
+              </div>`;
+          } else if (hasEpTg) {
+            thumbIcon = `
+              <div class="ep-play-icon"
+                style="background:rgba(44,165,224,0.6)">
+                <i class="fab fa-telegram"></i>
+              </div>`;
+          } else {
+            thumbIcon = `
+              <div class="ep-play-icon" style="background:rgba(0,0,0,0.4)">
+                <i class="fas fa-lock" style="font-size:14px"></i>
+              </div>`;
+          }
 
           item.innerHTML = `
             <div class="ep-thumb" style="position:relative;overflow:hidden">
@@ -236,15 +324,7 @@
                 style="width:100%;height:100%;object-fit:cover;
                   border-radius:8px;background:var(--bg3);display:block"
                 onerror="this.style.background='var(--bg3)'"/>
-              <div class="ep-play-icon">
-                <i class="fas fa-${isClickable ? 'play' : 'lock'}"></i>
-              </div>
-              ${hasTg && !hasVid ? `
-              <div style="position:absolute;bottom:4px;right:4px;
-                background:#2ca5e0;border-radius:4px;padding:2px 6px;
-                font-size:9px;color:#fff;font-weight:700">
-                <i class="fab fa-telegram"></i>
-              </div>` : ''}
+              ${thumbIcon}
             </div>
             <div class="ep-info">
               <div class="ep-num">Episode ${ep.id}</div>
@@ -256,23 +336,12 @@
                   <i class="fas fa-clock" style="font-size:9px"></i>
                   ${ep.duration}
                 </span>` : ''}
-                ${hasVid ? `
-                <span style="font-size:10px;color:var(--accent);font-weight:600">
-                  <i class="fas fa-play-circle"></i> Watch
-                </span>` : ''}
-                ${hasTg ? `
-                <span style="font-size:10px;color:#2ca5e0;font-weight:600">
-                  <i class="fab fa-telegram"></i> Telegram
-                </span>` : ''}
-                ${!hasVid && !hasTg ? `
-                <span style="font-size:10px;color:#888">
-                  <i class="fas fa-clock"></i> Coming soon
-                </span>` : ''}
+                ${statusBadge}
               </div>
             </div>
           `;
 
-          if (isClickable) {
+          if (clickable) {
             item.addEventListener('click', () => {
               window.location.href =
                 `watch.html?id=${animeId}&season=${season.id}&ep=${ep.id}`;
@@ -290,9 +359,11 @@
       let isSaved   = false;
 
       if (user) {
-        const doc = await db.collection('users').doc(user.uid).get();
-        const wl  = doc.exists ? (doc.data().watchlist || []) : [];
-        isSaved   = wl.includes(animeId);
+        try {
+          const doc = await db.collection('users').doc(user.uid).get();
+          const wl  = doc.exists ? (doc.data().watchlist || []) : [];
+          isSaved   = wl.includes(animeId);
+        } catch(e) {}
       } else {
         const local = JSON.parse(localStorage.getItem('av_mylist') || '[]');
         isSaved = local.includes(animeId);
@@ -300,30 +371,31 @@
 
       const seasons = anime.seasons || [];
 
-      // Find first watchable episode for "Watch Now"
+      // Find first watchable episode
       let watchUrl = '#';
-      for (const season of seasons) {
+      outer: for (const season of seasons) {
         const eps = season.episodes || [];
         for (const ep of eps) {
-          if (hasVideoContent(ep) || ep.telegramLinks || ep.telegramUrl) {
+          if (hasVideoContent(ep) || hasEpisodeTelegram(ep)) {
             watchUrl = `watch.html?id=${animeId}&season=${season.id}&ep=${ep.id}`;
-            break;
+            break outer;
           }
         }
-        if (watchUrl !== '#') break;
-        // If season has TG but no episodes, point to first ep if exists
-        if ((season.telegramLinks || season.telegramUrl) && eps.length > 0) {
+        // Season has TG packs but episodes may not be individually watchable
+        // Still link to first episode if exists
+        const packs = getSeasonPacks(season);
+        if (packs.length > 0 && eps.length > 0) {
           watchUrl = `watch.html?id=${animeId}&season=${season.id}&ep=${eps[0].id}`;
           break;
         }
       }
 
-      const genres    = (anime.genre || []).map(g =>
+      const genres = (anime.genre || []).map(g =>
         `<span class="genre-tag">${g}</span>`).join('');
 
       const seasonTabs = seasons.map((s, i) => `
         <button class="season-tab ${i === 0 ? 'active' : ''}"
-          onclick="switchSeason('${animeId}', ${i}, currentSeasons)">
+          onclick="switchSeason('${animeId}', ${i}, window.currentSeasons)">
           ${s.title}
         </button>`).join('');
 
@@ -362,7 +434,8 @@
 
           <div class="action-btns">
             <a href="${watchUrl}" class="btn-primary"
-              style="text-decoration:none;${watchUrl === '#' ? 'opacity:0.5;pointer-events:none' : ''}">
+              style="text-decoration:none;${watchUrl === '#'
+                ? 'opacity:0.5;pointer-events:none' : ''}">
               <i class="fas fa-play"></i> Watch Now
             </a>
             <button class="btn-outline ${isSaved ? 'saved' : ''}"
@@ -375,29 +448,27 @@
         </div>
 
         <!-- SEASON TABS -->
-        <div class="seasons-tabs" id="seasonsTabs">
+        ${seasons.length > 0 ? `
+        <div class="seasons-tabs">
           ${seasonTabs}
-        </div>
+        </div>` : ''}
 
-        <!-- SEASON CONTENT (TG Pack + Episodes) -->
-        <div id="seasonContent"></div>
+        <!-- SEASON CONTENT -->
+        <div id="seasonContent" style="margin-top:4px"></div>
       `;
 
-      // Store seasons globally for tab switching
       window.currentSeasons = seasons;
 
-      // Render first season
       if (seasons.length > 0) {
-        renderSeasonContent(animeId, seasons[0], seasons);
+        renderSeasonContent(animeId, seasons[0]);
       } else {
         document.getElementById('seasonContent').innerHTML =
-          '<p class="empty-msg" style="padding:30px 0">No seasons added yet.</p>';
+          '<p class="empty-msg" style="padding:30px 0;text-align:center">No seasons added yet.</p>';
       }
     }
 
     // ===== INIT =====
     loadTheme();
-
     const params  = new URLSearchParams(window.location.search);
     const animeId = params.get('id');
 
@@ -411,7 +482,7 @@
             <i class="fas fa-exclamation-circle"></i>
             <h2>Anime not found!</h2>
             <p><a href="index.html"
-              style="color:var(--accent)">Go back home</a></p>
+              style="color:var(--accent)">Go home</a></p>
           </div>`;
       }
     });
