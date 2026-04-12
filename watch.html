@@ -24,46 +24,33 @@
     </div>
   </header>
 
-  <!-- EPISODE SELECTOR PAGE -->
-  <div id="episodeSelectorPage" class="hidden"
-    style="position:fixed;inset:0;background:var(--bg);
-      z-index:200;overflow:hidden;display:flex;flex-direction:column">
-
-    <!-- Selector Header -->
-    <div style="display:flex;align-items:center;gap:12px;
-      padding:14px 16px;border-bottom:1px solid var(--border);
-      background:var(--header-bg);flex-shrink:0">
-      <button class="icon-btn" onclick="closeEpisodeSelector()">
+  <!-- EPISODE SELECTOR -->
+  <div id="episodeSelectorPage"
+    style="display:none;position:fixed;inset:0;background:var(--bg);
+      z-index:200;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;
+      border-bottom:1px solid var(--border);background:var(--header-bg);
+      flex-shrink:0">
+      <button class="icon-btn" onclick="closeSelector()">
         <i class="fas fa-arrow-left"></i>
       </button>
       <div>
-        <div class="logo" style="font-size:18px" id="selectorAnimeTitle">
-          ANIME <span>VERSE</span>
-        </div>
-        <div style="font-size:11px;color:var(--text2)">Select Episode</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text)"
+          id="selectorTitle">Episodes</div>
+        <div style="font-size:11px;color:var(--text2)">Select to watch</div>
       </div>
     </div>
-
-    <!-- Selector Body: Left = Seasons, Right = Episodes -->
     <div style="display:flex;flex:1;overflow:hidden">
-
-      <!-- LEFT — Season List (25% width) -->
-      <div style="width:25%;border-right:1px solid var(--border);
+      <!-- Seasons -->
+      <div style="width:28%;border-right:1px solid var(--border);
         overflow-y:auto;background:var(--bg2);flex-shrink:0"
-        id="selectorSeasonList">
-      </div>
-
-      <!-- RIGHT — Episode Grid (75% width) -->
-      <div style="flex:1;overflow-y:auto;padding:12px" id="selectorEpGrid">
-        <div style="text-align:center;color:var(--text2);
-          padding:40px;font-size:13px">
-          Select a season
-        </div>
-      </div>
+        id="selectorSeasonList"></div>
+      <!-- Episodes -->
+      <div style="flex:1;overflow-y:auto;padding:14px"
+        id="selectorEpGrid"></div>
     </div>
   </div>
 
-  <!-- MAIN WATCH PAGE -->
   <main class="main" id="watchMain">
     <div class="empty-state" style="min-height:60vh">
       <i class="fas fa-circle-notch fa-spin"
@@ -78,15 +65,12 @@
   <script src="firebase-config.js"></script>
   <script src="data.js"></script>
   <script>
-    // ===== THEME =====
     function toggleTheme() {
       const html = document.documentElement;
       const btn  = document.getElementById('themeBtn');
       const dark = html.getAttribute('data-theme') === 'dark';
       html.setAttribute('data-theme', dark ? 'light' : 'dark');
-      btn.innerHTML = dark
-        ? '<i class="fas fa-sun"></i>'
-        : '<i class="fas fa-moon"></i>';
+      btn.innerHTML = dark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
       localStorage.setItem('av_theme', dark ? 'light' : 'dark');
     }
     function loadTheme() {
@@ -94,75 +78,39 @@
       document.documentElement.setAttribute('data-theme', saved);
       const btn = document.getElementById('themeBtn');
       if (btn) btn.innerHTML = saved === 'dark'
-        ? '<i class="fas fa-moon"></i>'
-        : '<i class="fas fa-sun"></i>';
+        ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
     }
 
-    // ===== QUALITY CONFIG =====
     const qualityOrder  = ['4k','1080p','720p','480p'];
     const qualityConfig = {
-      '480p':  { label:'480p SD',   color:'#666' },
-      '720p':  { label:'720p HD',   color:'#2a6dd9' },
-      '1080p': { label:'1080p FHD', color:'#27ae60' },
-      '4k':    { label:'4K UHD',    color:'#C87740' },
+      '480p':  { label:'480p SD',  color:'#666' },
+      '720p':  { label:'720p HD',  color:'#2a6dd9' },
+      '1080p': { label:'1080p FHD',color:'#27ae60' },
+      '4k':    { label:'4K UHD',   color:'#C87740' },
     };
     const langFlags = {
       'Japanese':'🇯🇵','English Dub':'🇺🇸','Hindi Dub':'🇮🇳',
-      'Korean':'🇰🇷','Chinese':'🇨🇳','Portuguese':'🇧🇷',
-      'Spanish':'🇪🇸','French':'🇫🇷'
+      'Korean':'🇰🇷','Chinese':'🇨🇳'
     };
 
-    // ===== GLOBAL STATE =====
-    let globalAnime   = null;
-    let globalAnimeId = null;
+    let globalAnime     = null;
+    let globalAnimeId   = null;
+    let currentSeasonId = null;
+    let currentEpId     = null;
 
-    // ===== EMBED URL =====
-    function getEmbedUrl(url) {
-      if (!url || !url.trim()) return null;
-      // YouTube
-      if (url.includes('youtube.com/watch')) {
-        try {
-          const id = new URL(url).searchParams.get('v');
-          return { type:'iframe', src:`https://www.youtube.com/embed/${id}?autoplay=1&rel=0` };
-        } catch {}
-      }
-      if (url.includes('youtu.be/')) {
-        const id = url.split('youtu.be/')[1].split('?')[0];
-        return { type:'iframe', src:`https://www.youtube.com/embed/${id}?autoplay=1&rel=0` };
-      }
-      // Google Drive
-      if (url.includes('drive.google.com')) {
-        const m1 = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
-        if (m1) return { type:'iframe', src:`https://drive.google.com/file/d/${m1[1]}/preview` };
-        const m2 = url.match(/id=([a-zA-Z0-9_-]{10,})/);
-        if (m2) return { type:'iframe', src:`https://drive.google.com/file/d/${m2[1]}/preview` };
-      }
-      // Direct file (.mkv, .mp4 etc)
-      if (url.match(/\.(mp4|webm|ogg|mkv|m3u8)(\?|$)/i)) {
-        return { type:'video', src: url };
-      }
-      // GoFile
-      if (url.includes('gofile.io')) {
-        return { type:'video', src: url };
-      }
-      // Fallback iframe
-      return { type:'iframe', src: url };
-    }
-
-    // ===== EPISODE DATA HELPERS =====
-    function getEpisodeLangs(episode) {
-      if (episode.languages && Object.keys(episode.languages).length > 0)
-        return episode.languages;
-      if (episode.videoUrls) return { 'Japanese': episode.videoUrls };
-      if (episode.videoUrl)  return { 'Japanese': { '720p': episode.videoUrl } };
-      return {};
-    }
-
+    // =============================================
+    // VIDEO HELPERS
+    // =============================================
     function hasVideoContent(ep) {
       if (!ep) return false;
       const langs = ep.languages || {};
-      if (Object.values(langs).some(qm =>
-        qm && Object.values(qm).some(u => u && u.trim()))) return true;
+      for (const qMap of Object.values(langs)) {
+        if (qMap && typeof qMap === 'object') {
+          for (const url of Object.values(qMap)) {
+            if (url && typeof url === 'string' && url.trim()) return true;
+          }
+        }
+      }
       if (ep.videoUrls && Object.values(ep.videoUrls).some(u=>u&&u.trim())) return true;
       if (ep.videoUrl && ep.videoUrl.trim()) return true;
       return false;
@@ -170,9 +118,16 @@
 
     function hasEpTelegram(ep) {
       if (!ep) return false;
-      if (ep.telegramLinks && Object.values(ep.telegramLinks).some(v=>v)) return true;
+      if (ep.telegramLinks && Object.values(ep.telegramLinks).some(v=>v&&v.trim())) return true;
       if (ep.telegramUrl && ep.telegramUrl.trim()) return true;
       return false;
+    }
+
+    function getEpisodeLangs(ep) {
+      if (ep.languages && Object.keys(ep.languages).length > 0) return ep.languages;
+      if (ep.videoUrls) return { 'Japanese': ep.videoUrls };
+      if (ep.videoUrl)  return { 'Japanese': { '720p': ep.videoUrl } };
+      return {};
     }
 
     function getBestQuality(langData) {
@@ -181,63 +136,88 @@
       return Object.keys(langData)[0] || '';
     }
 
-    function getSeasonPacks(season) {
-      const packs = [];
-      if (season.telegramPacks && season.telegramPacks.length > 0) {
-        season.telegramPacks.forEach(p => {
-          if (p && (p.single || (p.links && Object.values(p.links).some(v=>v))))
-            packs.push(p);
-        });
-        return packs;
+    // =============================================
+    // EMBED URL — Google Drive, YouTube, Direct
+    // =============================================
+    function getEmbedUrl(url) {
+      if (!url || !url.trim()) return null;
+      url = url.trim();
+
+      // YouTube
+      if (url.includes('youtube.com/watch')) {
+        try {
+          const id = new URL(url).searchParams.get('v');
+          if (id) return { type:'iframe',
+            src:`https://www.youtube.com/embed/${id}?autoplay=1&rel=0&modestbranding=1` };
+        } catch {}
       }
-      if (season.telegramLinks &&
-        Object.values(season.telegramLinks).some(v=>v&&v.trim())) {
-        packs.push({ range: season.episodeRange||null, links: season.telegramLinks });
-        return packs;
+      if (url.includes('youtu.be/')) {
+        const id = url.split('youtu.be/')[1].split('?')[0];
+        return { type:'iframe',
+          src:`https://www.youtube.com/embed/${id}?autoplay=1&rel=0` };
       }
-      if (season.telegramUrl && season.telegramUrl.trim()) {
-        packs.push({ range: season.episodeRange||null, single: season.telegramUrl });
-        return packs;
+
+      // Google Drive — convert any Drive URL to preview
+      if (url.includes('drive.google.com')) {
+        let fileId = null;
+        const m1 = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+        if (m1) fileId = m1[1];
+        else {
+          const m2 = url.match(/id=([a-zA-Z0-9_-]{10,})/);
+          if (m2) fileId = m2[1];
+        }
+        if (fileId) return { type:'iframe',
+          src:`https://drive.google.com/file/d/${fileId}/preview?usp=sharing` };
       }
-      return packs;
+
+      // Direct video files (mp4, mkv, etc.)
+      if (url.match(/\.(mp4|webm|ogg|m3u8)(\?|$)/i))
+        return { type:'video', src: url };
+      if (url.match(/\.mkv(\?|$)/i))
+        return { type:'video', src: url };
+
+      // GoFile or other direct hosting
+      if (url.includes('gofile.io')) return { type:'video', src: url };
+
+      // Fallback
+      return { type:'iframe', src: url };
     }
 
-    // ===== LOAD VIDEO INTO PLAYER =====
+    // =============================================
+    // LOAD VIDEO INTO PLAYER
+    // =============================================
     function loadVideoUrl(url, quality) {
       document.querySelectorAll('.quality-btn').forEach(b =>
         b.classList.toggle('active', b.dataset.quality === quality));
-      const embed     = getEmbedUrl(url);
+
       const container = document.getElementById('playerContainer');
       if (!container) return;
+      const embed = getEmbedUrl(url);
       if (!embed) {
-        container.innerHTML = `
-          <div class="no-video-msg">
-            <i class="fas fa-film"></i>
-            <span>Cannot play this video.</span>
-          </div>`;
+        container.innerHTML = `<div class="no-video-msg">
+          <i class="fas fa-film"></i><span>Cannot play this video.</span></div>`;
         return;
       }
       if (embed.type === 'iframe') {
         container.innerHTML = `
-          <iframe src="${embed.src}" allowfullscreen
-            allow="autoplay;fullscreen;encrypted-media;picture-in-picture"
+          <iframe src="${embed.src}"
+            allowfullscreen webkitallowfullscreen mozallowfullscreen
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
             style="width:100%;height:100%;border:none;display:block">
           </iframe>`;
       } else {
         container.innerHTML = `
-          <video controls autoplay
+          <video controls autoplay playsinline
             controlsList="nodownload"
-            playsinline webkit-playsinline
-            style="width:100%;height:100%;background:#000">
+            style="width:100%;height:100%;background:#000;display:block">
             <source src="${embed.src}"/>
             Your browser does not support video.
           </video>`;
       }
     }
 
-    // ===== SWITCH LANGUAGE =====
     window.switchLanguage = function(lang, safeData) {
-      const langData = JSON.parse(safeData.replace(/&quot;/g, '"'));
+      const langData = JSON.parse(safeData.replace(/&quot;/g,'"'));
       document.querySelectorAll('.lang-btn').forEach(b =>
         b.classList.toggle('active', b.dataset.lang === lang));
       const qc = document.getElementById('qualityBtnsContainer');
@@ -250,109 +230,78 @@
           style="--qcolor:${cfg.color}">${cfg.label}</button>`;
       }).join('');
       const best = getBestQuality(langData);
-      if (best && langData[best])
-        setTimeout(() => loadVideoUrl(langData[best], best), 50);
+      if (best && langData[best]) setTimeout(() => loadVideoUrl(langData[best], best), 50);
     };
 
-    // ===== BUILD TELEGRAM SECTION =====
-    function buildTgSection(episode, season) {
-      const packs = getSeasonPacks(season);
-      let html = '';
-
-      // Episode-level TG
-      if (hasEpTelegram(episode)) {
-        if (episode.telegramUrl) {
-          html += `
-            <div class="tg-section">
-              <div class="tg-label">
-                <i class="fab fa-telegram"></i> Watch on Telegram
-              </div>
-              <a href="${episode.telegramUrl}" target="_blank"
-                class="tg-btn-main">
-                <i class="fab fa-telegram"></i> Open in Telegram
-              </a>
-            </div>`;
-        } else if (episode.telegramLinks) {
-          const keys = qualityOrder.filter(q=>episode.telegramLinks[q]);
-          if (keys.length) {
-            html += `
-              <div class="tg-section">
-                <div class="tg-label">
-                  <i class="fab fa-telegram"></i> Watch on Telegram
-                </div>
-                <div class="tg-quality-row">
-                  ${keys.map(q=>{
-                    const cfg=qualityConfig[q]||{label:q,color:'#2ca5e0'};
-                    return `<a href="${episode.telegramLinks[q]}"
-                      target="_blank" class="tg-quality-btn"
-                      style="--tgcolor:${cfg.color}">
-                      <i class="fab fa-telegram"></i>${cfg.label}</a>`;
-                  }).join('')}
-                </div>
-              </div>`;
-          }
-        }
+    // =============================================
+    // EPISODE-ONLY TELEGRAM SECTION
+    // (Season packs are NEVER shown on watch page)
+    // =============================================
+    function buildEpTgHTML(episode) {
+      let btns = '';
+      if (episode.telegramUrl) {
+        btns = `<a href="${episode.telegramUrl}" target="_blank" rel="noopener"
+          class="tg-btn-main">
+          <i class="fab fa-telegram"></i> Watch on Telegram
+        </a>`;
+      } else if (episode.telegramLinks) {
+        const keys = qualityOrder.filter(q => episode.telegramLinks[q]);
+        if (!keys.length) return '';
+        btns = `<div class="tg-quality-row">
+          ${keys.map(q => {
+            const cfg = qualityConfig[q]||{label:q,color:'#2ca5e0'};
+            return `<a href="${episode.telegramLinks[q]}" target="_blank"
+              rel="noopener" class="tg-quality-btn"
+              style="--tgcolor:${cfg.color}">
+              <i class="fab fa-telegram"></i>${cfg.label}
+            </a>`;
+          }).join('')}
+        </div>`;
       }
-
-      // Season packs
-      if (packs.length > 0) {
-        packs.forEach((pack,idx) => {
-          const rangeText = pack.range ? `Episodes ${pack.range}` : 'Full Season';
-          if (pack.single) {
-            html += `
-              <div class="tg-section">
-                <div class="tg-label">
-                  <i class="fab fa-telegram"></i>
-                  Season Pack
-                  <span style="font-size:11px;color:var(--text2);
-                    background:var(--bg3);padding:2px 8px;
-                    border-radius:10px;border:1px solid var(--border)">
-                    ${rangeText}
-                  </span>
+      if (!btns) return '';
+      const thumb = episode.thumbnail || '';
+      return `
+        <div class="tg-only-player">
+          ${thumb
+            ? `<div class="tg-only-thumb"
+                style="background-image:url('${thumb}')">
+                <div class="tg-only-overlay">
+                  <i class="fab fa-telegram"
+                    style="font-size:52px;color:#2ca5e0;opacity:0.9"></i>
+                  <div style="color:#fff;font-size:15px;font-weight:700;
+                    margin-top:12px;text-shadow:0 2px 8px rgba(0,0,0,0.8)">
+                    Watch on Telegram
+                  </div>
                 </div>
-                <a href="${pack.single}" target="_blank"
-                  class="tg-btn-main">
-                  <i class="fab fa-telegram"></i>Watch ${rangeText}
-                </a>
-              </div>`;
-          } else if (pack.links) {
-            const keys = qualityOrder.filter(q=>pack.links[q]);
-            if (keys.length) {
-              html += `
-                <div class="tg-section">
-                  <div class="tg-label">
-                    <i class="fab fa-telegram"></i>
-                    Season Pack — ${rangeText}
-                  </div>
-                  <div class="tg-quality-row">
-                    ${keys.map(q=>{
-                      const cfg=qualityConfig[q]||{label:q,color:'#2ca5e0'};
-                      return `<a href="${pack.links[q]}" target="_blank"
-                        class="tg-quality-btn"
-                        style="--tgcolor:${cfg.color}">
-                        <i class="fab fa-telegram"></i>${cfg.label}</a>`;
-                    }).join('')}
-                  </div>
-                </div>`;
-            }
-          }
-        });
-      }
-      return html;
+              </div>`
+            : `<div class="tg-only-thumb tg-only-thumb-empty">
+                <i class="fab fa-telegram"
+                  style="font-size:56px;color:#2ca5e0"></i>
+              </div>`}
+        </div>
+        <div class="tg-section">
+          <div class="tg-label">
+            <i class="fab fa-telegram"></i> Watch on Telegram
+          </div>
+          ${btns}
+        </div>`;
     }
 
-    // ===== RENDER PLAYER =====
+    // =============================================
+    // RENDER PLAYER
+    // =============================================
     function renderPlayer(anime, season, episode, allEps, seasonId, animeId) {
-      const hasVid    = hasVideoContent(episode);
-      const langs     = getEpisodeLangs(episode);
-      const langKeys  = Object.keys(langs);
-      const defLang   = langKeys.includes('Japanese') ? 'Japanese' : langKeys[0] || '';
-      const initLD    = defLang ? langs[defLang] : {};
-      const initBest  = getBestQuality(initLD);
-      const initQuals = qualityOrder.filter(q=>initLD[q]&&initLD[q].trim());
-      const tgHTML    = buildTgSection(episode, season);
+      const hasVid  = hasVideoContent(episode);
+      const hasEpTg = hasEpTelegram(episode);
 
-      const langBtns  = langKeys.map(lang => {
+      const langs    = getEpisodeLangs(episode);
+      const langKeys = Object.keys(langs);
+      const defLang  = langKeys.includes('Japanese') ? 'Japanese' : langKeys[0] || '';
+      const initLD   = defLang ? langs[defLang] : {};
+      const initBest = getBestQuality(initLD);
+      const initQs   = qualityOrder.filter(q => initLD[q]&&initLD[q].trim());
+
+      const langBtns = langKeys.map(lang => {
         const flag = langFlags[lang]||'🌐';
         const safe = JSON.stringify(langs[lang]).replace(/"/g,'&quot;');
         return `<button class="lang-btn ${lang===defLang?'active':''}"
@@ -361,7 +310,7 @@
           ${flag} ${lang}</button>`;
       }).join('');
 
-      const qualBtns = initQuals.map(q => {
+      const qualBtns = initQs.map(q => {
         const cfg = qualityConfig[q]||{label:q,color:'#888'};
         return `<button class="quality-btn ${q===initBest?'active':''}"
           data-quality="${q}"
@@ -375,14 +324,14 @@
 
       const prevBtn = prevEp
         ? `<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${prevEp.id}"
-            class="btn-outline" style="font-size:13px;text-decoration:none">
+            class="btn-outline" style="text-decoration:none;font-size:13px">
             <i class="fas fa-backward-step"></i> Prev</a>`
         : `<button class="btn-outline" disabled
             style="opacity:0.4;font-size:13px;cursor:not-allowed">
             <i class="fas fa-backward-step"></i> Prev</button>`;
       const nextBtn = nextEp
         ? `<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${nextEp.id}"
-            class="btn-primary" style="font-size:13px;text-decoration:none">
+            class="btn-primary" style="text-decoration:none;font-size:13px">
             Next <i class="fas fa-forward-step"></i></a>`
         : `<button class="btn-primary" disabled
             style="opacity:0.4;font-size:13px;cursor:not-allowed">
@@ -390,20 +339,27 @@
 
       let topHTML = '';
 
+      // ============================================
+      // SMART DISPLAY:
+      // hasVid   → ONLY player (no TG at all)
+      // !hasVid + hasEpTg → ONLY episode TG
+      // nothing  → no content message
+      // Season packs → NEVER shown here
+      // ============================================
       if (hasVid) {
         topHTML = `
           <div class="player-wrapper">
             <div id="playerContainer"
-              style="width:100%;height:100%;background:#000">
-              <div class="no-video-msg">
+              style="width:100%;height:100%;background:#000;
+                display:flex;align-items:center;justify-content:center">
+              <div style="color:rgba(255,255,255,0.5);text-align:center">
                 <i class="fas fa-circle-notch fa-spin"
-                  style="font-size:24px"></i>
-                <span>Loading...</span>
+                  style="font-size:28px;display:block;margin-bottom:10px"></i>
+                Loading...
               </div>
             </div>
           </div>`;
-
-        if (langKeys.length > 0 || initQuals.length > 1) {
+        if (langKeys.length > 0 || initQs.length > 1) {
           topHTML += `
             <div class="lang-quality-box">
               ${langKeys.length > 0 ? `
@@ -413,7 +369,7 @@
                 </span>
                 <div class="lang-btns">${langBtns}</div>
               </div>` : ''}
-              ${initQuals.length > 0 ? `
+              ${initQs.length > 0 ? `
               <div class="lq-row">
                 <span class="lq-label">
                   <i class="fas fa-sliders"></i> Quality
@@ -424,34 +380,16 @@
               </div>` : ''}
             </div>`;
         }
-        if (tgHTML) topHTML += tgHTML;
-      } else if (tgHTML) {
-        // TG only — show thumbnail
-        const thumb = episode.thumbnail || '';
-        topHTML = `
-          <div class="tg-only-player">
-            ${thumb
-              ? `<div class="tg-only-thumb"
-                  style="background-image:url('${thumb}')">
-                  <div class="tg-only-overlay">
-                    <i class="fab fa-telegram"
-                      style="font-size:48px;color:#2ca5e0;opacity:0.9"></i>
-                    <div style="color:#fff;font-size:14px;font-weight:600;
-                      margin-top:10px;text-shadow:0 2px 8px rgba(0,0,0,0.8)">
-                      Watch on Telegram
-                    </div>
-                  </div>
-                </div>`
-              : `<div class="tg-only-thumb tg-only-thumb-empty">
-                  <i class="fab fa-telegram"
-                    style="font-size:56px;color:#2ca5e0"></i>
-                </div>`}
-          </div>
-          ${tgHTML}`;
+        // NO telegram section when video exists
+
+      } else if (hasEpTg) {
+        topHTML = buildEpTgHTML(episode);
+
       } else {
         topHTML = `
-          <div class="player-wrapper" style="background:#111;
-            display:flex;align-items:center;justify-content:center">
+          <div class="player-wrapper"
+            style="display:flex;align-items:center;
+              justify-content:center;background:#111">
             <div class="no-video-msg">
               <i class="fas fa-film"></i>
               <span>Video not available yet.</span>
@@ -462,42 +400,55 @@
       document.getElementById('watchMain').innerHTML = `
         ${topHTML}
 
-        <!-- EPISODE SELECTOR BUTTON -->
-        <button onclick="openEpisodeSelector()"
+        <!-- Episodes button -->
+        <button onclick="openSelector()"
           style="width:100%;margin-top:12px;background:var(--card-bg);
-            border:1px solid var(--border);border-radius:10px;
-            padding:12px 16px;color:var(--text);font-family:'Poppins',sans-serif;
-            font-size:13px;font-weight:600;cursor:pointer;
-            display:flex;align-items:center;justify-content:space-between;
-            transition:border-color 0.2s"
+            border:1px solid var(--border);border-radius:12px;
+            padding:14px 16px;color:var(--text);
+            font-family:'Poppins',sans-serif;font-size:13px;
+            font-weight:600;cursor:pointer;
+            display:flex;align-items:center;
+            justify-content:space-between;transition:all 0.2s"
           onmouseover="this.style.borderColor='var(--accent)'"
           onmouseout="this.style.borderColor='var(--border)'">
-          <div style="display:flex;align-items:center;gap:8px">
-            <i class="fas fa-list" style="color:var(--accent)"></i>
-            <span>Episodes — ${season.title}</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:34px;height:34px;border-radius:8px;
+              background:rgba(200,119,64,0.15);display:flex;
+              align-items:center;justify-content:center">
+              <i class="fas fa-list"
+                style="color:var(--accent);font-size:14px"></i>
+            </div>
+            <div style="text-align:left">
+              <div style="font-size:13px;font-weight:700">
+                ${season.title}
+              </div>
+              <div style="font-size:11px;color:var(--text2)">
+                ${allEps.length} episode${allEps.length!==1?'s':''}
+              </div>
+            </div>
           </div>
           <i class="fas fa-chevron-right"
             style="color:var(--text2);font-size:12px"></i>
         </button>
 
-        <!-- PREV / NEXT -->
+        <!-- Nav -->
         <div class="ep-nav" style="margin-top:10px">
           ${prevBtn}
           <a href="anime.html?id=${animeId}"
             class="btn-outline"
             style="font-size:13px;text-decoration:none">
-            <i class="fas fa-info-circle"></i> Details
+            <i class="fas fa-info-circle"></i>
           </a>
           ${nextBtn}
         </div>
 
-        <!-- INFO -->
+        <!-- Info -->
         <div class="watch-info">
           <div class="anime-ep-label">
-            ${anime.title} &middot; ${season.title} &middot; Ep ${episode.id}
+            ${anime.title} &middot; ${season.title}
           </div>
-          <h2>${episode.title || 'Episode ' + episode.id}</h2>
-          <div style="display:flex;gap:12px;margin-top:8px;
+          <h2>Ep ${episode.id}: ${episode.title||'Episode '+episode.id}</h2>
+          <div style="display:flex;gap:10px;margin-top:8px;
             flex-wrap:wrap;align-items:center">
             ${episode.duration ? `
             <span class="info-chip" style="font-size:12px;color:var(--text2)">
@@ -508,163 +459,140 @@
             <span class="info-chip" style="font-size:12px;color:var(--text2)">
               <i class="fas fa-language"
                 style="color:var(--accent)"></i>
-              ${langKeys.length} language${langKeys.length>1?'s':''}
+              ${langKeys.length} lang${langKeys.length>1?'s':''}
             </span>` : ''}
           </div>
           ${episode.description ? `
           <p style="font-size:13px;color:var(--text2);
             line-height:1.7;margin-top:10px">
-            ${episode.description}
-          </p>` : ''}
+            ${episode.description}</p>` : ''}
         </div>
       `;
 
-      // Auto-load video
       if (hasVid && initBest && initLD[initBest]) {
-        setTimeout(() => loadVideoUrl(initLD[initBest], initBest), 150);
+        setTimeout(() => loadVideoUrl(initLD[initBest], initBest), 200);
       }
     }
 
-    // ===== EPISODE SELECTOR =====
-    function openEpisodeSelector() {
+    // =============================================
+    // EPISODE SELECTOR
+    // =============================================
+    function openSelector() {
       if (!globalAnime) return;
       const page = document.getElementById('episodeSelectorPage');
-      page.classList.remove('hidden');
       page.style.display = 'flex';
-
-      document.getElementById('selectorAnimeTitle').innerHTML =
-        `${globalAnime.title} <span style="color:var(--accent)">VERSE</span>`;
-
-      renderSelectorSeasons(globalAnime.seasons || []);
+      document.getElementById('selectorTitle').textContent =
+        globalAnime.title;
+      buildSelectorSeasons(globalAnime.seasons || []);
+    }
+    function closeSelector() {
+      document.getElementById('episodeSelectorPage').style.display = 'none';
     }
 
-    function closeEpisodeSelector() {
-      const page = document.getElementById('episodeSelectorPage');
-      page.classList.add('hidden');
-      page.style.display = 'none';
-    }
-
-    function renderSelectorSeasons(seasons) {
+    function buildSelectorSeasons(seasons) {
       const list = document.getElementById('selectorSeasonList');
-      list.innerHTML = seasons.map((s, idx) => `
-        <div class="selector-season-item ${idx===0?'active':''}"
-          id="sst-${s.id}"
-          onclick="selectSelectorSeason(${s.id}, this)"
-          data-season-id="${s.id}">
-          <span style="font-size:12px;line-height:1.3;
-            word-break:break-word">${s.title}</span>
+      list.innerHTML = seasons.map((s, i) => `
+        <div class="sel-season-item ${i===0?'active':''}"
+          id="ssel-${s.id}"
+          onclick="selectSeason(${s.id}, this)">
+          <span>${s.title}</span>
+          <span style="font-size:10px;color:inherit;opacity:0.7;
+            margin-top:3px;display:block">
+            ${(s.episodes||[]).length} ep
+          </span>
         </div>`).join('');
-
-      // Auto-select first season
-      if (seasons.length > 0) selectSelectorSeason(seasons[0].id, list.firstElementChild);
+      if (seasons.length > 0) selectSeason(seasons[0].id,
+        list.querySelector('.sel-season-item'));
     }
 
-    function selectSelectorSeason(seasonId, el) {
-      // Update active state
-      document.querySelectorAll('.selector-season-item')
-        .forEach(i => i.classList.remove('active'));
+    function selectSeason(seasonId, el) {
+      document.querySelectorAll('.sel-season-item')
+        .forEach(i=>i.classList.remove('active'));
       if (el) el.classList.add('active');
-
-      const seasons = globalAnime?.seasons || [];
-      const season  = seasons.find(s => s.id === seasonId);
+      const season = (globalAnime?.seasons||[]).find(s=>s.id===seasonId);
       if (!season) return;
-
       const grid = document.getElementById('selectorEpGrid');
       const eps  = season.episodes || [];
-
-      if (eps.length === 0) {
+      if (!eps.length) {
         grid.innerHTML = `
           <div style="text-align:center;color:var(--text2);
-            padding:30px;font-size:13px">
-            No episodes added yet.
+            padding:40px;font-size:13px">
+            No episodes yet.
           </div>`;
         return;
       }
-
       grid.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(10,1fr);
-          gap:6px">
+        <div style="font-size:11px;color:var(--text2);
+          font-weight:600;margin-bottom:12px;letter-spacing:0.5px">
+          ${season.title} — ${eps.length} Episodes
+        </div>
+        <div class="ep-num-grid">
           ${eps.map(ep => {
             const hasVid = hasVideoContent(ep);
             const hasTg  = hasEpTelegram(ep);
             const clickable = hasVid || hasTg;
             const isCurrent = ep.id === currentEpId &&
               season.id === currentSeasonId;
+            let style = '';
+            if (isCurrent) {
+              style = `background:var(--accent);color:#fff;
+                border-color:var(--accent)`;
+            } else if (hasVid) {
+              style = `background:var(--bg3);color:var(--text);
+                border-color:var(--border)`;
+            } else if (hasTg) {
+              style = `background:rgba(44,165,224,0.12);
+                color:#2ca5e0;border-color:rgba(44,165,224,0.4)`;
+            } else {
+              style = `background:var(--bg3);color:var(--text2);
+                border-color:var(--border);opacity:0.4`;
+            }
             return `
-              <div onclick="${clickable
-                ? `navigateToEp('${globalAnimeId}',${season.id},${ep.id})`
-                : ''}"
-                style="aspect-ratio:1;border-radius:8px;
-                  display:flex;align-items:center;justify-content:center;
-                  font-size:11px;font-weight:700;cursor:${clickable?'pointer':'default'};
-                  background:${isCurrent
-                    ? 'var(--accent)'
-                    : hasVid
-                      ? 'var(--bg3)'
-                      : hasTg
-                        ? 'rgba(44,165,224,0.15)'
-                        : 'var(--bg3)'};
-                  border:1px solid ${isCurrent
-                    ? 'var(--accent)'
-                    : hasVid
-                      ? 'var(--border)'
-                      : hasTg
-                        ? 'rgba(44,165,224,0.4)'
-                        : 'var(--border)'};
-                  color:${isCurrent
-                    ? '#fff'
-                    : hasVid || hasTg
-                      ? 'var(--text)'
-                      : 'var(--text2)'};
-                  opacity:${clickable?'1':'0.5'};
-                  transition:all 0.15s">
+              <div class="ep-num-box"
+                style="${style};cursor:${clickable?'pointer':'default'}"
+                ${clickable ? `onclick="goToEp('${globalAnimeId}',${season.id},${ep.id})"` : ''}>
                 ${ep.id}
+                ${isCurrent ? '<i class="fas fa-play" style="font-size:7px;display:block;margin-top:2px"></i>' : ''}
               </div>`;
           }).join('')}
         </div>
-        <div style="margin-top:12px;display:flex;gap:8px;
-          flex-wrap:wrap;font-size:11px;color:var(--text2)">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;
+          margin-top:14px;font-size:11px;color:var(--text2)">
           <span style="display:flex;align-items:center;gap:4px">
             <span style="width:10px;height:10px;border-radius:3px;
               background:var(--bg3);border:1px solid var(--border);
-              display:inline-block"></span>
-            Available
+              display:inline-block"></span>Available
           </span>
           <span style="display:flex;align-items:center;gap:4px">
             <span style="width:10px;height:10px;border-radius:3px;
-              background:rgba(44,165,224,0.15);
+              background:rgba(44,165,224,0.12);
               border:1px solid rgba(44,165,224,0.4);
-              display:inline-block"></span>
-            Telegram
+              display:inline-block"></span>Telegram
           </span>
           <span style="display:flex;align-items:center;gap:4px">
             <span style="width:10px;height:10px;border-radius:3px;
-              background:var(--accent);display:inline-block"></span>
-            Current
+              background:var(--accent);display:inline-block"></span>Current
           </span>
         </div>`;
     }
 
-    function navigateToEp(animeId, seasonId, epId) {
-      closeEpisodeSelector();
+    function goToEp(animeId, seasonId, epId) {
+      closeSelector();
       window.location.href =
         `watch.html?id=${animeId}&season=${seasonId}&ep=${epId}`;
     }
 
-    let currentSeasonId = null;
-    let currentEpId     = null;
-
-    // ===== INIT =====
+    // =============================================
+    // INIT
+    // =============================================
     loadTheme();
-
-    const params   = new URLSearchParams(window.location.search);
-    const animeId  = params.get('id');
-    const seasonId = parseInt(params.get('season'));
-    const epId     = parseInt(params.get('ep'));
-
-    currentSeasonId  = seasonId;
-    currentEpId      = epId;
-    globalAnimeId    = animeId;
+    const params    = new URLSearchParams(window.location.search);
+    const animeId   = params.get('id');
+    const seasonId  = parseInt(params.get('season'));
+    const epId      = parseInt(params.get('ep'));
+    currentSeasonId = seasonId;
+    currentEpId     = epId;
+    globalAnimeId   = animeId;
 
     db.collection('anime').doc(animeId).get().then(doc => {
       if (!doc.exists) {
@@ -672,28 +600,25 @@
           <div class="empty-state">
             <i class="fas fa-exclamation-circle"></i>
             <h2>Anime not found!</h2>
-            <p><a href="index.html"
-              style="color:var(--accent)">Go home</a></p>
+            <p><a href="index.html" style="color:var(--accent)">Go home</a></p>
           </div>`;
         return;
       }
       const anime   = { ...doc.data(), firestoreId: doc.id };
       globalAnime   = anime;
-      const season  = anime.seasons && anime.seasons.find(s=>s.id===seasonId);
-      const episode = season && season.episodes &&
-        season.episodes.find(e=>e.id===epId);
-
-      if (!season || !episode) {
+      const season  = (anime.seasons||[]).find(s=>s.id===seasonId);
+      const episode = season && (season.episodes||[]).find(e=>e.id===epId);
+      if (!season||!episode) {
         document.getElementById('watchMain').innerHTML = `
           <div class="empty-state">
             <i class="fas fa-film"></i>
             <h2>Episode not found!</h2>
             <p><a href="anime.html?id=${animeId}"
-              style="color:var(--accent)">Back to anime</a></p>
+              style="color:var(--accent)">Back</a></p>
           </div>`;
         return;
       }
-      document.title = `${episode.title||'Episode '+epId} — Anime Verse`;
+      document.title = `${episode.title||'Ep '+epId} — ${anime.title}`;
       renderPlayer(anime, season, episode, season.episodes, seasonId, animeId);
     });
   </script>
