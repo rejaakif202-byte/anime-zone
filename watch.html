@@ -2,11 +2,295 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <title>Watch — Anime Verse</title>
   <link rel="stylesheet" href="style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    /* ===== CUSTOM PLAYER STYLES ===== */
+    .av-wrapper {
+      position: relative;
+      width: 100%;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      aspect-ratio: 16/9;
+      user-select: none;
+    }
+    .av-wrapper.av-fullscreen {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      aspect-ratio: unset !important;
+      border-radius: 0 !important;
+      z-index: 9999 !important;
+    }
+    /* DIRECT VIDEO */
+    .av-video {
+      width: 100%; height: 100%;
+      display: block; object-fit: contain;
+      background: #000;
+    }
+    /* IFRAME (YouTube / Drive) */
+    .av-iframe {
+      width: 100%; height: 100%;
+      border: none; display: block;
+    }
+    /* LOADING SPINNER */
+    .av-loader {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.5);
+      z-index: 5;
+      pointer-events: none;
+    }
+    .av-loader.hidden { display: none; }
+    .av-spin {
+      width: 48px; height: 48px;
+      border: 4px solid rgba(255,255,255,0.15);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: avSpin 0.8s linear infinite;
+    }
+    @keyframes avSpin { to { transform: rotate(360deg); } }
+
+    /* CENTER TAP FEEDBACK */
+    .av-tap-feedback {
+      position: absolute;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.15);
+      border-radius: 50%;
+      width: 72px; height: 72px;
+      color: #fff; font-size: 22px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.15s;
+      z-index: 6;
+    }
+    .av-tap-feedback.left  { left: 15%; top: 50%; transform: translateY(-50%); }
+    .av-tap-feedback.right { right: 15%; top: 50%; transform: translateY(-50%); }
+    .av-tap-feedback.show  { opacity: 1; }
+
+    /* CENTER PLAY BUTTON */
+    .av-center-play {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 4; cursor: pointer;
+      opacity: 0; transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    .av-center-play.visible { opacity: 1; pointer-events: all; }
+    .av-center-play-btn {
+      width: 64px; height: 64px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(4px);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 24px;
+      border: 2px solid rgba(255,255,255,0.3);
+      transition: transform 0.15s, background 0.15s;
+    }
+    .av-center-play-btn:active { transform: scale(0.9); }
+
+    /* CONTROLS OVERLAY */
+    .av-controls {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      justify-content: flex-end;
+      background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0) 0%,
+        rgba(0,0,0,0) 40%,
+        rgba(0,0,0,0.7) 100%
+      );
+      z-index: 7;
+      opacity: 1; transition: opacity 0.3s;
+    }
+    .av-controls.hidden { opacity: 0; pointer-events: none; }
+    .av-controls.iframe-mode { pointer-events: none; }
+    .av-controls.iframe-mode .av-bottom-bar { pointer-events: all; }
+
+    /* TOP BAR */
+    .av-top-bar {
+      display: flex; align-items: center;
+      padding: 10px 12px 0;
+      gap: 10px;
+    }
+    .av-top-title {
+      font-size: 12px; color: #fff;
+      font-weight: 600; flex: 1;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* BOTTOM BAR */
+    .av-bottom-bar {
+      padding: 0 10px 8px;
+    }
+
+    /* PROGRESS BAR */
+    .av-progress-wrap {
+      position: relative; height: 18px;
+      display: flex; align-items: center;
+      cursor: pointer; margin-bottom: 4px;
+    }
+    .av-progress-bg {
+      position: absolute; left: 0; right: 0;
+      height: 4px; background: rgba(255,255,255,0.25);
+      border-radius: 2px; overflow: hidden;
+    }
+    .av-progress-buffered {
+      position: absolute; height: 100%;
+      background: rgba(255,255,255,0.35);
+      border-radius: 2px; width: 0%;
+      transition: width 0.3s;
+    }
+    .av-progress-fill {
+      position: absolute; height: 100%;
+      background: var(--accent, #C87740);
+      border-radius: 2px; width: 0%;
+    }
+    .av-seek {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer;
+      width: 100%; height: 100%;
+      margin: 0; padding: 0;
+    }
+    .av-progress-thumb {
+      position: absolute; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 14px; height: 14px;
+      background: #fff; border-radius: 50%;
+      pointer-events: none; left: 0%;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .av-progress-wrap:hover .av-progress-thumb { opacity: 1; }
+    .av-progress-wrap:hover .av-progress-bg { height: 6px; }
+
+    /* CONTROL ROW */
+    .av-ctrl-row {
+      display: flex; align-items: center; gap: 4px;
+    }
+    .av-ctrl-btn {
+      background: none; border: none;
+      color: #fff; cursor: pointer;
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; border-radius: 6px;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .av-ctrl-btn:hover { background: rgba(255,255,255,0.1); }
+    .av-ctrl-btn.sm { width: 30px; font-size: 13px; }
+
+    .av-time {
+      font-size: 11px; color: rgba(255,255,255,0.85);
+      font-family: 'Poppins', sans-serif;
+      white-space: nowrap; flex-shrink: 0;
+    }
+
+    .av-spacer { flex: 1; }
+
+    /* VOLUME SLIDER */
+    .av-vol-wrap {
+      display: flex; align-items: center; gap: 2px;
+      overflow: hidden; max-width: 0px;
+      transition: max-width 0.3s;
+    }
+    .av-vol-wrap.show { max-width: 70px; }
+    .av-vol-slider {
+      width: 60px; height: 4px;
+      -webkit-appearance: none;
+      background: linear-gradient(
+        to right,
+        #fff var(--vol, 100%),
+        rgba(255,255,255,0.3) var(--vol, 100%)
+      );
+      border-radius: 2px; outline: none;
+      cursor: pointer;
+    }
+    .av-vol-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px; height: 12px;
+      background: #fff; border-radius: 50%;
+    }
+
+    /* SPEED BADGE */
+    .av-speed-badge {
+      font-size: 10px; font-weight: 700;
+      color: rgba(255,255,255,0.8);
+      padding: 2px 5px; border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.3);
+      cursor: pointer; white-space: nowrap;
+      font-family: 'Poppins', sans-serif;
+    }
+    .av-speed-badge:hover { background: rgba(255,255,255,0.1); }
+
+    /* SPEED MENU */
+    .av-speed-menu {
+      position: absolute; bottom: 60px; right: 50px;
+      background: rgba(20,20,20,0.95);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; overflow: hidden;
+      z-index: 10; display: none;
+    }
+    .av-speed-menu.show { display: block; }
+    .av-speed-option {
+      padding: 8px 20px; font-size: 13px;
+      color: #fff; cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      transition: background 0.15s;
+    }
+    .av-speed-option:hover { background: rgba(255,255,255,0.1); }
+    .av-speed-option.active { color: var(--accent, #C87740); font-weight: 700; }
+
+    /* IFRAME FULLSCREEN BUTTON */
+    .av-iframe-fs-btn {
+      position: absolute; bottom: 8px; right: 8px;
+      background: rgba(0,0,0,0.7); border: none;
+      color: #fff; border-radius: 6px;
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 16px; z-index: 8;
+      backdrop-filter: blur(4px);
+      transition: background 0.2s;
+    }
+    .av-iframe-fs-btn:hover { background: rgba(0,0,0,0.9); }
+
+    /* FULLSCREEN EXIT BUTTON (when in custom fullscreen) */
+    .av-fs-exit-btn {
+      position: absolute; top: 12px; right: 12px;
+      background: rgba(0,0,0,0.6); border: none;
+      color: #fff; border-radius: 50%;
+      width: 38px; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 16px; z-index: 15;
+      backdrop-filter: blur(4px);
+      display: none;
+    }
+    .av-wrapper.av-fullscreen .av-fs-exit-btn { display: flex; }
+
+    /* DOUBLE TAP SEEK AREAS */
+    .av-seek-left, .av-seek-right {
+      position: absolute; top: 0; bottom: 48px;
+      width: 33%; z-index: 3; cursor: pointer;
+    }
+    .av-seek-left  { left: 0; }
+    .av-seek-right { right: 0; }
+
+    /* NO VIDEO STATE */
+    .av-no-video {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.4); gap: 10px;
+      font-family: 'Poppins', sans-serif;
+    }
+    .av-no-video i { font-size: 40px; }
+    .av-no-video span { font-size: 13px; }
+  </style>
 </head>
 <body>
 
@@ -26,7 +310,8 @@
 
   <main class="main" id="watchMain">
     <div class="empty-state" style="min-height:60vh">
-      <i class="fas fa-circle-notch fa-spin" style="font-size:40px;color:var(--accent)"></i>
+      <i class="fas fa-circle-notch fa-spin"
+        style="font-size:40px;color:var(--accent)"></i>
       <h2 style="margin-top:16px">Loading...</h2>
     </div>
   </main>
@@ -39,12 +324,12 @@
   <script>
     // ===== THEME =====
     function toggleTheme() {
-      const html   = document.documentElement;
-      const btn    = document.getElementById('themeBtn');
-      const isDark = html.getAttribute('data-theme') === 'dark';
-      html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-      btn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-      localStorage.setItem('av_theme', isDark ? 'light' : 'dark');
+      const html = document.documentElement;
+      const btn  = document.getElementById('themeBtn');
+      const dark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', dark ? 'light' : 'dark');
+      btn.innerHTML = dark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+      localStorage.setItem('av_theme', dark ? 'light' : 'dark');
     }
     function loadTheme() {
       const saved = localStorage.getItem('av_theme') || 'dark';
@@ -56,182 +341,505 @@
 
     // ===== CONFIGS =====
     const langFlags = {
-      'Japanese': '🇯🇵', 'English Dub': '🇺🇸',
-      'Hindi Dub': '🇮🇳', 'Korean': '🇰🇷',
-      'Chinese': '🇨🇳', 'Portuguese': '🇧🇷',
-      'Spanish': '🇪🇸', 'French': '🇫🇷',
+      'Japanese':'🇯🇵','English Dub':'🇺🇸',
+      'Hindi Dub':'🇮🇳','Korean':'🇰🇷',
+      'Chinese':'🇨🇳','Portuguese':'🇧🇷','Spanish':'🇪🇸','French':'🇫🇷'
     };
     const qualityConfig = {
-      '480p':  { label: '480p SD',   color: '#666' },
-      '720p':  { label: '720p HD',   color: '#2a6dd9' },
-      '1080p': { label: '1080p FHD', color: '#27ae60' },
-      '4k':    { label: '4K UHD',    color: '#C87740' },
+      '480p':  { label:'480p SD',  color:'#666' },
+      '720p':  { label:'720p HD',  color:'#2a6dd9' },
+      '1080p': { label:'1080p FHD',color:'#27ae60' },
+      '4k':    { label:'4K UHD',   color:'#C87740' },
     };
-    const qualityOrder = ['4k', '1080p', '720p', '480p'];
+    const qualityOrder = ['4k','1080p','720p','480p'];
 
-    // ===== CHECK CONTENT AVAILABILITY =====
-    function hasVideoContent(episode) {
-      // Check languages object
-      const langs = episode.languages || {};
-      const hasLangs = Object.values(langs).some(qualMap =>
-        qualMap && Object.values(qualMap).some(url => url && url.trim())
-      );
-      if (hasLangs) return true;
-      // Legacy
-      if (episode.videoUrls && Object.values(episode.videoUrls).some(u => u && u.trim()))
-        return true;
-      if (episode.videoUrl && episode.videoUrl.trim()) return true;
-      return false;
+    // ===== PLAYER STATE =====
+    let playerState = {
+      type: 'none',       // 'direct' | 'youtube' | 'drive' | 'iframe'
+      playing: false,
+      volume: 1,
+      muted: false,
+      speed: 1,
+      controlsTimer: null,
+      isFullscreen: false,
+      lastTap: 0,
+      tapTimer: null,
+      currentLang: '',
+      currentQuality: '',
+    };
+
+    // ===== URL DETECTION =====
+    function detectUrlType(url) {
+      if (!url || !url.trim()) return 'none';
+      if (url.includes('youtube.com/watch') || url.includes('youtu.be/'))
+        return 'youtube';
+      if (url.includes('drive.google.com')) return 'drive';
+      if (url.match(/\.(mp4|webm|ogg|mkv|m3u8)(\?|$)/i)) return 'direct';
+      if (url.includes('gofile.io')) return 'direct';
+      return 'iframe';
     }
 
-    function getTelegramData(episode, season) {
-      // Episode-level takes priority
-      if (episode.telegramLinks && Object.keys(episode.telegramLinks).length > 0) {
-        return {
-          source: 'episode',
-          links: episode.telegramLinks,
-          range: null
-        };
-      }
-      if (episode.telegramUrl) {
-        return {
-          source: 'episode',
-          single: episode.telegramUrl,
-          range: null
-        };
-      }
-      // Season-level
-      if (season.telegramLinks && Object.keys(season.telegramLinks).length > 0) {
-        return {
-          source: 'season',
-          links: season.telegramLinks,
-          range: season.episodeRange || null
-        };
-      }
-      if (season.telegramUrl) {
-        return {
-          source: 'season',
-          single: season.telegramUrl,
-          range: season.episodeRange || null
-        };
-      }
-      return null;
-    }
-
-    // ===== BUILD TELEGRAM SECTION HTML =====
-    function buildTelegramHTML(tgData, episode) {
-      if (!tgData) return '';
-
-      const rangeText = tgData.range
-        ? `Episodes ${tgData.range}`
-        : tgData.source === 'season' ? 'Full Season' : null;
-
-      let buttonsHTML = '';
-
-      if (tgData.single) {
-        // Single button
-        buttonsHTML = `
-          <a href="${tgData.single}" target="_blank" rel="noopener"
-            class="tg-btn-main">
-            <i class="fab fa-telegram"></i>
-            ${rangeText ? `Watch ${rangeText}` : 'Open in Telegram'}
-          </a>`;
-      } else if (tgData.links) {
-        // Quality-wise buttons
-        const keys = qualityOrder.filter(q => tgData.links[q]);
-        if (keys.length === 0) return '';
-        buttonsHTML = `
-          <div class="tg-quality-row">
-            ${keys.map(q => {
-              const cfg = qualityConfig[q] || { label: q, color: '#2ca5e0' };
-              const label = rangeText
-                ? `${cfg.label} — ${rangeText}`
-                : cfg.label;
-              return `
-                <a href="${tgData.links[q]}" target="_blank" rel="noopener"
-                  class="tg-quality-btn"
-                  style="--tgcolor:${cfg.color}">
-                  <i class="fab fa-telegram" style="font-size:12px"></i>
-                  ${label}
-                </a>`;
-            }).join('')}
-          </div>`;
-      }
-
-      if (!buttonsHTML) return '';
-
-      return `
-        <div class="tg-section">
-          <div class="tg-label">
-            <i class="fab fa-telegram"></i>
-            <span>Watch on Telegram</span>
-            ${tgData.source === 'season' ? `
-            <span style="font-size:11px;color:var(--text2);font-weight:400;
-              background:var(--bg3);padding:2px 8px;border-radius:10px;
-              border:1px solid var(--border)">Season Pack</span>` : ''}
-          </div>
-          ${buttonsHTML}
-        </div>`;
-    }
-
-    // ===== THUMBNAIL ONLY VIEW (no video, only telegram) =====
-    function buildThumbnailPlayerHTML(episode, tgHTML) {
-      const thumb = episode.thumbnail || '';
-      return `
-        <div class="tg-only-player">
-          ${thumb ? `
-          <div class="tg-only-thumb"
-            style="background-image:url('${thumb}')">
-            <div class="tg-only-overlay">
-              <i class="fab fa-telegram"
-                style="font-size:48px;color:#2ca5e0;opacity:0.9"></i>
-              <div style="color:#fff;font-size:14px;font-weight:600;
-                margin-top:10px;text-shadow:0 2px 8px rgba(0,0,0,0.8)">
-                Watch on Telegram
-              </div>
-            </div>
-          </div>` : `
-          <div class="tg-only-thumb tg-only-thumb-empty">
-            <i class="fab fa-telegram"
-              style="font-size:56px;color:#2ca5e0"></i>
-            <div style="color:#aaa;font-size:14px;margin-top:12px">
-              Available on Telegram
-            </div>
-          </div>`}
-        </div>
-        ${tgHTML}`;
-    }
-
-    // ===== EMBED URL =====
-    function getEmbedUrl(url) {
-      if (!url || !url.trim()) return null;
+    function getEmbedSrc(url) {
       if (url.includes('youtube.com/watch')) {
         try {
           const id = new URL(url).searchParams.get('v');
-          return { type: 'iframe', src: `https://www.youtube.com/embed/${id}?autoplay=1&rel=0` };
+          return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
         } catch {}
       }
       if (url.includes('youtu.be/')) {
         const id = url.split('youtu.be/')[1].split('?')[0];
-        return { type: 'iframe', src: `https://www.youtube.com/embed/${id}?autoplay=1&rel=0` };
+        return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
       }
       if (url.includes('drive.google.com')) {
         const m1 = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
-        if (m1) return { type: 'iframe', src: `https://drive.google.com/file/d/${m1[1]}/preview` };
+        if (m1) return `https://drive.google.com/file/d/${m1[1]}/preview`;
         const m2 = url.match(/id=([a-zA-Z0-9_-]{10,})/);
-        if (m2) return { type: 'iframe', src: `https://drive.google.com/file/d/${m2[1]}/preview` };
+        if (m2) return `https://drive.google.com/file/d/${m2[1]}/preview`;
       }
-      if (url.match(/\.(mp4|webm|ogg|mkv)(\?|$)/i))
-        return { type: 'video', src: url };
-      return { type: 'iframe', src: url };
+      return url;
     }
 
+    // ===== FORMAT TIME =====
+    function fmtTime(s) {
+      if (isNaN(s)) return '0:00';
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = Math.floor(s % 60);
+      if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+      return `${m}:${String(sec).padStart(2,'0')}`;
+    }
+
+    // ===== FULLSCREEN =====
+    function enterFullscreen(el) {
+      if (el.requestFullscreen)           el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (el.mozRequestFullScreen)    el.mozRequestFullScreen();
+      else if (el.msRequestFullscreen)     el.msRequestFullscreen();
+      else {
+        // Fallback: CSS fullscreen
+        el.classList.add('av-fullscreen');
+        playerState.isFullscreen = true;
+        document.body.style.overflow = 'hidden';
+      }
+    }
+    function exitFullscreen() {
+      if (document.exitFullscreen)           document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      else if (document.mozCancelFullScreen)  document.mozCancelFullScreen();
+      else if (document.msExitFullscreen)     document.msExitFullscreen();
+      else {
+        const el = document.querySelector('.av-fullscreen');
+        if (el) {
+          el.classList.remove('av-fullscreen');
+          document.body.style.overflow = '';
+        }
+        playerState.isFullscreen = false;
+      }
+    }
+
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+    document.addEventListener('mozfullscreenchange', onFsChange);
+    function onFsChange() {
+      const isFs = !!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement
+      );
+      playerState.isFullscreen = isFs;
+      const btn = document.getElementById('avFsBtn');
+      if (btn) btn.innerHTML = isFs
+        ? '<i class="fas fa-compress"></i>'
+        : '<i class="fas fa-expand"></i>';
+    }
+
+    // ===== BUILD DIRECT VIDEO PLAYER =====
+    function buildDirectPlayer(url, title) {
+      return `
+        <div class="av-wrapper" id="avWrapper">
+          <!-- Video element -->
+          <video class="av-video" id="avVideo"
+            playsinline webkit-playsinline
+            preload="metadata">
+            <source src="${url}" type="video/mp4"/>
+            <source src="${url}"/>
+          </video>
+
+          <!-- Loading -->
+          <div class="av-loader hidden" id="avLoader">
+            <div class="av-spin"></div>
+          </div>
+
+          <!-- Double tap seek areas -->
+          <div class="av-seek-left"  id="avSeekLeft"></div>
+          <div class="av-seek-right" id="avSeekRight"></div>
+
+          <!-- Tap feedback -->
+          <div class="av-tap-feedback left"  id="avTapLeft">
+            <i class="fas fa-backward"></i>
+          </div>
+          <div class="av-tap-feedback right" id="avTapRight">
+            <i class="fas fa-forward"></i>
+          </div>
+
+          <!-- Center play/pause -->
+          <div class="av-center-play visible" id="avCenterPlay">
+            <div class="av-center-play-btn" id="avCenterBtn">
+              <i class="fas fa-play"></i>
+            </div>
+          </div>
+
+          <!-- Fullscreen exit -->
+          <button class="av-fs-exit-btn" onclick="exitFullscreen()">
+            <i class="fas fa-compress"></i>
+          </button>
+
+          <!-- Controls -->
+          <div class="av-controls" id="avControls">
+            <div class="av-top-bar">
+              <span class="av-top-title">${title}</span>
+            </div>
+
+            <div class="av-bottom-bar">
+              <!-- Progress -->
+              <div class="av-progress-wrap" id="avProgWrap">
+                <div class="av-progress-bg">
+                  <div class="av-progress-buffered" id="avBuffered"></div>
+                  <div class="av-progress-fill"     id="avProgFill"></div>
+                </div>
+                <div class="av-progress-thumb" id="avProgThumb"></div>
+                <input type="range" class="av-seek" id="avSeekBar"
+                  min="0" max="100" step="0.01" value="0"/>
+              </div>
+
+              <!-- Buttons -->
+              <div class="av-ctrl-row">
+                <button class="av-ctrl-btn" id="avPlayBtn"
+                  onclick="togglePlay()">
+                  <i class="fas fa-play"></i>
+                </button>
+                <button class="av-ctrl-btn sm" onclick="seekBy(-10)"
+                  title="-10s">
+                  <i class="fas fa-rotate-left" style="font-size:11px"></i>
+                  <span style="font-size:9px;position:absolute;
+                    margin-top:12px">10</span>
+                </button>
+                <button class="av-ctrl-btn sm" onclick="seekBy(10)"
+                  title="+10s" style="position:relative">
+                  <i class="fas fa-rotate-right" style="font-size:11px"></i>
+                  <span style="font-size:9px;position:absolute;
+                    margin-top:12px">10</span>
+                </button>
+                <span class="av-time" id="avTime">0:00 / 0:00</span>
+
+                <div class="av-spacer"></div>
+
+                <span class="av-speed-badge" id="avSpeedBadge"
+                  onclick="toggleSpeedMenu()">1x</span>
+
+                <div style="position:relative">
+                  <div class="av-speed-menu" id="avSpeedMenu">
+                    ${[0.5,0.75,1,1.25,1.5,2].map(s =>
+                      `<div class="av-speed-option ${s===1?'active':''}"
+                        onclick="setSpeed(${s})">${s}x</div>`
+                    ).join('')}
+                  </div>
+                </div>
+
+                <button class="av-ctrl-btn" id="avVolBtn"
+                  onclick="toggleMute()">
+                  <i class="fas fa-volume-high"></i>
+                </button>
+                <div class="av-vol-wrap" id="avVolWrap">
+                  <input type="range" class="av-vol-slider" id="avVolSlider"
+                    min="0" max="100" value="100"
+                    oninput="setVolume(this.value)"/>
+                </div>
+
+                <button class="av-ctrl-btn" id="avFsBtn"
+                  onclick="toggleFullscreen()">
+                  <i class="fas fa-expand"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // ===== BUILD IFRAME PLAYER (YouTube / Drive) =====
+    function buildIframePlayer(url, title) {
+      const src  = getEmbedSrc(url);
+      const type = detectUrlType(url);
+      return `
+        <div class="av-wrapper" id="avWrapper" style="aspect-ratio:16/9">
+          <iframe class="av-iframe" id="avIframe"
+            src="${src}"
+            allowfullscreen
+            webkitallowfullscreen
+            mozallowfullscreen
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+          ></iframe>
+
+          <!-- Fullscreen exit button -->
+          <button class="av-fs-exit-btn" onclick="exitFullscreen()">
+            <i class="fas fa-compress"></i>
+          </button>
+
+          <!-- Custom fullscreen button overlay -->
+          <button class="av-iframe-fs-btn" id="avFsBtn"
+            onclick="toggleFullscreen()" title="Fullscreen">
+            <i class="fas fa-expand"></i>
+          </button>
+
+          <!-- Top title bar (shows briefly) -->
+          <div class="av-controls iframe-mode" id="avControls">
+            <div class="av-top-bar" style="padding-top:8px">
+              <span class="av-top-title">${title}</span>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // ===== INIT DIRECT PLAYER EVENTS =====
+    function initDirectPlayer() {
+      const video    = document.getElementById('avVideo');
+      const wrapper  = document.getElementById('avWrapper');
+      const controls = document.getElementById('avControls');
+      const loader   = document.getElementById('avLoader');
+      const playBtn  = document.getElementById('avPlayBtn');
+      const centerPlay = document.getElementById('avCenterPlay');
+      const centerBtn  = document.getElementById('avCenterBtn');
+      const progFill   = document.getElementById('avProgFill');
+      const progThumb  = document.getElementById('avProgThumb');
+      const buffered   = document.getElementById('avBuffered');
+      const seekBar    = document.getElementById('avSeekBar');
+      const timeEl     = document.getElementById('avTime');
+      const volBtn     = document.getElementById('avVolBtn');
+      const volWrap    = document.getElementById('avVolWrap');
+      const volSlider  = document.getElementById('avVolSlider');
+      const tapLeft    = document.getElementById('avTapLeft');
+      const tapRight   = document.getElementById('avTapRight');
+
+      if (!video) return;
+
+      // Show/hide controls on touch/mouse
+      function showControls() {
+        controls.classList.remove('hidden');
+        clearTimeout(playerState.controlsTimer);
+        if (playerState.playing) {
+          playerState.controlsTimer = setTimeout(() => {
+            controls.classList.add('hidden');
+            centerPlay.classList.remove('visible');
+          }, 3000);
+        }
+      }
+
+      wrapper.addEventListener('touchstart', showControls, { passive: true });
+      wrapper.addEventListener('mousemove', showControls);
+
+      // Click center to play/pause (with double-tap detection)
+      let lastTap = 0;
+      let tapTimer = null;
+
+      function handleWrapperTap(e) {
+        const now = Date.now();
+        const diff = now - lastTap;
+        const rect = wrapper.getBoundingClientRect();
+        const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+        const isLeft = x < rect.width * 0.33;
+        const isRight = x > rect.width * 0.67;
+
+        if (diff < 300 && diff > 0) {
+          // Double tap
+          clearTimeout(tapTimer);
+          if (isLeft || isRight) {
+            seekBy(isLeft ? -10 : 10);
+            showTapFeedback(isLeft ? tapLeft : tapRight);
+          }
+          lastTap = 0;
+        } else {
+          lastTap = now;
+          tapTimer = setTimeout(() => {
+            if (lastTap) {
+              togglePlay();
+              lastTap = 0;
+            }
+          }, 300);
+        }
+      }
+
+      wrapper.addEventListener('click', handleWrapperTap);
+
+      function showTapFeedback(el) {
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 600);
+      }
+
+      // Video events
+      video.addEventListener('play', () => {
+        playerState.playing = true;
+        playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        centerBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        centerPlay.classList.remove('visible');
+        showControls();
+      });
+      video.addEventListener('pause', () => {
+        playerState.playing = false;
+        playBtn.innerHTML = '<i class="fas fa-play"></i>';
+        centerBtn.innerHTML = '<i class="fas fa-play"></i>';
+        centerPlay.classList.add('visible');
+        controls.classList.remove('hidden');
+        clearTimeout(playerState.controlsTimer);
+      });
+      video.addEventListener('ended', () => {
+        playerState.playing = false;
+        playBtn.innerHTML = '<i class="fas fa-rotate-right"></i>';
+        centerBtn.innerHTML = '<i class="fas fa-rotate-right"></i>';
+        centerPlay.classList.add('visible');
+      });
+      video.addEventListener('waiting', () => {
+        loader.classList.remove('hidden');
+      });
+      video.addEventListener('canplay', () => {
+        loader.classList.add('hidden');
+      });
+      video.addEventListener('loadedmetadata', () => {
+        loader.classList.add('hidden');
+      });
+      video.addEventListener('error', () => {
+        loader.classList.add('hidden');
+      });
+
+      // Progress
+      video.addEventListener('timeupdate', () => {
+        if (!video.duration) return;
+        const pct = (video.currentTime / video.duration) * 100;
+        progFill.style.width  = pct + '%';
+        progThumb.style.left  = pct + '%';
+        seekBar.value = pct;
+        timeEl.textContent =
+          `${fmtTime(video.currentTime)} / ${fmtTime(video.duration)}`;
+      });
+
+      // Buffered
+      video.addEventListener('progress', () => {
+        if (!video.duration || !video.buffered.length) return;
+        const pct =
+          (video.buffered.end(video.buffered.length - 1) / video.duration) * 100;
+        buffered.style.width = pct + '%';
+      });
+
+      // Seek
+      seekBar.addEventListener('input', function() {
+        if (!video.duration) return;
+        video.currentTime = (this.value / 100) * video.duration;
+        progFill.style.width = this.value + '%';
+        progThumb.style.left = this.value + '%';
+      });
+
+      // Volume hover show
+      volBtn.addEventListener('mouseenter', () => volWrap.classList.add('show'));
+      volBtn.addEventListener('touchstart', () => volWrap.classList.toggle('show'), { passive: true });
+      document.getElementById('avWrapper').addEventListener('mouseleave', () => {
+        volWrap.classList.remove('show');
+      });
+
+      // Auto-play attempt
+      video.play().catch(() => {
+        // autoplay blocked — show play button
+        centerPlay.classList.add('visible');
+      });
+    }
+
+    // ===== TOGGLE PLAY =====
+    window.togglePlay = function() {
+      const video = document.getElementById('avVideo');
+      if (!video) return;
+      if (video.paused) video.play();
+      else video.pause();
+    };
+
+    // ===== SEEK BY SECONDS =====
+    window.seekBy = function(sec) {
+      const video = document.getElementById('avVideo');
+      if (!video) return;
+      video.currentTime = Math.max(0, Math.min(video.duration || 0, video.currentTime + sec));
+    };
+
+    // ===== VOLUME =====
+    window.setVolume = function(val) {
+      const video = document.getElementById('avVideo');
+      if (!video) return;
+      const v = val / 100;
+      video.volume = v;
+      playerState.volume = v;
+      playerState.muted  = v === 0;
+      updateVolIcon(v);
+      const slider = document.getElementById('avVolSlider');
+      if (slider) slider.style.setProperty('--vol', val + '%');
+    };
+    window.toggleMute = function() {
+      const video = document.getElementById('avVideo');
+      if (!video) return;
+      video.muted = !video.muted;
+      playerState.muted = video.muted;
+      const volSlider = document.getElementById('avVolSlider');
+      if (volSlider) {
+        volSlider.value = video.muted ? 0 : playerState.volume * 100;
+      }
+      updateVolIcon(video.muted ? 0 : playerState.volume);
+    };
+    function updateVolIcon(v) {
+      const btn = document.getElementById('avVolBtn');
+      if (!btn) return;
+      if (v === 0) btn.innerHTML = '<i class="fas fa-volume-xmark"></i>';
+      else if (v < 0.5) btn.innerHTML = '<i class="fas fa-volume-low"></i>';
+      else btn.innerHTML = '<i class="fas fa-volume-high"></i>';
+    }
+
+    // ===== SPEED =====
+    window.toggleSpeedMenu = function() {
+      document.getElementById('avSpeedMenu').classList.toggle('show');
+    };
+    window.setSpeed = function(s) {
+      const video = document.getElementById('avVideo');
+      if (video) video.playbackRate = s;
+      playerState.speed = s;
+      document.getElementById('avSpeedBadge').textContent = s + 'x';
+      document.querySelectorAll('.av-speed-option').forEach(el => {
+        el.classList.toggle('active', parseFloat(el.textContent) === s);
+      });
+      document.getElementById('avSpeedMenu').classList.remove('show');
+    };
+
+    // ===== FULLSCREEN =====
+    window.toggleFullscreen = function() {
+      const wrapper = document.getElementById('avWrapper');
+      if (!wrapper) return;
+      if (playerState.isFullscreen) {
+        exitFullscreen();
+      } else {
+        enterFullscreen(wrapper);
+      }
+    };
+
+    // ===== EPISODE / LANGUAGE DATA =====
     function getEpisodeLangs(episode) {
       if (episode.languages && Object.keys(episode.languages).length > 0)
         return episode.languages;
       if (episode.videoUrls) return { 'Japanese': episode.videoUrls };
       if (episode.videoUrl)  return { 'Japanese': { '720p': episode.videoUrl } };
       return {};
+    }
+
+    function hasVideoContent(episode) {
+      const langs = episode.languages || {};
+      if (Object.values(langs).some(qm =>
+        qm && Object.values(qm).some(u => u && u.trim())
+      )) return true;
+      if (episode.videoUrls && Object.values(episode.videoUrls).some(u => u)) return true;
+      if (episode.videoUrl && episode.videoUrl.trim()) return true;
+      return false;
     }
 
     function getBestQuality(langData) {
@@ -241,178 +849,333 @@
       return Object.keys(langData)[0] || '';
     }
 
-    // ===== LOAD VIDEO =====
-    function loadVideo(url, quality) {
-      const embed     = getEmbedUrl(url);
-      const container = document.getElementById('playerContainer');
+    function getTelegramData(episode, season) {
+      if (episode.telegramLinks &&
+        Object.values(episode.telegramLinks).some(v => v))
+        return { source:'episode', links: episode.telegramLinks };
+      if (episode.telegramUrl)
+        return { source:'episode', single: episode.telegramUrl };
+      // Season packs
+      const packs = getSeasonPacks(season);
+      if (packs.length > 0)
+        return { source:'season', packs };
+      return null;
+    }
+
+    function getSeasonPacks(season) {
+      const packs = [];
+      // New telegramPacks array
+      if (season.telegramPacks && season.telegramPacks.length > 0) {
+        season.telegramPacks.forEach(p => packs.push(p));
+      } else {
+        // Legacy single pack
+        if (season.telegramLinks &&
+          Object.values(season.telegramLinks).some(v => v)) {
+          packs.push({
+            range: season.episodeRange || null,
+            links: season.telegramLinks
+          });
+        } else if (season.telegramUrl) {
+          packs.push({
+            range: season.episodeRange || null,
+            single: season.telegramUrl
+          });
+        }
+      }
+      return packs;
+    }
+
+    // ===== LOAD VIDEO URL INTO PLAYER =====
+    function loadVideoUrl(url, quality, lang) {
+      playerState.currentQuality = quality;
+      playerState.currentLang    = lang;
+
+      // Update quality buttons
       document.querySelectorAll('.quality-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.quality === quality);
       });
-      if (!embed) {
-        container.innerHTML = `
-          <div class="no-video-msg">
-            <i class="fas fa-film"></i>
-            <span>Video not available for this quality.</span>
-          </div>`;
-        return;
-      }
-      if (embed.type === 'iframe') {
-        container.innerHTML = `
-          <iframe src="${embed.src}" allowfullscreen
-            allow="autoplay; fullscreen; encrypted-media; picture-in-picture">
-          </iframe>`;
+
+      // Reload the player section
+      const type = detectUrlType(url);
+      const playerSection = document.getElementById('playerSection');
+      const epTitle = playerSection.dataset.title || '';
+
+      if (type === 'direct') {
+        // Update video src
+        const video = document.getElementById('avVideo');
+        if (video) {
+          const wasPlaying = !video.paused;
+          const currentTime = video.currentTime;
+          video.src = url;
+          video.load();
+          if (wasPlaying) {
+            video.currentTime = currentTime;
+            video.play();
+          }
+        }
       } else {
-        container.innerHTML = `
-          <video controls autoplay controlsList="nodownload">
-            <source src="${embed.src}"/>
-          </video>`;
+        // Rebuild iframe player
+        playerSection.innerHTML = buildIframePlayer(url, epTitle);
       }
     }
 
     // ===== SWITCH LANGUAGE =====
-    function switchLanguage(lang, langData) {
+    window.switchLanguage = function(lang, langDataStr) {
+      const langData = JSON.parse(langDataStr.replace(/&quot;/g, '"'));
       document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.lang === lang);
       });
+      // Rebuild quality buttons
       const qContainer = document.getElementById('qualityBtnsContainer');
-      const available  = qualityOrder.filter(q => langData[q] && langData[q].trim());
+      if (!qContainer) return;
+      const available = qualityOrder.filter(q => langData[q] && langData[q].trim());
       qContainer.innerHTML = available.map(q => {
-        const cfg = qualityConfig[q] || { label: q, color: '#888' };
+        const cfg = qualityConfig[q] || { label:q, color:'#888' };
         return `<button class="quality-btn" data-quality="${q}"
-          onclick="loadVideo('${langData[q].replace(/'/g,"\\'")}', '${q}')"
+          onclick="loadVideoUrl('${langData[q].replace(/'/g,"\\'")}','${q}','${lang}')"
           style="--qcolor:${cfg.color}">
           ${cfg.label}
         </button>`;
       }).join('');
       const best = getBestQuality(langData);
       if (best && langData[best]) {
-        setTimeout(() => {
-          loadVideo(langData[best], best);
-          document.querySelectorAll('.quality-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.quality === best);
-          });
-        }, 50);
+        setTimeout(() => loadVideoUrl(langData[best], best, lang), 50);
       }
+    };
+
+    // ===== BUILD TELEGRAM SECTION =====
+    function buildTelegramHTML(tgData) {
+      if (!tgData) return '';
+
+      if (tgData.source === 'episode') {
+        // Single episode TG
+        if (tgData.single) {
+          return `
+            <div class="tg-section">
+              <div class="tg-label">
+                <i class="fab fa-telegram"></i>
+                <span>Watch on Telegram</span>
+              </div>
+              <a href="${tgData.single}" target="_blank"
+                rel="noopener" class="tg-btn-main">
+                <i class="fab fa-telegram"></i>
+                Open in Telegram
+              </a>
+            </div>`;
+        }
+        if (tgData.links) {
+          const keys = qualityOrder.filter(q => tgData.links[q]);
+          if (!keys.length) return '';
+          return `
+            <div class="tg-section">
+              <div class="tg-label">
+                <i class="fab fa-telegram"></i>
+                <span>Watch on Telegram</span>
+              </div>
+              <div class="tg-quality-row">
+                ${keys.map(q => {
+                  const cfg = qualityConfig[q]||{label:q,color:'#2ca5e0'};
+                  return `<a href="${tgData.links[q]}" target="_blank"
+                    rel="noopener" class="tg-quality-btn"
+                    style="--tgcolor:${cfg.color}">
+                    <i class="fab fa-telegram"></i> ${cfg.label}
+                  </a>`;
+                }).join('')}
+              </div>
+            </div>`;
+        }
+      }
+
+      if (tgData.source === 'season' && tgData.packs) {
+        return tgData.packs.map(pack => {
+          const rangeText = pack.range
+            ? `Episodes ${pack.range}` : 'Full Season';
+          if (pack.single) {
+            return `
+              <div class="tg-section">
+                <div class="tg-label">
+                  <i class="fab fa-telegram"></i>
+                  <span>Season Pack</span>
+                  <span style="font-size:11px;color:var(--text2);
+                    background:var(--bg3);padding:2px 8px;
+                    border-radius:10px;border:1px solid var(--border)">
+                    ${rangeText}
+                  </span>
+                </div>
+                <a href="${pack.single}" target="_blank" rel="noopener"
+                  class="tg-btn-main">
+                  <i class="fab fa-telegram"></i>
+                  Watch ${rangeText}
+                </a>
+              </div>`;
+          }
+          if (pack.links) {
+            const keys = qualityOrder.filter(q => pack.links[q]);
+            if (!keys.length) return '';
+            return `
+              <div class="tg-section">
+                <div class="tg-label">
+                  <i class="fab fa-telegram"></i>
+                  <span>Season Pack — ${rangeText}</span>
+                </div>
+                <div class="tg-quality-row">
+                  ${keys.map(q => {
+                    const cfg = qualityConfig[q]||{label:q,color:'#2ca5e0'};
+                    return `<a href="${pack.links[q]}" target="_blank"
+                      rel="noopener" class="tg-quality-btn"
+                      style="--tgcolor:${cfg.color}">
+                      <i class="fab fa-telegram"></i>
+                      ${cfg.label}
+                    </a>`;
+                  }).join('')}
+                </div>
+              </div>`;
+          }
+          return '';
+        }).join('');
+      }
+      return '';
     }
 
-    // ===== MAIN RENDER =====
+    // ===== THUMBNAIL + TG (no video) =====
+    function buildThumbnailPlayerHTML(episode, tgHTML) {
+      const thumb = episode.thumbnail || '';
+      return `
+        <div class="tg-only-player">
+          ${thumb
+            ? `<div class="tg-only-thumb"
+                style="background-image:url('${thumb}')">
+                <div class="tg-only-overlay">
+                  <i class="fab fa-telegram"
+                    style="font-size:48px;color:#2ca5e0;opacity:0.9"></i>
+                  <div style="color:#fff;font-size:14px;font-weight:600;
+                    margin-top:10px;text-shadow:0 2px 8px rgba(0,0,0,0.8)">
+                    Watch on Telegram
+                  </div>
+                </div>
+              </div>`
+            : `<div class="tg-only-thumb tg-only-thumb-empty">
+                <i class="fab fa-telegram"
+                  style="font-size:56px;color:#2ca5e0"></i>
+                <div style="color:#aaa;font-size:14px;margin-top:12px">
+                  Available on Telegram
+                </div>
+              </div>`}
+        </div>
+        ${tgHTML}`;
+    }
+
+    // ===== RENDER PLAYER =====
     function renderPlayer(anime, season, episode, allEpisodes, seasonId, animeId) {
-      const hasVideo  = hasVideoContent(episode);
-      const tgData    = getTelegramData(episode, season);
-      const hasTg     = !!tgData;
-      const tgHTML    = buildTelegramHTML(tgData, episode);
+      const hasVid  = hasVideoContent(episode);
+      const tgData  = getTelegramData(episode, season);
+      const hasTg   = !!tgData;
+      const tgHTML  = buildTelegramHTML(tgData);
 
-      const languages    = getEpisodeLangs(episode);
-      const langKeys     = Object.keys(languages);
-      const defaultLang  = langKeys.includes('Japanese') ? 'Japanese' : langKeys[0] || '';
-      const initLangData = defaultLang ? languages[defaultLang] : {};
-      const initBest     = getBestQuality(initLangData);
-      const initQualities= qualityOrder.filter(q => initLangData[q] && initLangData[q].trim());
+      const languages   = getEpisodeLangs(episode);
+      const langKeys    = Object.keys(languages);
+      const defaultLang = langKeys.includes('Japanese') ? 'Japanese' : langKeys[0] || '';
+      const initLD      = defaultLang ? languages[defaultLang] : {};
+      const initBest    = getBestQuality(initLD);
+      const initQuals   = qualityOrder.filter(q => initLD[q] && initLD[q].trim());
 
-      // Language buttons
       const langBtnsHTML = langKeys.map(lang => {
-        const flag     = langFlags[lang] || '🌐';
-        const safeData = JSON.stringify(languages[lang]).replace(/"/g,'&quot;');
+        const flag = langFlags[lang] || '🌐';
+        const safe = JSON.stringify(languages[lang]).replace(/"/g,'&quot;');
         return `<button class="lang-btn ${lang===defaultLang?'active':''}"
           data-lang="${lang}"
-          onclick="switchLanguage('${lang}', ${safeData})">
+          onclick="switchLanguage('${lang}', '${safe}')">
           ${flag} ${lang}
         </button>`;
       }).join('');
 
-      // Quality buttons
-      const qualityBtnsHTML = initQualities.map(q => {
-        const cfg = qualityConfig[q] || { label: q, color: '#888' };
-        return `<button class="quality-btn ${q===initBest?'active':''}" data-quality="${q}"
-          onclick="loadVideo('${(initLangData[q]||'').replace(/'/g,"\\'")}', '${q}')"
+      const qualBtnsHTML = initQuals.map(q => {
+        const cfg = qualityConfig[q]||{label:q,color:'#888'};
+        return `<button class="quality-btn ${q===initBest?'active':''}"
+          data-quality="${q}"
+          onclick="loadVideoUrl('${(initLD[q]||'').replace(/'/g,"\\'")}','${q}','${defaultLang}')"
           style="--qcolor:${cfg.color}">
           ${cfg.label}
         </button>`;
       }).join('');
 
-      // Prev / Next
+      // Nav buttons
       const currIdx = allEpisodes.findIndex(e => e.id === episode.id);
-      const prevEp  = currIdx > 0 ? allEpisodes[currIdx - 1] : null;
-      const nextEp  = currIdx < allEpisodes.length - 1 ? allEpisodes[currIdx + 1] : null;
+      const prevEp  = currIdx > 0 ? allEpisodes[currIdx-1] : null;
+      const nextEp  = currIdx < allEpisodes.length-1 ? allEpisodes[currIdx+1] : null;
 
       const prevBtn = prevEp
         ? `<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${prevEp.id}"
               class="btn-outline" style="font-size:13px;text-decoration:none">
-            <i class="fas fa-backward-step"></i> Prev
-           </a>`
-        : `<button class="btn-outline" disabled style="opacity:0.4;font-size:13px;cursor:not-allowed">
-            <i class="fas fa-backward-step"></i> Prev
-           </button>`;
-
+            <i class="fas fa-backward-step"></i> Prev</a>`
+        : `<button class="btn-outline" disabled
+              style="opacity:0.4;font-size:13px;cursor:not-allowed">
+            <i class="fas fa-backward-step"></i> Prev</button>`;
       const nextBtn = nextEp
         ? `<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${nextEp.id}"
               class="btn-primary" style="font-size:13px;text-decoration:none">
-            Next <i class="fas fa-forward-step"></i>
-           </a>`
-        : `<button class="btn-primary" disabled style="opacity:0.4;font-size:13px;cursor:not-allowed">
-            Next <i class="fas fa-forward-step"></i>
-           </button>`;
+            Next <i class="fas fa-forward-step"></i></a>`
+        : `<button class="btn-primary" disabled
+              style="opacity:0.4;font-size:13px;cursor:not-allowed">
+            Next <i class="fas fa-forward-step"></i></button>`;
 
-      // ============================================================
-      // SMART DISPLAY LOGIC
-      // Video only → Player
-      // TG only → Thumbnail + TG buttons
-      // Both → Player + TG section below
-      // Neither → No content message
-      // ============================================================
+      // Determine player type
+      let topHTML = '';
+      const epTitle = `${anime.title} · ${season.title} · Ep ${episode.id}`;
 
-      let topSectionHTML = '';
-
-      if (hasVideo) {
-        // Show video player
-        topSectionHTML = `
-          <!-- VIDEO PLAYER -->
-          <div class="player-wrapper">
-            <div id="playerContainer" style="width:100%;height:100%">
-              <div class="no-video-msg">
-                <i class="fas fa-circle-notch fa-spin" style="font-size:28px"></i>
-                <span>Loading video...</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- LANGUAGE + QUALITY -->
-          ${langKeys.length > 0 ? `
-          <div class="lang-quality-box">
-            ${langKeys.length > 0 ? `
-            <div class="lq-row">
-              <span class="lq-label"><i class="fas fa-language"></i> Language</span>
-              <div class="lang-btns">${langBtnsHTML}</div>
-            </div>` : ''}
-            <div class="lq-row">
-              <span class="lq-label"><i class="fas fa-sliders"></i> Quality</span>
-              <div class="quality-btns" id="qualityBtnsContainer">
-                ${qualityBtnsHTML}
-              </div>
-            </div>
-          </div>` : ''}
-
-          <!-- TELEGRAM (if also has TG) -->
-          ${hasTg ? tgHTML : ''}`;
-
+      if (hasVid && initBest && initLD[initBest]) {
+        const url  = initLD[initBest];
+        const type = detectUrlType(url);
+        if (type === 'direct') {
+          topHTML = `
+            <div id="playerSection" data-title="${epTitle}">
+              ${buildDirectPlayer(url, epTitle)}
+            </div>`;
+        } else {
+          topHTML = `
+            <div id="playerSection" data-title="${epTitle}">
+              ${buildIframePlayer(url, epTitle)}
+            </div>`;
+        }
+        if (langKeys.length > 0 || initQuals.length > 1) {
+          topHTML += `
+            <div class="lang-quality-box">
+              ${langKeys.length > 0 ? `
+              <div class="lq-row">
+                <span class="lq-label">
+                  <i class="fas fa-language"></i> Language
+                </span>
+                <div class="lang-btns">${langBtnsHTML}</div>
+              </div>` : ''}
+              ${initQuals.length > 0 ? `
+              <div class="lq-row">
+                <span class="lq-label">
+                  <i class="fas fa-sliders"></i> Quality
+                </span>
+                <div class="quality-btns" id="qualityBtnsContainer">
+                  ${qualBtnsHTML}
+                </div>
+              </div>` : ''}
+            </div>`;
+        }
+        if (hasTg) topHTML += tgHTML;
       } else if (hasTg) {
-        // Show thumbnail + TG buttons ONLY (no player)
-        topSectionHTML = buildThumbnailPlayerHTML(episode, tgHTML);
+        topHTML = buildThumbnailPlayerHTML(episode, tgHTML);
       } else {
-        // Nothing
-        topSectionHTML = `
+        topHTML = `
           <div style="background:var(--card-bg);border:1px solid var(--border);
-            border-radius:12px;padding:30px 20px;text-align:center;color:var(--text2);
-            margin-bottom:14px">
-            <i class="fas fa-film" style="font-size:36px;opacity:0.3;margin-bottom:12px;display:block"></i>
+            border-radius:12px;padding:30px;text-align:center;
+            color:var(--text2);margin-bottom:14px">
+            <i class="fas fa-film"
+              style="font-size:36px;opacity:0.3;margin-bottom:12px;
+                display:block"></i>
             Video not available yet.
           </div>`;
       }
 
       document.getElementById('watchMain').innerHTML = `
-        ${topSectionHTML}
+        ${topHTML}
 
-        <!-- NAV -->
         <div class="ep-nav">
           ${prevBtn}
           <a href="anime.html?id=${animeId}" class="btn-outline"
@@ -422,57 +1185,63 @@
           ${nextBtn}
         </div>
 
-        <!-- EPISODE INFO -->
         <div class="watch-info">
           <div class="anime-ep-label">
             ${anime.title} &middot; ${season.title} &middot; Episode ${episode.id}
           </div>
           <h2>${episode.title}</h2>
-          <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;align-items:center">
+          <div style="display:flex;gap:12px;margin-top:8px;
+            flex-wrap:wrap;align-items:center">
+            ${episode.duration ? `
             <span class="info-chip" style="font-size:12px;color:var(--text2)">
               <i class="fas fa-clock" style="color:var(--accent)"></i>
-              ${episode.duration || 'N/A'}
-            </span>
+              ${episode.duration}
+            </span>` : ''}
             ${langKeys.length > 0 ? `
             <span class="info-chip" style="font-size:12px;color:var(--text2)">
               <i class="fas fa-language" style="color:var(--accent)"></i>
-              ${langKeys.length} language${langKeys.length > 1 ? 's' : ''}
+              ${langKeys.length} language${langKeys.length>1?'s':''}
             </span>` : ''}
             ${hasTg ? `
             <span style="font-size:11px;font-weight:600;color:#2ca5e0;
               display:flex;align-items:center;gap:4px">
               <i class="fab fa-telegram"></i>
-              ${tgData.source === 'season' ? 'Season Pack' : 'On Telegram'}
+              ${tgData.source==='season' ? 'Season Pack' : 'On Telegram'}
             </span>` : ''}
           </div>
-          ${episode.description
-            ? `<p style="font-size:13px;color:var(--text2);line-height:1.7;margin-top:10px">
-                ${episode.description}</p>` : ''}
+          ${episode.description ? `
+          <p style="font-size:13px;color:var(--text2);
+            line-height:1.7;margin-top:10px">
+            ${episode.description}
+          </p>` : ''}
         </div>
 
-        <!-- ALL EPISODES -->
         <div style="margin-top:24px">
-          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text)">
+          <h3 style="font-size:15px;font-weight:700;
+            margin-bottom:12px;color:var(--text)">
             ${season.title} — All Episodes
           </h3>
           <div class="episodes-list" id="otherEps"></div>
         </div>
       `;
 
-      // Auto-load video if has video
-      if (hasVideo && defaultLang && initBest && initLangData[initBest]) {
-        setTimeout(() => loadVideo(initLangData[initBest], initBest), 100);
+      // Init direct player events after DOM
+      if (hasVid && initBest && initLD[initBest]) {
+        const type = detectUrlType(initLD[initBest]);
+        if (type === 'direct') {
+          setTimeout(initDirectPlayer, 100);
+        }
       }
 
-      // Render other episodes
+      // Other episodes
       const otherEps = document.getElementById('otherEps');
       allEpisodes.forEach(ep => {
-        const isActive    = ep.id === episode.id;
-        const epHasVideo  = hasVideoContent(ep);
-        const epTgData    = getTelegramData(ep, season);
-        const epHasTg     = !!epTgData;
-        const epLangs     = getEpisodeLangs(ep);
-        const epLangCount = Object.keys(epLangs).length;
+        const isActive = ep.id === episode.id;
+        const epHasVid = hasVideoContent(ep);
+        const epTgData = getTelegramData(ep, season);
+        const epHasTg  = !!epTgData;
+        const epLangs  = getEpisodeLangs(ep);
+        const epLC     = Object.keys(epLangs).length;
 
         const item = document.createElement('div');
         item.className = 'episode-item';
@@ -483,14 +1252,14 @@
         item.innerHTML = `
           <div class="ep-thumb" style="position:relative;overflow:hidden">
             <img src="${ep.thumbnail||''}" alt="Ep ${ep.id}"
-              style="width:100%;height:100%;object-fit:cover;border-radius:8px;
-                background:var(--bg3)"
+              style="width:100%;height:100%;object-fit:cover;
+                border-radius:8px;background:var(--bg3)"
               onerror="this.style.background='var(--bg3)'"/>
             <div class="ep-play-icon"
-              style="${isActive ? 'opacity:1;background:rgba(200,119,64,0.75)' : ''}">
-              <i class="fas fa-${isActive ? 'pause' : 'play'}"></i>
+              style="${isActive?'opacity:1;background:rgba(200,119,64,0.75)':''}">
+              <i class="fas fa-${isActive?'pause':'play'}"></i>
             </div>
-            ${epHasTg && !epHasVideo ? `
+            ${epHasTg&&!epHasVid ? `
             <div style="position:absolute;bottom:4px;right:4px;
               background:#2ca5e0;border-radius:4px;padding:2px 6px;
               font-size:9px;color:#fff;font-weight:700">
@@ -498,33 +1267,32 @@
             </div>` : ''}
           </div>
           <div class="ep-info">
-            <div class="ep-num" style="${isActive ? 'color:var(--accent)' : ''}">
-              Ep ${ep.id} ${isActive ? '&#9654; Playing' : ''}
+            <div class="ep-num"
+              style="${isActive?'color:var(--accent)':''}">
+              Ep ${ep.id} ${isActive?'&#9654; Playing':''}
             </div>
             <div class="ep-title">${ep.title}</div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;
               margin-top:3px;align-items:center">
+              ${ep.duration?`
               <span class="ep-duration">
                 <i class="fas fa-clock" style="font-size:9px"></i>
-                ${ep.duration || ''}
-              </span>
-              ${epHasVideo && epLangCount > 0 ? `
+                ${ep.duration}
+              </span>`:''}
+              ${epHasVid&&epLC>0?`
               <span style="font-size:10px;color:var(--accent);font-weight:600">
-                <i class="fas fa-play-circle"></i>
-                ${epLangCount} lang${epLangCount > 1 ? 's' : ''}
-              </span>` : ''}
-              ${epHasTg ? `
+                <i class="fas fa-play-circle"></i> ${epLC} lang${epLC>1?'s':''}
+              </span>`:''}
+              ${epHasTg?`
               <span style="font-size:10px;color:#2ca5e0;font-weight:600">
                 <i class="fab fa-telegram"></i>
-                ${epTgData.source === 'season' ? 'Season' : 'TG'}
-              </span>` : ''}
-              ${!epHasVideo && !epHasTg ? `
-              <span style="font-size:10px;color:#888">No video</span>` : ''}
+                ${epTgData.source==='season'?'Season':'TG'}
+              </span>`:''}
+              ${!epHasVid&&!epHasTg?`
+              <span style="font-size:10px;color:#888">Coming soon</span>`:''}
             </div>
-          </div>
-        `;
-
-        if (!isActive && (epHasVideo || epHasTg)) {
+          </div>`;
+        if (!isActive && (epHasVid||epHasTg)) {
           item.style.cursor = 'pointer';
           item.addEventListener('click', () => {
             window.location.href =
@@ -549,13 +1317,15 @@
           <div class="empty-state">
             <i class="fas fa-exclamation-circle"></i>
             <h2>Anime not found!</h2>
-            <p><a href="index.html" style="color:var(--accent)">Go home</a></p>
+            <p><a href="index.html"
+              style="color:var(--accent)">Go home</a></p>
           </div>`;
         return;
       }
       const anime   = { ...doc.data(), firestoreId: doc.id };
       const season  = anime.seasons && anime.seasons.find(s => s.id === seasonId);
-      const episode = season && season.episodes && season.episodes.find(e => e.id === epId);
+      const episode = season && season.episodes &&
+        season.episodes.find(e => e.id === epId);
 
       if (!season || !episode) {
         document.getElementById('watchMain').innerHTML = `
