@@ -350,7 +350,16 @@ function updateAuthUI(user) {
 
   if (user) {
     const initial = (user.displayName || user.email || 'U')[0].toUpperCase();
-    profileBtn.textContent  = initial;
+    // Check for avatar
+    if (user.photoURL) {
+      profileBtn.innerHTML = `
+        <img src="${user.photoURL}"
+          style="width:32px;height:32px;border-radius:50%;object-fit:cover"
+          onerror="this.parentElement.textContent='${initial}'"/>`;
+    } else {
+      profileBtn.innerHTML = '';
+      profileBtn.textContent = initial;
+    }
     profileBtn.style.fontWeight = '700';
     profileBtn.style.fontSize   = '15px';
 
