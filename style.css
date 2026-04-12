@@ -1499,3 +1499,9 @@ a { text-decoration: none; color: inherit; }
   border: 1px solid var(--border);
 }
 .tg-only-thumb-empty::after { display: none; }
+
+/* ===== ADMIN SEASON EDIT ===== */
+.q-badge.q-480  { background:#555; }
+.q-badge.q-720  { background:#2a6dd9; }
+.q-badge.q-1080 { background:#27ae60; }
+.q-badge.q-4k   { background:#C87740; }
