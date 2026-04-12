@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profile — Anime Verse</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    /* ===== PROFILE PAGE STYLES ===== */
+    .profile-page { max-width: 500px; margin: 0 auto; padding: 16px; }
+
+    /* BANNER */
+    .profile-banner {
+      width: 100%;
+      height: 130px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 14px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 56px;
+    }
+    .profile-banner-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg,
+        rgba(200,119,64,0.8), rgba(0,161,155,0.6));
+    }
+
+    /* AVATAR */
+    .profile-avatar-wrap {
+      position: absolute;
+      bottom: -44px;
+      left: 20px;
+    }
+    .profile-avatar {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      border: 3px solid var(--bg);
+      background: var(--bg3);
+      object-fit: cover;
+      display: block;
+    }
+    .profile-avatar-placeholder {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      border: 3px solid var(--bg);
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 700;
+      color: #fff;
+      font-family: 'Poppins', sans-serif;
+    }
+    .profile-avatar-edit {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 24px;
+      height: 24px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 10px;
+      color: #fff;
+      border: 2px solid var(--bg);
+    }
+
+    /* PROFILE INFO */
+    .profile-info-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .profile-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    .profile-username {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .profile-bio {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.6;
+    }
+
+    /* STATS ROW */
+    .profile-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .profile-stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 8px;
+      text-align: center;
+    }
+    .profile-stat-num {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .profile-stat-label {
+      font-size: 11px;
+      color: var(--text2);
+    }
+
+    /* EDIT FORM */
+    .profile-edit-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .profile-edit-card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .username-check {
+      font-size: 11px;
+      margin-top: 4px;
+      display: none;
+    }
+    .username-check.ok    { color: #27ae60; display: block; }
+    .username-check.error { color: #e50914; display: block; }
+    .username-check.checking { color: var(--text2); display: block; }
+
+    /* WATCHLIST GRID */
+    .profile-watchlist-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin: 20px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* NOT LOGGED IN */
+    .profile-login-prompt {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text2);
+    }
+    .profile-login-prompt i {
+      font-size: 64px;
+      color: var(--accent);
+      opacity: 0.5;
+      margin-bottom: 20px;
+    }
+    .profile-login-prompt h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .profile-login-prompt p {
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    /* SUCCESS / ERROR messages */
+    .profile-success {
+      background: rgba(39,174,96,0.1);
+      border: 1px solid #27ae60;
+      color: #27ae60;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 14px;
+      display: none;
+    }
+    .profile-error {
+      background: rgba(229,9,20,0.1);
+      border: 1px solid #e50914;
+      color: #e50914;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 14px;
+      display: none;
+    }
+
+    /* AVATAR URL MODAL */
+    .avatar-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .avatar-modal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 380px;
+    }
+    .avatar-modal-card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--text);
+    }
+    .avatar-preview {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      object-fit: cover;
+      margin: 0 auto 14px;
+      display: block;
+      background: var(--bg3);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <button class="icon-btn" onclick="history.back()">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <a href="index.html" class="logo">ANIME <span>VERSE</span></a>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" id="themeBtn" onclick="toggleTheme()">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- AVATAR URL MODAL -->
+  <div class="avatar-modal-overlay hidden" id="avatarModal">
+    <div class="avatar-modal-card">
+      <h3><i class="fas fa-image" style="color:var(--accent)"></i> Change Avatar</h3>
+      <img id="avatarPreviewImg"
+        class="avatar-preview"
+        src="" alt="Preview"
+        onerror="this.src='';this.style.background='var(--bg3)'"/>
+      <div class="form-group">
+        <label>IMAGE URL</label>
+        <input type="url" id="avatarUrlInput"
+          placeholder="https://i.imgur.com/..."
+          oninput="previewAvatar(this.value)"/>
+        <p style="font-size:11px;color:var(--text2);margin-top:4px;line-height:1.5">
+          Kisi bhi image ka direct URL paste karo.<br>
+          Tip: imgur.com pe upload karo → direct link lo
+        </p>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-outline"
+          onclick="closeAvatarModal()" style="flex:1">
+          Cancel
+        </button>
+        <button class="btn-primary"
+          onclick="saveAvatar()" style="flex:1">
+          <i class="fas fa-check"></i> Save
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <main class="main">
+    <div class="profile-page" id="profilePage">
+      <div class="empty-state" style="min-height:50vh">
+        <i class="fas fa-circle-notch fa-spin"
+          style="font-size:40px;color:var(--accent)"></i>
+        <h2 style="margin-top:16px">Loading...</h2>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="data.js"></script>
+  <script>
+    // ===== THEME =====
+    function toggleTheme() {
+      const html = document.documentElement;
+      const btn  = document.getElementById('themeBtn');
+      const dark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', dark ? 'light' : 'dark');
+      btn.innerHTML = dark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+      localStorage.setItem('av_theme', dark ? 'light' : 'dark');
+    }
+    function loadTheme() {
+      const saved = localStorage.getItem('av_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      const btn = document.getElementById('themeBtn');
+      if (btn) btn.innerHTML = saved === 'dark'
+        ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+    }
+
+    let currentUserData = null;
+    let usernameCheckTimer = null;
+
+    // ===== AVATAR MODAL =====
+    function openAvatarModal() {
+      document.getElementById('avatarModal').classList.remove('hidden');
+      if (currentUserData?.photoURL) {
+        document.getElementById('avatarUrlInput').value = currentUserData.photoURL;
+        document.getElementById('avatarPreviewImg').src = currentUserData.photoURL;
+      }
+    }
+    function closeAvatarModal() {
+      document.getElementById('avatarModal').classList.add('hidden');
+      document.getElementById('avatarUrlInput').value = '';
+    }
+    function previewAvatar(url) {
+      const img = document.getElementById('avatarPreviewImg');
+      img.src = url || '';
+    }
+    async function saveAvatar() {
+      const url = document.getElementById('avatarUrlInput').value.trim();
+      if (!url) { alert('Enter an image URL!'); return; }
+      const user = auth.currentUser;
+      if (!user) return;
+      try {
+        await user.updateProfile({ photoURL: url });
+        await db.collection('users').doc(user.uid).update({ photoURL: url });
+        closeAvatarModal();
+        loadProfile(user);
+      } catch(e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    // ===== USERNAME CHECK =====
+    async function checkUsername(username, currentUid) {
+      const checkEl = document.getElementById('usernameCheck');
+      if (!username) {
+        checkEl.className = 'username-check';
+        return false;
+      }
+      if (username.length < 3) {
+        checkEl.className = 'username-check error';
+        checkEl.textContent = 'Username must be at least 3 characters';
+        return false;
+      }
+      if (!/^[a-z0-9_\.]+$/.test(username)) {
+        checkEl.className = 'username-check error';
+        checkEl.textContent = 'Only lowercase letters, numbers, _ and . allowed';
+        return false;
+      }
+      checkEl.className = 'username-check checking';
+      checkEl.textContent = 'Checking availability...';
+
+      try {
+        const snap = await db.collection('users')
+          .where('username', '==', username).get();
+        const takenByOther = snap.docs.some(d => d.id !== currentUid);
+        if (takenByOther) {
+          checkEl.className = 'username-check error';
+          checkEl.textContent = `@${username} is already taken`;
+          return false;
+        } else {
+          checkEl.className = 'username-check ok';
+          checkEl.textContent = `@${username} is available!`;
+          return true;
+        }
+      } catch(e) {
+        checkEl.className = 'username-check ok';
+        checkEl.textContent = 'Looks good!';
+        return true;
+      }
+    }
+
+    function onUsernameInput(val, uid) {
+      clearTimeout(usernameCheckTimer);
+      const checkEl = document.getElementById('usernameCheck');
+      val = val.toLowerCase().replace(/\s/g,'');
+      document.getElementById('usernameInput').value = val;
+      if (!val) {
+        checkEl.className = 'username-check';
+        return;
+      }
+      checkEl.className = 'username-check checking';
+      checkEl.textContent = 'Checking...';
+      usernameCheckTimer = setTimeout(() => checkUsername(val, uid), 600);
+    }
+
+    // ===== SAVE PROFILE =====
+    async function saveProfile(uid) {
+      const displayName = document.getElementById('displayNameInput').value.trim();
+      const username    = document.getElementById('usernameInput').value.trim().toLowerCase();
+      const bio         = document.getElementById('bioInput').value.trim();
+
+      if (!displayName) { alert('Display name required!'); return; }
+      if (username && username.length < 3) {
+        alert('Username must be at least 3 characters!');
+        return;
+      }
+      if (username && !/^[a-z0-9_\.]+$/.test(username)) {
+        alert('Username: only lowercase, numbers, _ and . allowed!');
+        return;
+      }
+
+      const btn = document.getElementById('saveProfileBtn');
+      btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Saving...';
+      btn.disabled  = true;
+
+      try {
+        // Check username availability if changed
+        if (username && username !== currentUserData?.username) {
+          const available = await checkUsername(username, uid);
+          if (!available) {
+            btn.innerHTML = '<i class="fas fa-floppy-disk"></i> Save Changes';
+            btn.disabled  = false;
+            return;
+          }
+        }
+
+        // Update Firebase Auth
+        await auth.currentUser.updateProfile({ displayName });
+
+        // Update Firestore
+        const updateData = {
+          name:        displayName,
+          bio:         bio,
+          updatedAt:   firebase.firestore.FieldValue.serverTimestamp()
+        };
+        if (username) updateData.username = username;
+
+        await db.collection('users').doc(uid).update(updateData);
+
+        document.getElementById('profileSuccess').style.display = 'block';
+        setTimeout(() => {
+          document.getElementById('profileSuccess').style.display = 'none';
+        }, 3000);
+
+        // Refresh
+        const user = auth.currentUser;
+        if (user) loadProfile(user);
+
+      } catch(e) {
+        document.getElementById('profileError').textContent = 'Error: ' + e.message;
+        document.getElementById('profileError').style.display = 'block';
+        setTimeout(() => {
+          document.getElementById('profileError').style.display = 'none';
+        }, 4000);
+      } finally {
+        btn.innerHTML = '<i class="fas fa-floppy-disk"></i> Save Changes';
+        btn.disabled  = false;
+      }
+    }
+
+    // ===== LOAD PROFILE =====
+    async function loadProfile(user) {
+      let userData = {};
+      try {
+        const doc = await db.collection('users').doc(user.uid).get();
+        if (doc.exists) userData = doc.data();
+      } catch(e) {}
+
+      currentUserData = {
+        ...userData,
+        displayName: user.displayName || userData.name || 'User',
+        email:       user.email,
+        photoURL:    user.photoURL || userData.photoURL || '',
+      };
+
+      const name     = currentUserData.displayName;
+      const username = currentUserData.username || '';
+      const bio      = currentUserData.bio || '';
+      const avatar   = currentUserData.photoURL || '';
+      const watchlist= userData.watchlist || [];
+      const initial  = name.charAt(0).toUpperCase();
+
+      // Get watchlist count (from Firebase anime)
+      let watchlistCount = watchlist.length;
+
+      const container = document.getElementById('profilePage');
+      container.innerHTML = `
+
+        <!-- BANNER + AVATAR -->
+        <div style="position:relative;margin-bottom:56px">
+          <div class="profile-banner">
+            <div class="profile-banner-overlay"></div>
+          </div>
+          <div class="profile-avatar-wrap" onclick="openAvatarModal()">
+            ${avatar
+              ? `<img class="profile-avatar"
+                  src="${avatar}" alt="${name}"
+                  onerror="this.style.display='none';
+                    document.getElementById('avatarFallback').style.display='flex'"/>
+                <div class="profile-avatar-placeholder"
+                  id="avatarFallback" style="display:none">
+                  ${initial}
+                </div>`
+              : `<div class="profile-avatar-placeholder">${initial}</div>`}
+            <div class="profile-avatar-edit" title="Change avatar">
+              <i class="fas fa-camera"></i>
+            </div>
+          </div>
+          <!-- Edit button top right -->
+          <div style="position:absolute;bottom:-40px;right:0">
+            <button class="btn-outline"
+              onclick="toggleEditForm()"
+              id="editToggleBtn"
+              style="font-size:13px;padding:8px 16px;
+                display:flex;align-items:center;gap:6px">
+              <i class="fas fa-pen"></i> Edit Profile
+            </button>
+          </div>
+        </div>
+
+        <!-- PROFILE INFO -->
+        <div class="profile-info-section">
+          <div class="profile-name">${name}</div>
+          ${username
+            ? `<div class="profile-username">@${username}</div>`
+            : `<div style="font-size:12px;color:var(--text2);margin-bottom:8px">
+                Set a username below
+               </div>`}
+          ${bio
+            ? `<div class="profile-bio">${bio}</div>`
+            : `<div style="font-size:12px;color:var(--text2);font-style:italic">
+                No bio yet
+               </div>`}
+          <div style="font-size:12px;color:var(--text2);margin-top:8px;
+            display:flex;align-items:center;gap:5px">
+            <i class="fas fa-envelope" style="font-size:11px"></i>
+            ${user.email}
+            ${user.emailVerified
+              ? `<span style="color:#27ae60;font-size:10px;font-weight:700">
+                  <i class="fas fa-circle-check"></i> Verified
+                 </span>`
+              : `<span style="color:#e50914;font-size:10px;font-weight:700">
+                  <i class="fas fa-circle-exclamation"></i> Not verified
+                 </span>`}
+          </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="profile-stats">
+          <div class="profile-stat-card">
+            <div class="profile-stat-num">${watchlistCount}</div>
+            <div class="profile-stat-label">Watchlist</div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="profile-stat-num"
+              style="font-size:16px;color:var(--accent)">
+              ${user.emailVerified
+                ? '<i class="fas fa-shield-halved"></i>'
+                : '<i class="fas fa-clock"></i>'}
+            </div>
+            <div class="profile-stat-label">
+              ${user.emailVerified ? 'Verified' : 'Pending'}
+            </div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="profile-stat-num" style="font-size:13px">
+              ${new Date(user.metadata.creationTime || Date.now())
+                .toLocaleDateString('en-US', {month:'short',year:'numeric'})}
+            </div>
+            <div class="profile-stat-label">Joined</div>
+          </div>
+        </div>
+
+        <!-- EDIT FORM (hidden by default) -->
+        <div class="profile-edit-card hidden" id="editFormCard">
+          <h3>
+            <i class="fas fa-pen" style="color:var(--accent)"></i>
+            Edit Profile
+          </h3>
+
+          <div id="profileSuccess" class="profile-success">
+            ✅ Profile updated successfully!
+          </div>
+          <div id="profileError" class="profile-error"></div>
+
+          <div class="form-group">
+            <label>DISPLAY NAME *</label>
+            <input type="text" id="displayNameInput"
+              value="${name}" placeholder="Your name"/>
+          </div>
+
+          <div class="form-group">
+            <label>USERNAME</label>
+            <div style="position:relative">
+              <span style="position:absolute;left:12px;top:50%;
+                transform:translateY(-50%);color:var(--text2);
+                font-size:14px">@</span>
+              <input type="text" id="usernameInput"
+                value="${username}"
+                placeholder="yourname"
+                style="padding-left:28px"
+                oninput="onUsernameInput(this.value,'${user.uid}')"/>
+            </div>
+            <div id="usernameCheck" class="username-check"></div>
+            <p style="font-size:11px;color:var(--text2);margin-top:4px">
+              Unique username. Only a-z, 0-9, _ and . allowed.
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label>BIO</label>
+            <textarea id="bioInput"
+              placeholder="Tell something about yourself..."
+              style="min-height:80px">${bio}</textarea>
+          </div>
+
+          <div style="background:rgba(200,119,64,0.08);
+            border:1px solid var(--accent);border-radius:8px;
+            padding:10px 12px;margin-bottom:14px;font-size:12px;
+            color:var(--text2);display:flex;gap:8px;align-items:flex-start">
+            <i class="fas fa-image"
+              style="color:var(--accent);margin-top:2px;flex-shrink:0"></i>
+            <span>Profile picture change karne ke liye oopar ke avatar pe tap karo.</span>
+          </div>
+
+          <button class="btn-primary" id="saveProfileBtn"
+            onclick="saveProfile('${user.uid}')" style="width:100%">
+            <i class="fas fa-floppy-disk"></i> Save Changes
+          </button>
+
+          <div style="margin-top:12px;text-align:center">
+            <button onclick="logoutUser()"
+              style="background:none;border:none;color:#e50914;
+                font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;
+                display:flex;align-items:center;gap:6px;margin:0 auto">
+              <i class="fas fa-right-from-bracket"></i>
+              Logout
+            </button>
+          </div>
+        </div>
+
+        <!-- WATCHLIST SECTION -->
+        <div class="profile-watchlist-title">
+          <i class="fas fa-bookmark" style="color:var(--accent)"></i>
+          My Watchlist
+        </div>
+        <div id="watchlistGrid" class="grid">
+          <div class="empty-msg" style="grid-column:1/-1;padding:30px">
+            <i class="fas fa-circle-notch fa-spin"></i>
+            Loading...
+          </div>
+        </div>
+      `;
+
+      loadWatchlistGrid(watchlist);
+    }
+
+    function toggleEditForm() {
+      const card = document.getElementById('editFormCard');
+      const btn  = document.getElementById('editToggleBtn');
+      if (card.classList.contains('hidden')) {
+        card.classList.remove('hidden');
+        btn.innerHTML = '<i class="fas fa-times"></i> Close';
+      } else {
+        card.classList.add('hidden');
+        btn.innerHTML = '<i class="fas fa-pen"></i> Edit Profile';
+      }
+    }
+
+    async function logoutUser() {
+      if (!confirm('Log out?')) return;
+      await auth.signOut();
+      window.location.href = 'index.html';
+    }
+
+    // ===== LOAD WATCHLIST GRID =====
+    async function loadWatchlistGrid(watchlist) {
+      const grid = document.getElementById('watchlistGrid');
+      if (!grid) return;
+
+      if (!watchlist || watchlist.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column:1/-1;text-align:center;
+            padding:30px;color:var(--text2);font-size:14px">
+            <i class="fas fa-bookmark"
+              style="font-size:32px;opacity:0.3;margin-bottom:12px;
+                display:block"></i>
+            Nothing saved yet.<br>
+            <span style="font-size:12px">
+              Tap ❤️ on any anime to save it here.
+            </span>
+          </div>`;
+        return;
+      }
+
+      // Load anime data
+      try {
+        const animeList = [];
+        // Fetch in batches of 10 (Firestore limit)
+        const batches = [];
+        for (let i = 0; i < watchlist.length; i += 10) {
+          batches.push(watchlist.slice(i, i + 10));
+        }
+        for (const batch of batches) {
+          const snap = await db.collection('anime')
+            .where(firebase.firestore.FieldPath.documentId(), 'in', batch)
+            .get();
+          snap.forEach(doc => animeList.push({ ...doc.data(), firestoreId: doc.id }));
+        }
+
+        if (animeList.length === 0) {
+          grid.innerHTML = `
+            <div style="grid-column:1/-1;text-align:center;
+              padding:30px;color:var(--text2);font-size:14px">
+              No anime found.
+            </div>`;
+          return;
+        }
+
+        grid.innerHTML = '';
+        animeList.forEach(anime => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.style.cursor = 'pointer';
+          card.innerHTML = `
+            <div style="position:relative">
+              <img class="card-thumb"
+                src="${anime.thumbnail || ''}"
+                alt="${anime.title}"
+                onerror="this.style.background='var(--bg3)'"/>
+            </div>
+            <div class="card-info">
+              <span class="card-badge">
+                ${(anime.type||'ANIME').toUpperCase()}
+              </span>
+              <div class="card-title">${anime.title}</div>
+              <div class="card-meta">
+                <span class="card-rating">
+                  <i class="fas fa-star"></i> ${anime.rating||'N/A'}
+                </span>
+                <span class="card-year">${anime.year||''}</span>
+              </div>
+            </div>`;
+          card.addEventListener('click', () => {
+            window.location.href = `anime.html?id=${anime.firestoreId}`;
+          });
+          grid.appendChild(card);
+        });
+      } catch(e) {
+        grid.innerHTML = `
+          <div style="grid-column:1/-1;text-align:center;
+            padding:20px;color:var(--text2);font-size:13px">
+            Could not load watchlist.
+          </div>`;
+      }
+    }
+
+    // ===== NOT LOGGED IN VIEW =====
+    function showLoginPrompt() {
+      document.getElementById('profilePage').innerHTML = `
+        <div class="profile-login-prompt">
+          <i class="fas fa-user-circle"></i>
+          <h2>Not Logged In</h2>
+          <p>Login or create an account to access your profile.</p>
+          <button class="btn-primary"
+            onclick="window.location.href='index.html'"
+            style="margin:0 auto;max-width:200px;
+              display:flex;align-items:center;gap:8px">
+            <i class="fas fa-right-to-bracket"></i>
+            Go to Login
+          </button>
+        </div>`;
+    }
+
+    // ===== INIT =====
+    loadTheme();
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        loadProfile(user);
+      } else {
+        showLoginPrompt();
+      }
+    });
+
+    // Close avatar modal on outside click
+    document.getElementById('avatarModal').addEventListener('click', function(e) {
+      if (e.target === this) closeAvatarModal();
+    });
+  </script>
+</body>
+</html>
