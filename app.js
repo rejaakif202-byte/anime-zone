@@ -147,7 +147,6 @@ async function loginUser() {
   try {
     const cred = await auth.signInWithEmailAndPassword(email, password);
 
-    // Check if email is verified
     if (!cred.user.emailVerified) {
       await auth.signOut();
       showAuthError(
@@ -191,17 +190,12 @@ async function loginUser() {
 async function forgotPassword() {
   const email = document.getElementById('loginEmail').value.trim();
   if (!email) {
-    showAuthError(
-      'Please enter your email address in the field above first, then click forgot password.'
-    );
+    showAuthError('Please enter your email address in the field above first, then click forgot password.');
     return;
   }
-
   try {
     await auth.sendPasswordResetEmail(email);
-    showAuthSuccess(
-      '📧 Password reset email sent to ' + email + '!\n\nCheck your inbox (and spam folder).'
-    );
+    showAuthSuccess('📧 Password reset email sent to ' + email + '!\n\nCheck your inbox (and spam folder).');
   } catch(e) {
     const code = e.code || '';
     if (code === 'auth/user-not-found') {
@@ -219,7 +213,6 @@ async function signupUser() {
   const password = document.getElementById('signupPassword').value;
   const confirm  = document.getElementById('signupConfirm').value;
 
-  // Validation
   if (!name || !email || !password || !confirm) {
     showAuthError('Please fill in all fields.');
     return;
@@ -242,7 +235,6 @@ async function signupUser() {
   btn.disabled  = true;
 
   try {
-    // Check if email already exists first
     const methods = await auth.fetchSignInMethodsForEmail(email);
     if (methods && methods.length > 0) {
       showAuthError(
@@ -254,16 +246,9 @@ async function signupUser() {
       return;
     }
 
-    // Create account
     const cred = await auth.createUserWithEmailAndPassword(email, password);
-
-    // Set display name
     await cred.user.updateProfile({ displayName: name });
-
-    // Send verification email
     await cred.user.sendEmailVerification();
-
-    // Save user data to Firestore
     await db.collection('users').doc(cred.user.uid).set({
       name,
       email,
@@ -271,8 +256,6 @@ async function signupUser() {
       watchlist:  [],
       emailVerified: false
     });
-
-    // Sign out until verified
     await auth.signOut();
 
     showAuthSuccess(
@@ -281,13 +264,11 @@ async function signupUser() {
       'Please check your inbox and click the verification link before logging in.'
     );
 
-    // Clear signup form
     document.getElementById('signupName').value     = '';
     document.getElementById('signupEmail').value    = '';
     document.getElementById('signupPassword').value = '';
     document.getElementById('signupConfirm').value  = '';
 
-    // Switch to login tab after 3 seconds
     setTimeout(() => {
       switchAuthTab('login');
       document.getElementById('loginEmail').value = email;
@@ -318,7 +299,7 @@ async function signupUser() {
   }
 }
 
-// Resend verification
+// ===== RESEND VERIFICATION =====
 async function resendVerification(email, encodedPassword) {
   try {
     const password = decodeURIComponent(encodedPassword);
@@ -331,7 +312,7 @@ async function resendVerification(email, encodedPassword) {
   }
 }
 
-// Forgot password from signup tab
+// ===== FORGOT PASSWORD DIRECT =====
 async function forgotPasswordDirect(email) {
   try {
     await auth.sendPasswordResetEmail(email);
@@ -347,8 +328,61 @@ async function logoutUser() {
   await auth.signOut();
 }
 
-// ===== UPDATE UI AFTER AUTH =====
-function updateAuthUI(user) {
+// ===== SIDEBAR PROFILE — PFP + CLICKABLE =====
+async function updateSidebarProfile(user) {
+  const profileSection = document.getElementById('sidebarProfile');
+  const avatarEl       = document.getElementById('sidebarAvatar');
+  const nameEl         = document.getElementById('sidebarName');
+  const emailEl        = document.getElementById('sidebarEmail');
+
+  if (!profileSection) return;
+
+  const name    = user.displayName || 'User';
+  const initial = name.charAt(0).toUpperCase();
+
+  // Set name & email immediately
+  if (nameEl)  nameEl.textContent  = name;
+  if (emailEl) emailEl.textContent = user.email;
+
+  // Make whole section clickable → profile.html
+  profileSection.style.cursor = 'pointer';
+  profileSection.onclick = () => {
+    closeSidebar();
+    window.location.href = 'profile.html';
+  };
+
+  // Start with initial, then try to load avatar
+  if (avatarEl) avatarEl.textContent = initial;
+
+  // Try Firestore first, fallback to Firebase Auth photoURL
+  let avatarURL = user.photoURL || '';
+  try {
+    const doc = await db.collection('users').doc(user.uid).get();
+    if (doc.exists && doc.data().photoURL) {
+      avatarURL = doc.data().photoURL;
+    }
+  } catch(e) {}
+
+  // Render avatar image if URL exists
+  if (avatarEl && avatarURL) {
+    avatarEl.innerHTML = `
+      <img src="${avatarURL}"
+        style="width:100%;height:100%;border-radius:50%;object-fit:cover"
+        onerror="this.parentElement.textContent='${initial}'"/>`;
+  }
+
+  // Also update header profile button with avatar
+  const profileBtn = document.getElementById('profileBtn');
+  if (profileBtn && avatarURL) {
+    profileBtn.innerHTML = `
+      <img src="${avatarURL}"
+        style="width:32px;height:32px;border-radius:50%;object-fit:cover"
+        onerror="this.parentElement.innerHTML='<i class=\\'fas fa-user\\'></i>'"/>`;
+  }
+}
+
+// ===== UPDATE AUTH UI =====
+async function updateAuthUI(user) {
   currentUser = user;
   const profileBtn       = document.getElementById('profileBtn');
   const sidebarUserInfo  = document.getElementById('sidebarUserInfo');
@@ -358,37 +392,37 @@ function updateAuthUI(user) {
 
   if (user) {
     const initial = (user.displayName || user.email || 'U')[0].toUpperCase();
-    // Check for avatar
-    if (user.photoURL) {
-      profileBtn.innerHTML = `
-        <img src="${user.photoURL}"
-          style="width:32px;height:32px;border-radius:50%;object-fit:cover"
-          onerror="this.parentElement.textContent='${initial}'"/>`;
-    } else {
-      profileBtn.innerHTML = '';
-      profileBtn.textContent = initial;
-    }
-    profileBtn.style.fontWeight = '700';
-    profileBtn.style.fontSize   = '15px';
 
-    sidebarUserInfo.style.display = 'block';
-    document.getElementById('sidebarAvatar').textContent = initial;
-    document.getElementById('sidebarName').textContent   = user.displayName || 'User';
-    document.getElementById('sidebarEmail').textContent  = user.email;
-    sidebarLoginBtn.style.display  = 'none';
-    sidebarLogoutBtn.style.display = 'flex';
+    // Header profile button — show initial immediately
+    if (profileBtn) {
+      profileBtn.innerHTML    = '';
+      profileBtn.textContent  = initial;
+      profileBtn.style.fontWeight = '700';
+      profileBtn.style.fontSize   = '15px';
+    }
+
+    // Sidebar — show user info block
+    if (sidebarUserInfo) sidebarUserInfo.style.display = 'block';
+    if (sidebarLoginBtn)  sidebarLoginBtn.style.display  = 'none';
+    if (sidebarLogoutBtn) sidebarLogoutBtn.style.display = 'flex';
 
     if (sessionStorage.getItem('av_admin') === '1') {
-      adminSection.style.display = 'block';
+      if (adminSection) adminSection.style.display = 'block';
     }
+
+    // Load PFP from Firestore async (updates both sidebar & header btn)
+    updateSidebarProfile(user);
+
   } else {
-    profileBtn.innerHTML        = '<i class="fas fa-user"></i>';
-    profileBtn.style.fontWeight = '';
-    profileBtn.style.fontSize   = '';
-    sidebarUserInfo.style.display  = 'none';
-    sidebarLoginBtn.style.display  = 'flex';
-    sidebarLogoutBtn.style.display = 'none';
-    adminSection.style.display     = 'none';
+    if (profileBtn) {
+      profileBtn.innerHTML        = '<i class="fas fa-user"></i>';
+      profileBtn.style.fontWeight = '';
+      profileBtn.style.fontSize   = '';
+    }
+    if (sidebarUserInfo)  sidebarUserInfo.style.display  = 'none';
+    if (sidebarLoginBtn)  sidebarLoginBtn.style.display  = 'flex';
+    if (sidebarLogoutBtn) sidebarLogoutBtn.style.display = 'none';
+    if (adminSection)     adminSection.style.display     = 'none';
   }
 }
 
@@ -413,8 +447,7 @@ async function toggleMyList(id, btnEl) {
     try {
       const ref = db.collection('users').doc(currentUser.uid);
       const doc = await ref.get();
-
-      let list = doc.exists ? (doc.data().watchlist || []).map(String) : [];
+      let list  = doc.exists ? (doc.data().watchlist || []).map(String) : [];
 
       if (list.includes(id)) {
         list = list.filter(x => x !== id);
@@ -423,13 +456,10 @@ async function toggleMyList(id, btnEl) {
         list.push(id);
         if (btnEl) btnEl.classList.add('saved');
       }
-
-      // Use SET with merge — works even if doc doesn't exist
       await ref.set({ watchlist: list }, { merge: true });
 
     } catch(e) {
       console.error('Watchlist error:', e);
-      // Fallback to localStorage
       let list = getMyListLocal().map(String);
       if (list.includes(id)) {
         list = list.filter(x => x !== id);
@@ -603,7 +633,6 @@ async function renderHome() {
 
   emptyEl.classList.add('hidden');
 
-  // Top 10
   const top10 = allAnimeCache.filter(a => a.top10)
     .sort((a, b) => (a.top10rank||99) - (b.top10rank||99));
   if (top10.length > 0) {
@@ -613,7 +642,6 @@ async function renderHome() {
     top10.forEach(a => g.appendChild(createCard(a, true)));
   }
 
-  // Latest
   const latest = allAnimeCache.filter(a => a.latest);
   if (latest.length > 0) {
     latestSec.classList.remove('hidden');
@@ -622,7 +650,6 @@ async function renderHome() {
     latest.forEach(a => g.appendChild(createCard(a)));
   }
 
-  // Trending
   const trending = allAnimeCache.filter(a => a.trending);
   if (trending.length > 0) {
     trendingSec.classList.remove('hidden');
@@ -631,7 +658,6 @@ async function renderHome() {
     trending.forEach(a => g.appendChild(createCard(a)));
   }
 
-  // If nothing is tagged — show all
   if (top10.length === 0 && latest.length === 0 && trending.length === 0) {
     trendingSec.classList.remove('hidden');
     const g = document.getElementById('trendingGrid');
@@ -650,7 +676,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderHome();
 
-  // Close modal on overlay click
   const modal = document.getElementById('authModal');
   if (modal) {
     modal.addEventListener('click', function(e) {
