@@ -346,6 +346,8 @@
       // nothing  → no content message
       // Season packs → NEVER shown here
       // ============================================
+      // Replace the smart display section in renderPlayer:
+
       if (hasVid) {
         topHTML = `
           <div class="player-wrapper">
@@ -359,6 +361,7 @@
               </div>
             </div>
           </div>`;
+
         if (langKeys.length > 0 || initQs.length > 1) {
           topHTML += `
             <div class="lang-quality-box">
@@ -380,11 +383,45 @@
               </div>` : ''}
             </div>`;
         }
-        // NO telegram section when video exists
+
+        // ✅ ALSO show episode TG if it exists (both video AND telegram)
+        if (hasEpTg) {
+          let tgBtns = '';
+          if (episode.telegramUrl) {
+            tgBtns = `<a href="${episode.telegramUrl}" target="_blank"
+              rel="noopener" class="tg-btn-main">
+              <i class="fab fa-telegram"></i> Watch on Telegram
+            </a>`;
+          } else if (episode.telegramLinks) {
+            const keys = qualityOrder.filter(q=>episode.telegramLinks[q]);
+            if (keys.length) {
+              tgBtns = `<div class="tg-quality-row">
+                ${keys.map(q=>{
+                  const cfg=qualityConfig[q]||{label:q,color:'#2ca5e0'};
+                  return `<a href="${episode.telegramLinks[q]}"
+                    target="_blank" rel="noopener"
+                    class="tg-quality-btn"
+                    style="--tgcolor:${cfg.color}">
+                    <i class="fab fa-telegram"></i>${cfg.label}
+                  </a>`;
+                }).join('')}
+              </div>`;
+            }
+          }
+          if (tgBtns) {
+            topHTML += `
+              <div class="tg-section" style="margin-top:10px">
+                <div class="tg-label">
+                  <i class="fab fa-telegram"></i>
+                  Also on Telegram
+                </div>
+                ${tgBtns}
+              </div>`;
+          }
+        }
 
       } else if (hasEpTg) {
         topHTML = buildEpTgHTML(episode);
-
       } else {
         topHTML = `
           <div class="player-wrapper"
