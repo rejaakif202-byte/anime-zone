@@ -2,9 +2,6 @@
 // ANIME VERSE — Main App
 // ================================================
 
-// ===== FIREBASE INIT (already done in firebase-config.js) =====
-// db, auth are global
-
 // ===== GLOBALS =====
 let currentUser     = null;
 let allAnimeData    = [];
@@ -31,37 +28,80 @@ function loadTheme() {
     : '<i class="fas fa-sun"></i>';
 }
 
+// ===== AUTH LOADING SPLASH =====
+// Show while Firebase resolves — prevents auth wall flash for returning users
+function showAuthLoading() {
+  if (document.getElementById('authLoadingScreen')) return;
+  const loader = document.createElement('div');
+  loader.id = 'authLoadingScreen';
+  loader.style.cssText = `
+    position:fixed;inset:0;z-index:9998;
+    background:var(--bg,#0d0d0d);
+    display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:16px;
+  `;
+  loader.innerHTML = `
+    <div style="font-family:'Bebas Neue',sans-serif;
+      font-size:34px;letter-spacing:3px;color:var(--text,#fff)">
+      ANIME <span style="color:var(--accent,#C87740)">VERSE</span>
+    </div>
+    <div style="width:36px;height:36px;
+      border:3px solid rgba(200,119,64,0.2);
+      border-top-color:var(--accent,#C87740);
+      border-radius:50%;
+      animation:avAuthSpin 0.7s linear infinite">
+    </div>
+    <style>
+      @keyframes avAuthSpin { to { transform:rotate(360deg); } }
+    </style>
+  `;
+  document.body.appendChild(loader);
+}
+function hideAuthLoading() {
+  const loader = document.getElementById('authLoadingScreen');
+  if (loader) {
+    loader.style.opacity = '0';
+    loader.style.transition = 'opacity 0.2s';
+    setTimeout(() => loader.remove(), 200);
+  }
+}
+
+// Show loading immediately on page load
+loadTheme();
+showAuthLoading();
+
 // ===== AUTH GATE =====
-// Pages that require login
 const PROTECTED_PAGES = ['index.html', 'anime.html', 'watch.html', 'profile.html'];
 const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
+  // Persistence confirmed LOCAL — user stays logged in across sessions
+}).catch(() => {});
+
 auth.onAuthStateChanged(async user => {
+  hideAuthLoading();
   currentUser = user;
+
   if (!user) {
-    // If on a protected page, show auth wall
+    // User not logged in
     if (PROTECTED_PAGES.includes(currentPage) || currentPage === '') {
       showAuthWall();
       return;
     }
   } else {
-    // Hide auth wall if showing
+    // User already logged in — hide any auth wall, show content
     const wall = document.getElementById('authWall');
     if (wall) wall.style.display = 'none';
     const main = document.getElementById('appContent');
     if (main) main.style.display = 'block';
-    // Update UI
     await updateAuthUI(user);
-    // Init app
     initApp();
   }
 });
 
 function showAuthWall() {
-  // Hide main content
   const main = document.getElementById('appContent');
   if (main) main.style.display = 'none';
-  // Show auth wall
   let wall = document.getElementById('authWall');
   if (!wall) {
     wall = document.createElement('div');
@@ -73,7 +113,6 @@ function showAuthWall() {
     `;
     wall.innerHTML = `
       <div style="text-align:center;max-width:380px;width:100%">
-        <!-- Logo -->
         <div style="font-family:'Bebas Neue',sans-serif;
           font-size:36px;letter-spacing:2px;margin-bottom:8px">
           ANIME <span style="color:var(--accent)">VERSE</span>
@@ -81,12 +120,8 @@ function showAuthWall() {
         <p style="font-size:13px;color:var(--text2);margin-bottom:32px">
           Your anime streaming destination
         </p>
-
-        <!-- Auth Card -->
         <div style="background:var(--card-bg);border:1px solid var(--border);
           border-radius:20px;padding:24px;text-align:left">
-
-          <!-- Tabs -->
           <div style="display:flex;gap:0;margin-bottom:20px;
             background:var(--bg3);border-radius:10px;padding:4px">
             <button id="authTabLogin"
@@ -104,7 +139,6 @@ function showAuthWall() {
               Sign Up
             </button>
           </div>
-
           <div id="authError"
             style="display:none;background:rgba(229,9,20,0.1);
               border:1px solid #e50914;color:#e50914;padding:10px 12px;
@@ -113,8 +147,6 @@ function showAuthWall() {
             style="display:none;background:rgba(39,174,96,0.1);
               border:1px solid #27ae60;color:#27ae60;padding:10px 12px;
               border-radius:8px;font-size:12px;margin-bottom:14px"></div>
-
-          <!-- LOGIN FORM -->
           <div id="loginForm">
             <div class="form-group">
               <label style="font-size:11px;font-weight:600;
@@ -140,8 +172,7 @@ function showAuthWall() {
             <div style="text-align:right;margin-bottom:16px;margin-top:-8px">
               <button onclick="doForgotPassword()"
                 style="background:none;border:none;color:var(--accent);
-                  font-size:12px;cursor:pointer;
-                  font-family:'Poppins',sans-serif">
+                  font-size:12px;cursor:pointer;font-family:'Poppins',sans-serif">
                 Forgot password?
               </button>
             </div>
@@ -150,20 +181,16 @@ function showAuthWall() {
               <i class="fas fa-right-to-bracket"></i> Login
             </button>
           </div>
-
-          <!-- SIGNUP FORM -->
           <div id="signupForm" style="display:none">
             <div class="form-group">
               <label style="font-size:11px;font-weight:600;
                 color:var(--text2);letter-spacing:0.5px">DISPLAY NAME</label>
-              <input type="text" id="signupName"
-                placeholder="Your name"/>
+              <input type="text" id="signupName" placeholder="Your name"/>
             </div>
             <div class="form-group">
               <label style="font-size:11px;font-weight:600;
                 color:var(--text2);letter-spacing:0.5px">EMAIL</label>
-              <input type="email" id="signupEmail"
-                placeholder="your@email.com"/>
+              <input type="email" id="signupEmail" placeholder="your@email.com"/>
             </div>
             <div class="form-group" style="position:relative">
               <label style="font-size:11px;font-weight:600;
@@ -185,7 +212,6 @@ function showAuthWall() {
             </button>
           </div>
         </div>
-
         <p style="font-size:11px;color:var(--text2);margin-top:16px">
           By continuing, you agree to our terms of service.
         </p>
@@ -218,8 +244,10 @@ function switchAuthTab(tab) {
     loginTab.style.background  = 'none';
     loginTab.style.color       = 'var(--text2)';
   }
-  document.getElementById('authError').style.display   = 'none';
-  document.getElementById('authSuccess').style.display = 'none';
+  const errEl = document.getElementById('authError');
+  const sucEl = document.getElementById('authSuccess');
+  if (errEl) errEl.style.display = 'none';
+  if (sucEl) sucEl.style.display = 'none';
 }
 
 function togglePwView(inputId, iconId) {
@@ -250,7 +278,7 @@ async function doLogin() {
   if (btn) { btn.innerHTML='<i class="fas fa-circle-notch fa-spin"></i> Logging in...'; btn.disabled=true; }
   try {
     await auth.signInWithEmailAndPassword(email, pass);
-    // onAuthStateChanged will handle the rest
+    // onAuthStateChanged handles the rest
   } catch(e) {
     showAuthError(getAuthError(e.code));
     if (btn) { btn.innerHTML='<i class="fas fa-right-to-bracket"></i> Login'; btn.disabled=false; }
@@ -269,14 +297,12 @@ async function doSignup() {
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
     await cred.user.updateProfile({ displayName: name });
-    // Create user doc
     await db.collection('users').doc(cred.user.uid).set({
-      name, email,
-      watchlist: [],
+      name, email, watchlist: [],
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     await cred.user.sendEmailVerification();
-    showAuthSuccess('Account created! Verification email sent. You can now browse.');
+    showAuthSuccess('Account created! You can now browse.');
     setTimeout(() => {
       const wall = document.getElementById('authWall');
       if (wall) wall.style.display = 'none';
@@ -322,24 +348,21 @@ async function updateAuthUI(user) {
     return;
   }
 
-  // Get Firestore user data for avatar
   let userData = {};
   try {
     const doc = await db.collection('users').doc(user.uid).get();
     if (doc.exists) userData = doc.data();
   } catch(e) {}
 
-  const name   = user.displayName || userData.name || 'User';
-  const avatar = userData.photoURL || '';
-  const initial= name.charAt(0).toUpperCase();
+  const name    = user.displayName || userData.name || 'User';
+  const avatar  = userData.photoURL || '';
+  const initial = name.charAt(0).toUpperCase();
 
-  // ===== PROFILE BUTTON (top right) =====
   const profileBtn  = document.getElementById('profileBtn');
   const profileIcon = document.getElementById('profileIcon');
   if (profileBtn && profileIcon) {
     if (avatar) {
       profileIcon.style.display = 'none';
-      // Remove any existing img
       const existImg = profileBtn.querySelector('img');
       if (existImg) existImg.remove();
       const img = document.createElement('img');
@@ -355,7 +378,6 @@ async function updateAuthUI(user) {
       profileBtn.textContent = '';
       profileBtn.appendChild(img);
     } else {
-      // Show initial
       profileIcon.style.display = 'none';
       profileBtn.textContent    = initial;
       profileBtn.style.fontWeight = '700';
@@ -366,10 +388,8 @@ async function updateAuthUI(user) {
     profileBtn.onclick = () => { window.location.href = 'profile.html'; };
   }
 
-  // ===== SIDEBAR =====
   updateSidebarProfile({ name, avatar, initial, email: user.email });
 
-  // Update my list count badge
   const watchlist = userData.watchlist || [];
   const badge = document.getElementById('myListBadge');
   if (badge && watchlist.length > 0) {
@@ -398,9 +418,9 @@ function updateSidebarProfile(userData) {
   const avatarEl = document.getElementById('sidebarAvatar');
 
   if (!userData) {
-    if (nameEl)  nameEl.textContent  = 'Guest';
-    if (emailEl) emailEl.textContent = 'Login to save progress';
-    if (avatarEl) avatarEl.innerHTML =
+    if (nameEl)   nameEl.textContent  = 'Guest';
+    if (emailEl)  emailEl.textContent = 'Login to save progress';
+    if (avatarEl) avatarEl.innerHTML  =
       '<i class="fas fa-user" style="font-size:20px;color:#fff"></i>';
     return;
   }
@@ -430,7 +450,7 @@ async function logoutUser() {
   window.location.reload();
 }
 
-// ===== OPEN AUTH MODAL (fallback) =====
+// ===== OPEN AUTH MODAL =====
 function openAuthModal() {
   showAuthWall();
 }
@@ -449,7 +469,7 @@ async function toggleMyList(id, btnEl) {
       const doc = await ref.get();
       let list  = doc.exists ? (doc.data().watchlist||[]).map(String) : [];
       if (list.includes(id)) {
-        list = list.filter(x=>x!==id);
+        list = list.filter(x => x !== id);
         if (btnEl) btnEl.classList.remove('saved');
       } else {
         list.push(id);
@@ -475,33 +495,37 @@ async function isInMyList(animeId) {
   return getMyListLocal().map(String).includes(animeId);
 }
 
-// ===== FIREBASE DATA =====
+// ===== FETCH ALL ANIME (FIXED — orderBy fallback) =====
 async function fetchAllAnime() {
   try {
-    // Try with orderBy first (needs Firestore index)
     let snap;
     try {
-      snap = await db.collection('anime').orderBy('createdAt','desc').get();
+      // Try with orderBy (needs Firestore index on createdAt)
+      snap = await db.collection('anime').orderBy('createdAt', 'desc').get();
     } catch(e) {
-      // Fallback: fetch without orderBy if index missing
-      console.warn('orderBy failed, fetching without sort:', e.message);
+      // Firestore index missing or createdAt field missing — fetch without sort
+      console.warn('Falling back to unordered fetch:', e.message);
       snap = await db.collection('anime').get();
     }
     const data = [];
-    snap.forEach(doc => data.push({...doc.data(), firestoreId: doc.id}));
+    snap.forEach(doc => data.push({ ...doc.data(), firestoreId: doc.id }));
     allAnimeData = data;
     return data;
   } catch(e) {
     console.error('Fetch error:', e);
-    // Show error in UI
+    // Show error message in grid
     const grid = document.getElementById('latestGrid');
     if (grid) grid.innerHTML = `
-      <div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text2);font-size:13px">
-        <i class="fas fa-wifi" style="font-size:24px;opacity:0.4;display:block;margin-bottom:10px"></i>
-        Failed to load content. Check your connection.<br/>
-        <button onclick="location.reload()" style="margin-top:12px;background:var(--accent);
-          color:#fff;border:none;border-radius:8px;padding:8px 18px;
-          font-family:'Poppins',sans-serif;cursor:pointer">Retry</button>
+      <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text2)">
+        <i class="fas fa-wifi"
+          style="font-size:28px;opacity:0.3;display:block;margin-bottom:12px"></i>
+        Failed to load content.<br/>
+        <button onclick="location.reload()"
+          style="margin-top:14px;background:var(--accent);color:#fff;
+            border:none;border-radius:8px;padding:8px 20px;
+            font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer">
+          Retry
+        </button>
       </div>`;
     return [];
   }
@@ -510,7 +534,7 @@ async function fetchAllAnime() {
 // ===== RENDER CARD =====
 function renderCard(anime) {
   const div = document.createElement('div');
-  div.className   = 'card';
+  div.className    = 'card';
   div.style.cursor = 'pointer';
   const genres = (anime.genre||[]).slice(0,2).map(g =>
     `<span class="genre-tag" style="font-size:10px;padding:3px 8px">${g}</span>`
@@ -521,7 +545,7 @@ function renderCard(anime) {
         src="${anime.thumbnail||''}"
         alt="${anime.title}"
         onerror="this.style.background='var(--bg3)'"/>
-      <button class="wishlist-btn ${''}"
+      <button class="wishlist-btn"
         id="wl-${anime.firestoreId}"
         onclick="event.stopPropagation();handleWishlistToggle('${anime.firestoreId}',this)">
         <i class="fas fa-heart"></i>
@@ -556,7 +580,6 @@ async function initApp() {
   loadTheme();
   const data = await fetchAllAnime();
 
-  // Check saved wishlist state
   if (currentUser) {
     try {
       const doc  = await db.collection('users').doc(currentUser.uid).get();
@@ -576,16 +599,17 @@ async function initApp() {
 // ===== RENDER HOME =====
 function renderHome(data) {
   renderSection('latestGrid',
-    data.filter(a=>a.latest).sort((a,b)=>{
-      const ta = a.createdAt?.toDate?.()?.getTime()||0;
-      const tb = b.createdAt?.toDate?.()?.getTime()||0;
+    data.filter(a => a.latest).sort((a, b) => {
+      const ta = a.createdAt?.toDate?.()?.getTime() || 0;
+      const tb = b.createdAt?.toDate?.()?.getTime() || 0;
       return tb - ta;
     }), 'No latest releases yet.');
 
   renderSection('trendingGrid',
-    data.filter(a=>a.trending), 'No trending anime yet.');
+    data.filter(a => a.trending), 'No trending anime yet.');
 
-  renderTop10(data.filter(a=>a.top10).sort((a,b)=>(a.top10rank||0)-(b.top10rank||0)));
+  renderTop10(data.filter(a => a.top10)
+    .sort((a, b) => (a.top10rank||0) - (b.top10rank||0)));
 }
 
 function renderSection(gridId, items, emptyMsg) {
@@ -612,10 +636,10 @@ function renderTop10(items) {
   grid.innerHTML = '';
   items.forEach((anime, i) => {
     const div = document.createElement('div');
-    div.className = 'top10-item';
+    div.className    = 'top10-item';
     div.style.cursor = 'pointer';
     div.innerHTML = `
-      <span class="top10-rank">${(i+1)}</span>
+      <span class="top10-rank">${i+1}</span>
       <img src="${anime.thumbnail||''}"
         style="width:60px;height:80px;object-fit:cover;border-radius:8px;flex-shrink:0"
         onerror="this.style.background='var(--bg3)'"/>
@@ -670,7 +694,7 @@ function initSearch(data) {
     if (!q) { renderHome(allAnimeData); return; }
     const results = allAnimeData.filter(a =>
       a.title.toLowerCase().includes(q) ||
-      (a.genre||[]).some(g=>g.toLowerCase().includes(q))
+      (a.genre||[]).some(g => g.toLowerCase().includes(q))
     );
     renderSection('latestGrid', results, 'No results found.');
     const secTrend = document.getElementById('trendingSection');
@@ -680,36 +704,32 @@ function initSearch(data) {
   });
 }
 
-// ===== SIDEBAR =====
+// ===== SIDEBAR (FIXED) =====
 function initSidebar() {
   const menuBtn  = document.getElementById('menuBtn');
   const sidebar  = document.getElementById('sidebar');
   const overlay  = document.getElementById('sidebarOverlay');
   const closeBtn = document.getElementById('closeSidebar');
 
-  if (menuBtn) menuBtn.addEventListener('click', () => {
+  const open = () => {
     sidebar?.classList.remove('hidden');
     overlay?.classList.remove('hidden');
-  });
+  };
   const close = () => {
     sidebar?.classList.add('hidden');
     overlay?.classList.add('hidden');
   };
-  if (overlay) overlay.addEventListener('click', close);
+
+  if (menuBtn)  menuBtn.addEventListener('click', open);
+  if (overlay)  overlay.addEventListener('click', close);
   if (closeBtn) closeBtn.addEventListener('click', close);
 
   // ✅ Global functions for onclick= attributes in HTML
   window.toggleSidebar = () => {
-    const isHidden = sidebar?.classList.contains('hidden');
-    if (isHidden) {
-      sidebar?.classList.remove('hidden');
-      overlay?.classList.remove('hidden');
-    } else {
-      sidebar?.classList.add('hidden');
-      overlay?.classList.add('hidden');
-    }
+    sidebar?.classList.contains('hidden') ? open() : close();
   };
   window.closeSidebar = close;
+
   // Sidebar profile click → profile page
   const sidebarProfileEl = document.getElementById('sidebarProfileSection');
   if (sidebarProfileEl) {
@@ -720,7 +740,7 @@ function initSidebar() {
     });
   }
 
-  // Sidebar logout
+  // Logout
   const logoutBtn = document.getElementById('sidebarLogout');
   if (logoutBtn) logoutBtn.addEventListener('click', async () => {
     close();
@@ -728,7 +748,7 @@ function initSidebar() {
     window.location.reload();
   });
 
-  // My list sidebar
+  // My list
   const myListBtn = document.getElementById('sidebarMyList');
   if (myListBtn) myListBtn.addEventListener('click', () => {
     close();
@@ -756,11 +776,12 @@ async function showMyListPage() {
     if (latestGrid) {
       latestGrid.innerHTML = '';
       if (!items.length) {
-        latestGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;
-          padding:40px;color:var(--text2)">
-          <i class="fas fa-bookmark"
-            style="font-size:36px;opacity:0.3;margin-bottom:14px;display:block"></i>
-          Your list is empty.</div>`;
+        latestGrid.innerHTML = `
+          <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text2)">
+            <i class="fas fa-bookmark"
+              style="font-size:36px;opacity:0.3;margin-bottom:14px;display:block"></i>
+            Your list is empty.
+          </div>`;
       } else {
         items.forEach(a => latestGrid.appendChild(renderCard(a)));
       }
@@ -768,5 +789,12 @@ async function showMyListPage() {
   } catch(e) { console.error(e); }
 }
 
-// ===== INIT =====
-loadTheme();
+// ===== SCROLL TO TRENDING =====
+function scrollTrending() {
+  const sec = document.getElementById('trendingSection');
+  if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+}
+
+function showMyList() {
+  showMyListPage();
+}
