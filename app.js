@@ -74,10 +74,6 @@ showAuthLoading();
 const PROTECTED_PAGES = ['index.html', 'anime.html', 'watch.html', 'profile.html'];
 const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
-  // Persistence confirmed LOCAL — user stays logged in across sessions
-}).catch(() => {});
-
 auth.onAuthStateChanged(async user => {
   hideAuthLoading();
   currentUser = user;
@@ -798,3 +794,15 @@ function scrollTrending() {
 function showMyList() {
   showMyListPage();
 }
+
+// Make these global for onclick= in HTML
+window.scrollTrending  = scrollTrending;
+window.showMyList      = showMyList;
+window.filterCategory  = filterCategory;
+window.logoutUser      = logoutUser;
+window.doLogin         = doLogin;
+window.doSignup        = doSignup;
+window.doForgotPassword = doForgotPassword;
+window.switchAuthTab   = switchAuthTab;
+window.togglePwView    = togglePwView;
+window.openAuthModal   = openAuthModal;
