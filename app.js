@@ -478,13 +478,31 @@ async function isInMyList(animeId) {
 // ===== FIREBASE DATA =====
 async function fetchAllAnime() {
   try {
-    const snap = await db.collection('anime').orderBy('createdAt','desc').get();
+    // Try with orderBy first (needs Firestore index)
+    let snap;
+    try {
+      snap = await db.collection('anime').orderBy('createdAt','desc').get();
+    } catch(e) {
+      // Fallback: fetch without orderBy if index missing
+      console.warn('orderBy failed, fetching without sort:', e.message);
+      snap = await db.collection('anime').get();
+    }
     const data = [];
     snap.forEach(doc => data.push({...doc.data(), firestoreId: doc.id}));
     allAnimeData = data;
     return data;
   } catch(e) {
     console.error('Fetch error:', e);
+    // Show error in UI
+    const grid = document.getElementById('latestGrid');
+    if (grid) grid.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text2);font-size:13px">
+        <i class="fas fa-wifi" style="font-size:24px;opacity:0.4;display:block;margin-bottom:10px"></i>
+        Failed to load content. Check your connection.<br/>
+        <button onclick="location.reload()" style="margin-top:12px;background:var(--accent);
+          color:#fff;border:none;border-radius:8px;padding:8px 18px;
+          font-family:'Poppins',sans-serif;cursor:pointer">Retry</button>
+      </div>`;
     return [];
   }
 }
@@ -680,6 +698,18 @@ function initSidebar() {
   if (overlay) overlay.addEventListener('click', close);
   if (closeBtn) closeBtn.addEventListener('click', close);
 
+  // ✅ Global functions for onclick= attributes in HTML
+  window.toggleSidebar = () => {
+    const isHidden = sidebar?.classList.contains('hidden');
+    if (isHidden) {
+      sidebar?.classList.remove('hidden');
+      overlay?.classList.remove('hidden');
+    } else {
+      sidebar?.classList.add('hidden');
+      overlay?.classList.add('hidden');
+    }
+  };
+  window.closeSidebar = close;
   // Sidebar profile click → profile page
   const sidebarProfileEl = document.getElementById('sidebarProfileSection');
   if (sidebarProfileEl) {
