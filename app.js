@@ -31,7 +31,6 @@ loadTheme();
 auth.onAuthStateChanged(async user => {
   currentUser = user;
   if (user) {
-    // Dismiss any open auth modal
     const modal = document.getElementById('avAuthModal');
     if (modal) modal.style.display = 'none';
     document.body.style.overflow = '';
@@ -40,13 +39,11 @@ auth.onAuthStateChanged(async user => {
   } else {
     setProfileBtnAnon();
     updateSidebarProfile(null);
-    initApp(); // still load content even when not logged in
+    initApp();
   }
 });
 
-// ===== AUTH MODAL (shown on demand only) =====
-// Uses unique IDs prefixed with "av_" to avoid conflicts
-
+// ===== AUTH MODAL =====
 function openAuthModal() {
   let modal = document.getElementById('avAuthModal');
   if (!modal) {
@@ -99,118 +96,153 @@ function openAuthModal() {
         <!-- Error/Success -->
         <div id="av_authErr"
           style="display:none;background:rgba(229,9,20,0.1);
-            border:1px solid #e50914;color:#e50914;padding:10px 12px;
-            border-radius:8px;font-size:12px;margin-bottom:14px;
-            font-family:'Poppins',sans-serif">
+            border:1px solid #e50914;color:#e50914;
+            padding:10px 12px;border-radius:8px;
+            font-size:12px;margin-bottom:14px;line-height:1.6">
         </div>
         <div id="av_authOk"
           style="display:none;background:rgba(39,174,96,0.1);
-            border:1px solid #27ae60;color:#27ae60;padding:10px 12px;
-            border-radius:8px;font-size:12px;margin-bottom:14px;
-            font-family:'Poppins',sans-serif">
+            border:1px solid #27ae60;color:#27ae60;
+            padding:10px 12px;border-radius:8px;
+            font-size:12px;margin-bottom:14px;line-height:1.6;
+            white-space:pre-line">
         </div>
 
         <!-- LOGIN FORM -->
         <div id="av_loginForm">
           <div style="margin-bottom:14px">
-            <div style="font-size:11px;font-weight:600;color:var(--text2);
-              letter-spacing:0.5px;margin-bottom:6px">
-              EMAIL
-            </div>
-            <input type="email" id="av_email"
-              placeholder="your@email.com"
-              onkeydown="if(event.key==='Enter')avDoLogin()"
+            <label style="font-size:11px;font-weight:700;
+              color:var(--text2);letter-spacing:0.5px;
+              display:block;margin-bottom:6px">EMAIL</label>
+            <input id="av_email" type="email" placeholder="your@email.com"
               style="width:100%;padding:11px 14px;border-radius:10px;
                 border:1px solid var(--border);background:var(--bg3);
                 color:var(--text);font-family:'Poppins',sans-serif;
                 font-size:13px;box-sizing:border-box;outline:none"/>
           </div>
-          <div style="margin-bottom:6px;position:relative">
-            <div style="font-size:11px;font-weight:600;color:var(--text2);
-              letter-spacing:0.5px;margin-bottom:6px">
-              PASSWORD
+          <div style="margin-bottom:8px">
+            <label style="font-size:11px;font-weight:700;
+              color:var(--text2);letter-spacing:0.5px;
+              display:block;margin-bottom:6px">PASSWORD</label>
+            <div style="position:relative">
+              <input id="av_pw" type="password" placeholder="Enter password"
+                style="width:100%;padding:11px 44px 11px 14px;border-radius:10px;
+                  border:1px solid var(--border);background:var(--bg3);
+                  color:var(--text);font-family:'Poppins',sans-serif;
+                  font-size:13px;box-sizing:border-box;outline:none"
+                onkeydown="if(event.key==='Enter')avDoLogin()"/>
+              <button onclick="avTogglePw('av_pw','av_eyeL')"
+                style="position:absolute;right:12px;top:50%;
+                  transform:translateY(-50%);background:none;
+                  border:none;color:var(--text2);cursor:pointer;font-size:15px">
+                <i class="fas fa-eye" id="av_eyeL"></i>
+              </button>
             </div>
-            <input type="password" id="av_pass"
-              placeholder="Password"
-              onkeydown="if(event.key==='Enter')avDoLogin()"
-              style="width:100%;padding:11px 40px 11px 14px;
-                border-radius:10px;border:1px solid var(--border);
-                background:var(--bg3);color:var(--text);
-                font-family:'Poppins',sans-serif;font-size:13px;
-                box-sizing:border-box;outline:none"/>
-            <button onclick="avTogglePw('av_pass','av_eyeLogin')"
-              style="position:absolute;right:10px;bottom:10px;
-                background:none;border:none;color:var(--text2);
-                cursor:pointer;font-size:15px">
-              <i class="fas fa-eye" id="av_eyeLogin"></i>
-            </button>
           </div>
-          <div style="text-align:right;margin-bottom:18px">
-            <button onclick="avForgotPw()"
-              style="background:none;border:none;color:var(--accent);
-                font-size:12px;cursor:pointer;
-                font-family:'Poppins',sans-serif">
-              Forgot password?
-            </button>
+          <div style="text-align:right;margin-bottom:16px">
+            <a href="#" onclick="avForgotPw()"
+              style="font-size:12px;color:var(--accent);
+                text-decoration:none;font-weight:600">
+              <i class="fas fa-key" style="font-size:11px"></i>
+              Forgot Password?
+            </a>
           </div>
-          <button onclick="avDoLogin()" id="av_loginBtn"
-            style="width:100%;padding:12px;border-radius:10px;border:none;
-              background:var(--accent);color:#fff;
-              font-family:'Poppins',sans-serif;
-              font-size:14px;font-weight:700;cursor:pointer">
-            <i class="fas fa-right-to-bracket"></i> Login
+          <button onclick="avDoLogin()"
+            style="width:100%;padding:13px;border-radius:12px;
+              border:none;background:var(--accent);color:#fff;
+              font-family:'Poppins',sans-serif;font-size:14px;
+              font-weight:700;cursor:pointer">
+            <i class="fas fa-sign-in-alt"></i> Login
           </button>
+          <p style="text-align:center;margin-top:14px;
+            font-size:12px;color:var(--text2)">
+            Don't have an account?
+            <a href="#" onclick="avSwitchTab('signup')"
+              style="color:var(--accent);font-weight:600;text-decoration:none">
+              Sign Up
+            </a>
+          </p>
         </div>
 
         <!-- SIGNUP FORM -->
         <div id="av_signupForm" style="display:none">
           <div style="margin-bottom:14px">
-            <div style="font-size:11px;font-weight:600;color:var(--text2);
-              letter-spacing:0.5px;margin-bottom:6px">DISPLAY NAME</div>
-            <input type="text" id="av_name"
-              placeholder="Your name"
+            <label style="font-size:11px;font-weight:700;
+              color:var(--text2);letter-spacing:0.5px;
+              display:block;margin-bottom:6px">DISPLAY NAME</label>
+            <input id="av_name" type="text" placeholder="Your name"
               style="width:100%;padding:11px 14px;border-radius:10px;
                 border:1px solid var(--border);background:var(--bg3);
                 color:var(--text);font-family:'Poppins',sans-serif;
                 font-size:13px;box-sizing:border-box;outline:none"/>
           </div>
           <div style="margin-bottom:14px">
-            <div style="font-size:11px;font-weight:600;color:var(--text2);
-              letter-spacing:0.5px;margin-bottom:6px">EMAIL</div>
-            <input type="email" id="av_regEmail"
-              placeholder="your@email.com"
+            <label style="font-size:11px;font-weight:700;
+              color:var(--text2);letter-spacing:0.5px;
+              display:block;margin-bottom:6px">EMAIL</label>
+            <input id="av_semail" type="email" placeholder="your@email.com"
               style="width:100%;padding:11px 14px;border-radius:10px;
                 border:1px solid var(--border);background:var(--bg3);
                 color:var(--text);font-family:'Poppins',sans-serif;
                 font-size:13px;box-sizing:border-box;outline:none"/>
           </div>
-          <div style="margin-bottom:18px;position:relative">
-            <div style="font-size:11px;font-weight:600;color:var(--text2);
-              letter-spacing:0.5px;margin-bottom:6px">PASSWORD</div>
-            <input type="password" id="av_regPass"
-              placeholder="Min 6 characters"
-              onkeydown="if(event.key==='Enter')avDoSignup()"
-              style="width:100%;padding:11px 40px 11px 14px;
-                border-radius:10px;border:1px solid var(--border);
-                background:var(--bg3);color:var(--text);
-                font-family:'Poppins',sans-serif;font-size:13px;
-                box-sizing:border-box;outline:none"/>
-            <button onclick="avTogglePw('av_regPass','av_eyeSignup')"
-              style="position:absolute;right:10px;bottom:10px;
-                background:none;border:none;color:var(--text2);
-                cursor:pointer;font-size:15px">
-              <i class="fas fa-eye" id="av_eyeSignup"></i>
-            </button>
+          <div style="margin-bottom:14px">
+            <label style="font-size:11px;font-weight:700;
+              color:var(--text2);letter-spacing:0.5px;
+              display:block;margin-bottom:6px">PASSWORD</label>
+            <div style="position:relative">
+              <input id="av_spw" type="password"
+                placeholder="Minimum 6 characters"
+                style="width:100%;padding:11px 44px 11px 14px;border-radius:10px;
+                  border:1px solid var(--border);background:var(--bg3);
+                  color:var(--text);font-family:'Poppins',sans-serif;
+                  font-size:13px;box-sizing:border-box;outline:none"/>
+              <button onclick="avTogglePw('av_spw','av_eyeS')"
+                style="position:absolute;right:12px;top:50%;
+                  transform:translateY(-50%);background:none;
+                  border:none;color:var(--text2);cursor:pointer;font-size:15px">
+                <i class="fas fa-eye" id="av_eyeS"></i>
+              </button>
+            </div>
           </div>
-          <button onclick="avDoSignup()" id="av_signupBtn"
-            style="width:100%;padding:12px;border-radius:10px;border:none;
-              background:var(--accent);color:#fff;
-              font-family:'Poppins',sans-serif;
-              font-size:14px;font-weight:700;cursor:pointer">
+          <div style="margin-bottom:16px">
+            <label style="font-size:11px;font-weight:700;
+              color:var(--text2);letter-spacing:0.5px;
+              display:block;margin-bottom:6px">CONFIRM PASSWORD</label>
+            <input id="av_spw2" type="password"
+              placeholder="Re-enter password"
+              style="width:100%;padding:11px 14px;border-radius:10px;
+                border:1px solid var(--border);background:var(--bg3);
+                color:var(--text);font-family:'Poppins',sans-serif;
+                font-size:13px;box-sizing:border-box;outline:none"
+              onkeydown="if(event.key==='Enter')avDoSignup()"/>
+          </div>
+          <div style="background:rgba(200,119,64,0.08);
+            border:1px solid var(--accent);border-radius:8px;
+            padding:10px 12px;margin-bottom:16px;font-size:12px;
+            color:var(--text2);line-height:1.6;
+            display:flex;gap:10px;align-items:flex-start">
+            <i class="fas fa-shield-halved"
+              style="color:var(--accent);margin-top:2px;
+                font-size:14px;flex-shrink:0"></i>
+            <span>Verification email will be sent. Verify before logging in.</span>
+          </div>
+          <button onclick="avDoSignup()"
+            style="width:100%;padding:13px;border-radius:12px;
+              border:none;background:var(--accent);color:#fff;
+              font-family:'Poppins',sans-serif;font-size:14px;
+              font-weight:700;cursor:pointer">
             <i class="fas fa-user-plus"></i> Create Account
           </button>
+          <p style="text-align:center;margin-top:14px;
+            font-size:12px;color:var(--text2)">
+            Already have an account?
+            <a href="#" onclick="avSwitchTab('login')"
+              style="color:var(--accent);font-weight:600;text-decoration:none">
+              Login
+            </a>
+          </p>
         </div>
-
       </div>`;
 
     modal.addEventListener('click', e => {
@@ -230,172 +262,181 @@ function closeAuthModal() {
 }
 
 function avSwitchTab(tab) {
-  const lf = document.getElementById('av_loginForm');
-  const sf = document.getElementById('av_signupForm');
-  const lt = document.getElementById('av_tabLogin');
-  const st = document.getElementById('av_tabSignup');
-  if (!lf) return;
-  if (tab === 'login') {
-    lf.style.display = 'block';
-    sf.style.display = 'none';
-    lt.style.cssText += 'background:var(--accent);color:#fff';
-    st.style.cssText += 'background:transparent;color:var(--text2)';
-  } else {
-    lf.style.display = 'none';
-    sf.style.display = 'block';
-    st.style.cssText += 'background:var(--accent);color:#fff';
-    lt.style.cssText += 'background:transparent;color:var(--text2)';
-  }
-  const err = document.getElementById('av_authErr');
-  const ok  = document.getElementById('av_authOk');
-  if (err) err.style.display = 'none';
-  if (ok)  ok.style.display  = 'none';
+  const loginForm  = document.getElementById('av_loginForm');
+  const signupForm = document.getElementById('av_signupForm');
+  const tabLogin   = document.getElementById('av_tabLogin');
+  const tabSignup  = document.getElementById('av_tabSignup');
+  if (!loginForm) return;
+
+  const isLogin = tab === 'login';
+  loginForm.style.display  = isLogin ? 'block' : 'none';
+  signupForm.style.display = isLogin ? 'none'  : 'block';
+
+  const activeStyle   = `background:var(--accent);color:#fff;font-weight:700`;
+  const inactiveStyle = `background:transparent;color:var(--text2);font-weight:600`;
+  if (tabLogin)  tabLogin.style.cssText  += ';' + (isLogin  ? activeStyle : inactiveStyle);
+  if (tabSignup) tabSignup.style.cssText += ';' + (!isLogin ? activeStyle : inactiveStyle);
+
+  avClearMsg();
+}
+
+function avShowErr(msg) {
+  const e = document.getElementById('av_authErr');
+  const s = document.getElementById('av_authOk');
+  if (e) { e.innerHTML = msg; e.style.display = 'block'; }
+  if (s) s.style.display = 'none';
+}
+function avShowOk(msg) {
+  const e = document.getElementById('av_authErr');
+  const s = document.getElementById('av_authOk');
+  if (s) { s.textContent = msg; s.style.display = 'block'; }
+  if (e) e.style.display = 'none';
+}
+function avClearMsg() {
+  const e = document.getElementById('av_authErr');
+  const s = document.getElementById('av_authOk');
+  if (e) { e.style.display = 'none'; e.innerHTML = ''; }
+  if (s) { s.style.display = 'none'; s.textContent = ''; }
 }
 
 function avTogglePw(inputId, iconId) {
   const inp  = document.getElementById(inputId);
   const icon = document.getElementById(iconId);
   if (!inp) return;
-  inp.type = inp.type === 'password' ? 'text' : 'password';
-  if (icon) icon.className = inp.type === 'password'
-    ? 'fas fa-eye' : 'fas fa-eye-slash';
-}
-
-function avShowErr(msg) {
-  const el = document.getElementById('av_authErr');
-  const ok = document.getElementById('av_authOk');
-  if (el) { el.textContent = msg; el.style.display = 'block'; }
-  if (ok) ok.style.display = 'none';
-}
-function avShowOk(msg) {
-  const el = document.getElementById('av_authOk');
-  const er = document.getElementById('av_authErr');
-  if (el) { el.textContent = msg; el.style.display = 'block'; }
-  if (er) er.style.display = 'none';
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    if (icon) icon.className = 'fas fa-eye-slash';
+  } else {
+    inp.type = 'password';
+    if (icon) icon.className = 'fas fa-eye';
+  }
 }
 
 async function avDoLogin() {
   const email = (document.getElementById('av_email')?.value || '').trim();
-  const pass  =  document.getElementById('av_pass')?.value  || '';
-  if (!email || !pass) { avShowErr('Please fill in all fields.'); return; }
-  const btn = document.getElementById('av_loginBtn');
-  if (btn) {
-    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Logging in...';
-    btn.disabled  = true;
-  }
-  try {
-    await auth.signInWithEmailAndPassword(email, pass);
-    closeAuthModal();
-  } catch(e) {
-    avShowErr(getAuthErr(e.code));
-    if (btn) {
-      btn.innerHTML = '<i class="fas fa-right-to-bracket"></i> Login';
-      btn.disabled  = false;
-    }
-  }
-}
+  const pw    = document.getElementById('av_pw')?.value || '';
+  if (!email || !pw) { avShowErr('Please fill in all fields.'); return; }
 
-async function avDoSignup() {
-  const name  = (document.getElementById('av_name')?.value     || '').trim();
-  const email = (document.getElementById('av_regEmail')?.value  || '').trim();
-  const pass  =  document.getElementById('av_regPass')?.value   || '';
-  if (!name)           { avShowErr('Enter your name.'); return; }
-  if (!email)          { avShowErr('Enter your email.'); return; }
-  if (pass.length < 6) { avShowErr('Password must be at least 6 characters.'); return; }
-  const btn = document.getElementById('av_signupBtn');
-  if (btn) {
-    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Creating...';
-    btn.disabled  = true;
-  }
   try {
-    const cred = await auth.createUserWithEmailAndPassword(email, pass);
-    await cred.user.updateProfile({ displayName: name });
-    await db.collection('users').doc(cred.user.uid).set({
-      name, email,
-      watchlist: [],
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    avShowOk('Account created! Welcome to Anime Verse 🎌');
-    if (btn) {
-      btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
-      btn.disabled  = false;
+    const cred = await auth.signInWithEmailAndPassword(email, pw);
+    if (!cred.user.emailVerified) {
+      await auth.signOut();
+      avShowErr('⚠️ Email not verified! Check your inbox.<br><br>' +
+        `<a href="#" onclick="avResend('${email}','${encodeURIComponent(pw)}')"
+          style="color:var(--accent);text-decoration:underline;font-weight:600">
+          📧 Resend verification email</a>`);
+      return;
     }
+    avShowOk('✅ Logged in!');
+    setTimeout(closeAuthModal, 800);
   } catch(e) {
-    avShowErr(getAuthErr(e.code));
-    if (btn) {
-      btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
-      btn.disabled  = false;
+    const c = e.code || '';
+    if (c.includes('wrong-password') || c.includes('user-not-found') ||
+        c.includes('invalid-credential') || c.includes('invalid-login')) {
+      avShowErr('❌ Wrong email or password.<br><br>' +
+        '<a href="#" onclick="avForgotPw()" ' +
+        'style="color:var(--accent);text-decoration:underline;font-weight:600">' +
+        '🔑 Forgot Password?</a>');
+    } else {
+      avShowErr('Login failed: ' + e.message.replace('Firebase: ', ''));
     }
   }
 }
 
 async function avForgotPw() {
   const email = (document.getElementById('av_email')?.value || '').trim();
-  if (!email) { avShowErr('Enter your email first.'); return; }
+  if (!email) { avShowErr('Enter your email above first.'); return; }
   try {
     await auth.sendPasswordResetEmail(email);
-    avShowOk('Reset email sent! Check your inbox.');
-  } catch(e) { avShowErr(getAuthErr(e.code)); }
+    avShowOk('📧 Reset email sent to ' + email + '!');
+  } catch(e) {
+    avShowErr('Error: ' + e.message.replace('Firebase: ', ''));
+  }
 }
 
-function getAuthErr(code) {
-  const map = {
-    'auth/user-not-found':         'No account with this email.',
-    'auth/wrong-password':         'Wrong password.',
-    'auth/email-already-in-use':   'Email already registered.',
-    'auth/invalid-email':          'Invalid email address.',
-    'auth/weak-password':          'Password too weak (min 6 chars).',
-    'auth/too-many-requests':      'Too many attempts. Try later.',
-    'auth/network-request-failed': 'Network error. Check connection.',
-    'auth/invalid-credential':     'Wrong email or password.',
-  };
-  return map[code] || `Error: ${code}`;
+async function avDoSignup() {
+  const name  = (document.getElementById('av_name')?.value   || '').trim();
+  const email = (document.getElementById('av_semail')?.value || '').trim();
+  const pw    = document.getElementById('av_spw')?.value  || '';
+  const pw2   = document.getElementById('av_spw2')?.value || '';
+
+  if (!name || !email || !pw || !pw2) {
+    avShowErr('Please fill in all fields.'); return;
+  }
+  if (pw.length < 6) {
+    avShowErr('Password must be at least 6 characters.'); return;
+  }
+  if (pw !== pw2) {
+    avShowErr('Passwords do not match!'); return;
+  }
+
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pw);
+    await cred.user.updateProfile({ displayName: name });
+    await cred.user.sendEmailVerification();
+    await db.collection('users').doc(cred.user.uid).set({
+      name, email,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      watchlist: [], emailVerified: false
+    });
+    await auth.signOut();
+    avShowOk('✅ Account created!\n📧 Verification email sent to ' + email);
+    setTimeout(() => avSwitchTab('login'), 3000);
+  } catch(e) {
+    const c = e.code || '';
+    if (c === 'auth/email-already-in-use') {
+      avShowErr('❌ Email already registered.<br>' +
+        '<a href="#" onclick="avSwitchTab(\'login\')" ' +
+        'style="color:var(--accent);text-decoration:underline">→ Go to Login</a>');
+    } else {
+      avShowErr('Signup failed: ' + e.message.replace('Firebase: ', ''));
+    }
+  }
 }
 
-// Keep old names as aliases for backward compatibility
-window.doLogin       = avDoLogin;
-window.doSignup      = avDoSignup;
-window.doForgotPassword = avForgotPw;
-window.switchAuthTab = avSwitchTab;
+async function avResend(email, encodedPw) {
+  try {
+    const cred = await auth.signInWithEmailAndPassword(
+      email, decodeURIComponent(encodedPw));
+    await cred.user.sendEmailVerification();
+    await auth.signOut();
+    avShowOk('📧 Verification email resent!');
+  } catch(e) {
+    avShowErr('Could not resend: ' + e.message.replace('Firebase: ', ''));
+  }
+}
 
 // ===== UPDATE AUTH UI =====
 async function updateAuthUI(user) {
-  if (!user) { setProfileBtnAnon(); updateSidebarProfile(null); return; }
+  const profileBtn = document.getElementById('profileBtn');
 
-  let userData = {};
+  let name   = user.displayName || 'User';
+  let avatar = user.photoURL || '';
+  let email  = user.email || '';
+
   try {
-    const doc = await db.collection('users').doc(user.uid).get();
-    if (doc.exists) userData = doc.data();
+    const doc  = await db.collection('users').doc(user.uid).get();
+    const data = doc.exists ? doc.data() : {};
+    if (data.name)      name   = data.name;
+    if (data.photoURL)  avatar = data.photoURL;
   } catch(e) {}
 
-  const name    = user.displayName || userData.name || 'User';
-  const avatar  = userData.photoURL || '';
   const initial = name.charAt(0).toUpperCase();
 
-  // ===== PROFILE BUTTON — circle PFP, no square =====
-  const profileBtn = document.getElementById('profileBtn');
   if (profileBtn) {
-    // Clear all children
     profileBtn.innerHTML = '';
-    profileBtn.removeAttribute('style');
-    // Apply circle style
     profileBtn.style.cssText = `
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      overflow: hidden;
-      padding: 0;
-      border: none;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--accent);
-      flex-shrink: 0;
-    `;
+      width:36px;height:36px;border-radius:50%;
+      overflow:hidden;padding:0;border:2px solid var(--accent);
+      cursor:pointer;display:flex;align-items:center;
+      justify-content:center;background:var(--accent);
+      flex-shrink:0;`;
 
     if (avatar) {
-      const img = document.createElement('img');
-      img.src   = avatar;
-      img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
-      img.onerror = () => {
+      const img     = document.createElement('img');
+      img.src       = avatar;
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover';
+      img.onerror   = () => {
         profileBtn.innerHTML =
           `<span style="font-size:15px;font-weight:700;color:#fff">${initial}</span>`;
       };
@@ -407,25 +448,15 @@ async function updateAuthUI(user) {
     profileBtn.onclick = () => { window.location.href = 'profile.html'; };
   }
 
-  updateSidebarProfile({ name, avatar, initial, email: user.email });
+  updateSidebarProfile({ name, avatar, initial, email });
 
-  // Update sidebar login/logout buttons
   const loginBtn  = document.getElementById('sidebarLoginBtn');
   const logoutBtn = document.getElementById('sidebarLogoutBtn');
   if (loginBtn)  loginBtn.style.display  = 'none';
   if (logoutBtn) logoutBtn.style.display = 'flex';
 
-  // Show admin link if needed
-  // (check email or a flag in Firestore if you want)
   const adminSec = document.getElementById('adminSidebarSection');
   if (adminSec) adminSec.style.display = 'block';
-
-  const badge = document.getElementById('myListBadge');
-  const wl    = userData.watchlist || [];
-  if (badge && wl.length > 0) {
-    badge.textContent = wl.length;
-    badge.style.display = 'flex';
-  }
 }
 
 function setProfileBtnAnon() {
@@ -433,16 +464,10 @@ function setProfileBtnAnon() {
   if (!profileBtn) return;
   profileBtn.innerHTML = '';
   profileBtn.style.cssText = `
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    overflow: hidden;
-    padding: 0;
-    border: none;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--bg3);
-    flex-shrink: 0;
-  `;
+    width:36px;height:36px;border-radius:50%;
+    overflow:hidden;padding:0;border:none;
+    cursor:pointer;display:flex;align-items:center;
+    justify-content:center;background:var(--bg3);flex-shrink:0;`;
   profileBtn.innerHTML =
     '<i class="fas fa-user" style="color:var(--text2);font-size:15px"></i>';
   profileBtn.onclick = () => openAuthModal();
@@ -479,11 +504,6 @@ async function logoutUser() {
 }
 
 // ===== MY LIST =====
-function getMyListLocal() {
-  try { return JSON.parse(localStorage.getItem('av_mylist') || '[]'); }
-  catch(e) { return []; }
-}
-
 async function toggleMyList(id, btnEl) {
   id = String(id);
   if (!currentUser) { openAuthModal(); return; }
@@ -565,7 +585,18 @@ function renderCard(anime) {
 
 // ===== INIT APP =====
 async function initApp() {
+  // Show loading, hide everything else
+  const loadingState = document.getElementById('loadingState');
+  const emptyState   = document.getElementById('emptyState');
+  const homeSecs     = document.getElementById('homeSections');
+  if (loadingState) loadingState.style.display = 'flex';
+  if (emptyState)   emptyState.classList.add('hidden');
+  if (homeSecs)     homeSecs.style.display = 'block';
+
   const data = await fetchAllAnime();
+
+  // Hide loading once data comes in
+  if (loadingState) loadingState.style.display = 'none';
 
   if (currentUser) {
     try {
@@ -579,17 +610,12 @@ async function initApp() {
   }
 
   renderHome(data);
-  initSearch(data);
   initSidebar();
-
-  // Hide loading
-  const loadingState = document.getElementById('loadingState');
-  if (loadingState) loadingState.style.display = 'none';
 }
 
 // ===== RENDER HOME =====
 function renderHome(data) {
-  const latest = data.filter(a => a.latest).sort((a,b) => {
+  const latest   = data.filter(a => a.latest).sort((a,b) => {
     const ta = a.createdAt?.toDate?.()?.getTime() || 0;
     const tb = b.createdAt?.toDate?.()?.getTime() || 0;
     return tb - ta;
@@ -598,22 +624,40 @@ function renderHome(data) {
   const top10    = data.filter(a => a.top10)
     .sort((a,b) => (a.top10rank||0) - (b.top10rank||0));
 
-  // Show/hide sections
   const latestSec   = document.getElementById('latestSection');
   const trendingSec = document.getElementById('trendingSection');
   const top10Sec    = document.getElementById('top10Section');
-  const homeSecs    = document.getElementById('homeSections');
   const emptyState  = document.getElementById('emptyState');
+  const homeSecs    = document.getElementById('homeSections');
+  const myListSec   = document.getElementById('myListSection');
+
+  // Always hide myList when rendering home
+  if (myListSec) myListSec.classList.add('hidden');
+  if (homeSecs)  homeSecs.style.display = 'block';
+
+  if (data.length === 0) {
+    if (emptyState)   emptyState.classList.remove('hidden');
+    if (latestSec)    latestSec.classList.add('hidden');
+    if (trendingSec)  trendingSec.classList.add('hidden');
+    if (top10Sec)     top10Sec.classList.add('hidden');
+    return;
+  }
+
+  if (emptyState) emptyState.classList.add('hidden');
+
+  // ✅ FIXED: If nothing tagged — show all anime in trending section
+  const hasTagged = latest.length || trending.length || top10.length;
+
+  if (!hasTagged) {
+    if (latestSec)   latestSec.classList.add('hidden');
+    if (top10Sec)    top10Sec.classList.add('hidden');
+    if (trendingSec) trendingSec.classList.remove('hidden');
+    renderGrid('trendingGrid', data, 'No anime yet.');
+    return;
+  }
 
   if (latestSec)   latestSec.classList.toggle('hidden',   !latest.length);
   if (trendingSec) trendingSec.classList.toggle('hidden', !trending.length);
-  if (homeSecs)    homeSecs.style.display = 'block';
-
-  if (!latest.length && !trending.length && !top10.length) {
-    if (emptyState) emptyState.classList.remove('hidden');
-  } else {
-    if (emptyState) emptyState.classList.add('hidden');
-  }
 
   renderGrid('latestGrid',   latest,   'No latest releases yet.');
   renderGrid('trendingGrid', trending, 'No trending anime yet.');
@@ -667,7 +711,7 @@ function renderTop10(items) {
   });
 }
 
-// ===== FILTER =====
+// ===== FILTER CATEGORY =====
 function filterCategory(cat, btnEl) {
   currentCategory = cat;
   document.querySelectorAll('.cat-pill,.pill').forEach(b => b.classList.remove('active'));
@@ -706,34 +750,33 @@ function searchAnime(q) {
     a.title.toLowerCase().includes(q.toLowerCase()) ||
     (a.genre||[]).some(g => g.toLowerCase().includes(q.toLowerCase()))
   );
-  renderGrid('latestGrid', r, 'No results found.');
   const sec1 = document.getElementById('trendingSection');
   const sec2 = document.getElementById('top10Section');
   const sec3 = document.getElementById('latestSection');
   if (sec1) sec1.classList.add('hidden');
   if (sec2) sec2.classList.add('hidden');
   if (sec3) sec3.classList.remove('hidden');
+  renderGrid('latestGrid', r, 'No results found.');
 }
 
-// ===== SIDEBAR =====
+// ===== SIDEBAR — FIXED to use .open class =====
 function initSidebar() {
   const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebarOverlay') ||
-                  document.getElementById('overlay');
+  const overlay = document.getElementById('overlay');
 
+  // ✅ FIXED: Use .open class (matches CSS) instead of .hidden
   window.toggleSidebar = () => {
     if (!sidebar) return;
-    sidebar.classList.toggle('hidden');
-    if (overlay) overlay.classList.toggle('hidden');
+    sidebar.classList.toggle('open');
+    if (overlay) overlay.classList.toggle('active');
   };
   window.closeSidebar = () => {
-    if (sidebar) sidebar.classList.add('hidden');
-    if (overlay) overlay.classList.add('hidden');
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
   };
 
   if (overlay) overlay.addEventListener('click', window.closeSidebar);
 
-  // Sidebar profile → profile.html
   const pfSec = document.getElementById('sidebarProfileSection');
   if (pfSec) {
     pfSec.onclick = () => {
@@ -747,22 +790,21 @@ function initSidebar() {
 // ===== MY LIST PAGE =====
 function showMyList() {
   if (!currentUser) { openAuthModal(); return; }
-  const myListSec    = document.getElementById('myListSection');
-  const homeSecs     = document.getElementById('homeSections');
-  const searchSec    = document.getElementById('searchSection');
-  const categorySec  = document.getElementById('categorySection');
+
+  const myListSec  = document.getElementById('myListSection');
+  const homeSecs   = document.getElementById('homeSections');
 
   if (myListSec) myListSec.classList.remove('hidden');
-  if (homeSecs) homeSecs.style.display = 'none';
-  if (searchSec) searchSec.classList.add('hidden');
-  if (categorySec) categorySec.classList.add('hidden');
+  if (homeSecs)  homeSecs.style.display = 'none';
 
   const grid  = document.getElementById('myListGrid');
   const empty = document.getElementById('myListEmpty');
 
   db.collection('users').doc(currentUser.uid).get().then(doc => {
     const ids   = doc.exists ? (doc.data().watchlist||[]) : [];
-    const items = allAnimeData.filter(a => ids.map(String).includes(String(a.firestoreId)));
+    const items = allAnimeData.filter(a =>
+      ids.map(String).includes(String(a.firestoreId))
+    );
     if (!items.length) {
       if (grid)  grid.innerHTML = '';
       if (empty) empty.style.display = 'flex';
@@ -799,3 +841,4 @@ window.avDoLogin            = avDoLogin;
 window.avDoSignup           = avDoSignup;
 window.avForgotPw           = avForgotPw;
 window.avTogglePw           = avTogglePw;
+window.avResend             = avResend;
