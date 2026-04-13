@@ -559,10 +559,6 @@ function renderCard(anime) {
       <img class="card-thumb"
         src="${anime.thumbnail||''}" alt="${anime.title}"
         onerror="this.style.background='var(--bg3)'"/>
-      <button class="wishlist-btn" id="wl-${anime.firestoreId}"
-        onclick="event.stopPropagation();handleWishlistToggle('${anime.firestoreId}',this)">
-        <i class="fas fa-heart"></i>
-      </button>
     </div>
     <div class="card-info">
       <span class="card-badge">${(anime.type||'ANIME').toUpperCase()}</span>
