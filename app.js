@@ -1,4 +1,4 @@
- // ================================================
+// ================================================
 // ANIME VERSE — Main App
 // ================================================
 
@@ -12,7 +12,9 @@ function toggleTheme() {
   const btn  = document.getElementById('themeBtn');
   const dark = html.getAttribute('data-theme') === 'dark';
   html.setAttribute('data-theme', dark ? 'light' : 'dark');
-  if (btn) btn.innerHTML = dark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+  if (btn) btn.innerHTML = dark
+    ? '<i class="fas fa-sun"></i>'
+    : '<i class="fas fa-moon"></i>';
   localStorage.setItem('av_theme', dark ? 'light' : 'dark');
 }
 function loadTheme() {
@@ -20,301 +22,323 @@ function loadTheme() {
   document.documentElement.setAttribute('data-theme', saved);
   const btn = document.getElementById('themeBtn');
   if (btn) btn.innerHTML = saved === 'dark'
-    ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+    ? '<i class="fas fa-moon"></i>'
+    : '<i class="fas fa-sun"></i>';
 }
 loadTheme();
 
-// ===== AUTH LOADING SPLASH =====
-function showAuthLoading() {
-  if (document.getElementById('authLoadingScreen')) return;
-  const el = document.createElement('div');
-  el.id = 'authLoadingScreen';
-  el.style.cssText =
-    'position:fixed;inset:0;z-index:9998;background:var(--bg,#0d0d0d);' +
-    'display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px';
-  el.innerHTML = `
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:34px;
-      letter-spacing:3px;color:var(--text,#fff)">
-      ANIME <span style="color:var(--accent,#C87740)">VERSE</span>
-    </div>
-    <div style="width:36px;height:36px;
-      border:3px solid rgba(200,119,64,0.2);
-      border-top-color:var(--accent,#C87740);
-      border-radius:50%;animation:_spin 0.7s linear infinite"></div>
-    <style>@keyframes _spin{to{transform:rotate(360deg)}}</style>`;
-  document.body.appendChild(el);
-}
-function hideAuthLoading() {
-  const el = document.getElementById('authLoadingScreen');
-  if (el) el.remove();
-}
-showAuthLoading();
-
-// ===== AUTH GATE =====
-const PROTECTED_PAGES = ['index.html','anime.html','watch.html','profile.html'];
-const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-
+// ===== AUTH STATE =====
 auth.onAuthStateChanged(async user => {
-  hideAuthLoading();
   currentUser = user;
-  if (!user) {
-    if (PROTECTED_PAGES.includes(currentPage) || currentPage === '') {
-      showAuthWall();
-    }
-  } else {
-    const wall = document.getElementById('authWall');
-    if (wall) wall.style.display = 'none';
-    const main = document.getElementById('appContent');
-    if (main) main.style.display = 'block';
+  if (user) {
+    // Dismiss any open auth modal
+    const modal = document.getElementById('avAuthModal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
     await updateAuthUI(user);
     initApp();
+  } else {
+    setProfileBtnAnon();
+    updateSidebarProfile(null);
+    initApp(); // still load content even when not logged in
   }
 });
 
-// ===== AUTH WALL =====
-function showAuthWall() {
-  const main = document.getElementById('appContent');
-  if (main) main.style.display = 'none';
+// ===== AUTH MODAL (shown on demand only) =====
+// Uses unique IDs prefixed with "av_" to avoid conflicts
 
-  let wall = document.getElementById('authWall');
-  if (wall) { wall.style.display = 'flex'; return; }
-
-  wall = document.createElement('div');
-  wall.id = 'authWall';
-  wall.style.cssText =
-    'position:fixed;inset:0;background:var(--bg);z-index:9999;' +
-    'display:flex;align-items:center;justify-content:center;padding:20px;flex-direction:column';
-
-  wall.innerHTML = `
-    <div style="text-align:center;max-width:380px;width:100%">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;
-        letter-spacing:2px;margin-bottom:8px;color:var(--text)">
-        ANIME <span style="color:var(--accent)">VERSE</span>
-      </div>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:28px">
-        Your anime streaming destination
-      </p>
-
+function openAuthModal() {
+  let modal = document.getElementById('avAuthModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'avAuthModal';
+    modal.style.cssText =
+      'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;' +
+      'display:flex;align-items:center;justify-content:center;' +
+      'padding:20px;backdrop-filter:blur(6px)';
+    modal.innerHTML = `
       <div style="background:var(--card-bg);border:1px solid var(--border);
-        border-radius:20px;padding:24px">
+        border-radius:20px;padding:24px;width:100%;max-width:380px;
+        position:relative">
 
-        <!-- Tabs -->
+        <button onclick="closeAuthModal()"
+          style="position:absolute;top:14px;right:14px;background:none;
+            border:none;color:var(--text2);cursor:pointer;font-size:18px">
+          <i class="fas fa-times"></i>
+        </button>
+
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;
+            letter-spacing:2px;color:var(--text)">
+            ANIME <span style="color:var(--accent)">VERSE</span>
+          </div>
+          <p style="font-size:13px;color:var(--text2);margin-top:4px">
+            Login to unlock all features
+          </p>
+        </div>
+
+        <!-- TABS -->
         <div style="display:flex;background:var(--bg3);
           border-radius:10px;padding:4px;margin-bottom:20px">
-          <button id="authTabLogin" onclick="switchAuthTab('login')"
+          <button id="av_tabLogin" onclick="avSwitchTab('login')"
             style="flex:1;padding:9px;border-radius:8px;border:none;
               background:var(--accent);color:#fff;
               font-family:'Poppins',sans-serif;font-size:13px;
-              font-weight:700;cursor:pointer">
+              font-weight:700;cursor:pointer;transition:all 0.2s">
             Login
           </button>
-          <button id="authTabSignup" onclick="switchAuthTab('signup')"
+          <button id="av_tabSignup" onclick="avSwitchTab('signup')"
             style="flex:1;padding:9px;border-radius:8px;border:none;
               background:transparent;color:var(--text2);
               font-family:'Poppins',sans-serif;font-size:13px;
-              font-weight:600;cursor:pointer">
+              font-weight:600;cursor:pointer;transition:all 0.2s">
             Sign Up
           </button>
         </div>
 
-        <!-- Error / Success -->
-        <div id="authError" style="display:none;
-          background:rgba(229,9,20,0.12);border:1px solid #e50914;
-          color:#e50914;padding:10px 12px;border-radius:8px;
-          font-size:12px;margin-bottom:14px;font-family:'Poppins',sans-serif">
+        <!-- Error/Success -->
+        <div id="av_authErr"
+          style="display:none;background:rgba(229,9,20,0.1);
+            border:1px solid #e50914;color:#e50914;padding:10px 12px;
+            border-radius:8px;font-size:12px;margin-bottom:14px;
+            font-family:'Poppins',sans-serif">
         </div>
-        <div id="authSuccess" style="display:none;
-          background:rgba(39,174,96,0.12);border:1px solid #27ae60;
-          color:#27ae60;padding:10px 12px;border-radius:8px;
-          font-size:12px;margin-bottom:14px;font-family:'Poppins',sans-serif">
+        <div id="av_authOk"
+          style="display:none;background:rgba(39,174,96,0.1);
+            border:1px solid #27ae60;color:#27ae60;padding:10px 12px;
+            border-radius:8px;font-size:12px;margin-bottom:14px;
+            font-family:'Poppins',sans-serif">
         </div>
 
         <!-- LOGIN FORM -->
-        <div id="loginForm">
+        <div id="av_loginForm">
           <div style="margin-bottom:14px">
             <div style="font-size:11px;font-weight:600;color:var(--text2);
-              letter-spacing:0.5px;margin-bottom:6px">EMAIL</div>
-            <input type="email" id="loginEmail" placeholder="your@email.com"
-              onkeydown="if(event.key==='Enter')doLogin()"
+              letter-spacing:0.5px;margin-bottom:6px">
+              EMAIL
+            </div>
+            <input type="email" id="av_email"
+              placeholder="your@email.com"
+              onkeydown="if(event.key==='Enter')avDoLogin()"
               style="width:100%;padding:11px 14px;border-radius:10px;
                 border:1px solid var(--border);background:var(--bg3);
                 color:var(--text);font-family:'Poppins',sans-serif;
-                font-size:13px;box-sizing:border-box"/>
+                font-size:13px;box-sizing:border-box;outline:none"/>
           </div>
           <div style="margin-bottom:6px;position:relative">
             <div style="font-size:11px;font-weight:600;color:var(--text2);
-              letter-spacing:0.5px;margin-bottom:6px">PASSWORD</div>
-            <input type="password" id="loginPass" placeholder="Password"
-              onkeydown="if(event.key==='Enter')doLogin()"
-              style="width:100%;padding:11px 40px 11px 14px;border-radius:10px;
-                border:1px solid var(--border);background:var(--bg3);
-                color:var(--text);font-family:'Poppins',sans-serif;
-                font-size:13px;box-sizing:border-box"/>
-            <button onclick="togglePwView('loginPass','eyeLogin')"
+              letter-spacing:0.5px;margin-bottom:6px">
+              PASSWORD
+            </div>
+            <input type="password" id="av_pass"
+              placeholder="Password"
+              onkeydown="if(event.key==='Enter')avDoLogin()"
+              style="width:100%;padding:11px 40px 11px 14px;
+                border-radius:10px;border:1px solid var(--border);
+                background:var(--bg3);color:var(--text);
+                font-family:'Poppins',sans-serif;font-size:13px;
+                box-sizing:border-box;outline:none"/>
+            <button onclick="avTogglePw('av_pass','av_eyeLogin')"
               style="position:absolute;right:10px;bottom:10px;
                 background:none;border:none;color:var(--text2);
                 cursor:pointer;font-size:15px">
-              <i class="fas fa-eye" id="eyeLogin"></i>
+              <i class="fas fa-eye" id="av_eyeLogin"></i>
             </button>
           </div>
           <div style="text-align:right;margin-bottom:18px">
-            <button onclick="doForgotPassword()"
+            <button onclick="avForgotPw()"
               style="background:none;border:none;color:var(--accent);
-                font-size:12px;cursor:pointer;font-family:'Poppins',sans-serif">
+                font-size:12px;cursor:pointer;
+                font-family:'Poppins',sans-serif">
               Forgot password?
             </button>
           </div>
-          <button onclick="doLogin()" id="loginBtn"
+          <button onclick="avDoLogin()" id="av_loginBtn"
             style="width:100%;padding:12px;border-radius:10px;border:none;
-              background:var(--accent);color:#fff;font-family:'Poppins',sans-serif;
+              background:var(--accent);color:#fff;
+              font-family:'Poppins',sans-serif;
               font-size:14px;font-weight:700;cursor:pointer">
             <i class="fas fa-right-to-bracket"></i> Login
           </button>
         </div>
 
         <!-- SIGNUP FORM -->
-        <div id="signupForm" style="display:none">
+        <div id="av_signupForm" style="display:none">
           <div style="margin-bottom:14px">
             <div style="font-size:11px;font-weight:600;color:var(--text2);
               letter-spacing:0.5px;margin-bottom:6px">DISPLAY NAME</div>
-            <input type="text" id="signupName" placeholder="Your name"
+            <input type="text" id="av_name"
+              placeholder="Your name"
               style="width:100%;padding:11px 14px;border-radius:10px;
                 border:1px solid var(--border);background:var(--bg3);
                 color:var(--text);font-family:'Poppins',sans-serif;
-                font-size:13px;box-sizing:border-box"/>
+                font-size:13px;box-sizing:border-box;outline:none"/>
           </div>
           <div style="margin-bottom:14px">
             <div style="font-size:11px;font-weight:600;color:var(--text2);
               letter-spacing:0.5px;margin-bottom:6px">EMAIL</div>
-            <input type="email" id="signupEmail" placeholder="your@email.com"
+            <input type="email" id="av_regEmail"
+              placeholder="your@email.com"
               style="width:100%;padding:11px 14px;border-radius:10px;
                 border:1px solid var(--border);background:var(--bg3);
                 color:var(--text);font-family:'Poppins',sans-serif;
-                font-size:13px;box-sizing:border-box"/>
+                font-size:13px;box-sizing:border-box;outline:none"/>
           </div>
           <div style="margin-bottom:18px;position:relative">
             <div style="font-size:11px;font-weight:600;color:var(--text2);
               letter-spacing:0.5px;margin-bottom:6px">PASSWORD</div>
-            <input type="password" id="signupPass"
+            <input type="password" id="av_regPass"
               placeholder="Min 6 characters"
-              onkeydown="if(event.key==='Enter')doSignup()"
-              style="width:100%;padding:11px 40px 11px 14px;border-radius:10px;
-                border:1px solid var(--border);background:var(--bg3);
-                color:var(--text);font-family:'Poppins',sans-serif;
-                font-size:13px;box-sizing:border-box"/>
-            <button onclick="togglePwView('signupPass','eyeSignup')"
+              onkeydown="if(event.key==='Enter')avDoSignup()"
+              style="width:100%;padding:11px 40px 11px 14px;
+                border-radius:10px;border:1px solid var(--border);
+                background:var(--bg3);color:var(--text);
+                font-family:'Poppins',sans-serif;font-size:13px;
+                box-sizing:border-box;outline:none"/>
+            <button onclick="avTogglePw('av_regPass','av_eyeSignup')"
               style="position:absolute;right:10px;bottom:10px;
                 background:none;border:none;color:var(--text2);
                 cursor:pointer;font-size:15px">
-              <i class="fas fa-eye" id="eyeSignup"></i>
+              <i class="fas fa-eye" id="av_eyeSignup"></i>
             </button>
           </div>
-          <button onclick="doSignup()" id="signupBtn"
+          <button onclick="avDoSignup()" id="av_signupBtn"
             style="width:100%;padding:12px;border-radius:10px;border:none;
-              background:var(--accent);color:#fff;font-family:'Poppins',sans-serif;
+              background:var(--accent);color:#fff;
+              font-family:'Poppins',sans-serif;
               font-size:14px;font-weight:700;cursor:pointer">
             <i class="fas fa-user-plus"></i> Create Account
           </button>
         </div>
 
-      </div>
-      <p style="font-size:11px;color:var(--text2);margin-top:14px">
-        By continuing, you agree to our terms of service.
-      </p>
-    </div>`;
+      </div>`;
 
-  document.body.appendChild(wall);
-}
-
-// ===== AUTH FUNCTIONS =====
-function switchAuthTab(tab) {
-  const loginForm  = document.getElementById('loginForm');
-  const signupForm = document.getElementById('signupForm');
-  const loginTab   = document.getElementById('authTabLogin');
-  const signupTab  = document.getElementById('authTabSignup');
-  if (!loginForm || !signupForm) return;
-
-  if (tab === 'login') {
-    loginForm.style.display  = 'block';
-    signupForm.style.display = 'none';
-    if (loginTab)  { loginTab.style.background = 'var(--accent)'; loginTab.style.color = '#fff'; }
-    if (signupTab) { signupTab.style.background = 'transparent'; signupTab.style.color = 'var(--text2)'; }
+    modal.addEventListener('click', e => {
+      if (e.target === modal) closeAuthModal();
+    });
+    document.body.appendChild(modal);
   } else {
-    loginForm.style.display  = 'none';
-    signupForm.style.display = 'block';
-    if (signupTab) { signupTab.style.background = 'var(--accent)'; signupTab.style.color = '#fff'; }
-    if (loginTab)  { loginTab.style.background = 'transparent'; loginTab.style.color = 'var(--text2)'; }
+    modal.style.display = 'flex';
   }
-  document.getElementById('authError')?.style && (document.getElementById('authError').style.display = 'none');
-  document.getElementById('authSuccess')?.style && (document.getElementById('authSuccess').style.display = 'none');
+  document.body.style.overflow = 'hidden';
 }
 
-function togglePwView(inputId, iconId) {
+function closeAuthModal() {
+  const modal = document.getElementById('avAuthModal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function avSwitchTab(tab) {
+  const lf = document.getElementById('av_loginForm');
+  const sf = document.getElementById('av_signupForm');
+  const lt = document.getElementById('av_tabLogin');
+  const st = document.getElementById('av_tabSignup');
+  if (!lf) return;
+  if (tab === 'login') {
+    lf.style.display = 'block';
+    sf.style.display = 'none';
+    lt.style.cssText += 'background:var(--accent);color:#fff';
+    st.style.cssText += 'background:transparent;color:var(--text2)';
+  } else {
+    lf.style.display = 'none';
+    sf.style.display = 'block';
+    st.style.cssText += 'background:var(--accent);color:#fff';
+    lt.style.cssText += 'background:transparent;color:var(--text2)';
+  }
+  const err = document.getElementById('av_authErr');
+  const ok  = document.getElementById('av_authOk');
+  if (err) err.style.display = 'none';
+  if (ok)  ok.style.display  = 'none';
+}
+
+function avTogglePw(inputId, iconId) {
   const inp  = document.getElementById(inputId);
   const icon = document.getElementById(iconId);
   if (!inp) return;
   inp.type = inp.type === 'password' ? 'text' : 'password';
-  if (icon) icon.className = inp.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+  if (icon) icon.className = inp.type === 'password'
+    ? 'fas fa-eye' : 'fas fa-eye-slash';
 }
 
-function showAuthError(msg) {
-  const el = document.getElementById('authError');
+function avShowErr(msg) {
+  const el = document.getElementById('av_authErr');
+  const ok = document.getElementById('av_authOk');
   if (el) { el.textContent = msg; el.style.display = 'block'; }
+  if (ok) ok.style.display = 'none';
 }
-function showAuthSuccess(msg) {
-  const s = document.getElementById('authSuccess');
-  const e = document.getElementById('authError');
-  if (s) { s.textContent = msg; s.style.display = 'block'; }
-  if (e) e.style.display = 'none';
+function avShowOk(msg) {
+  const el = document.getElementById('av_authOk');
+  const er = document.getElementById('av_authErr');
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+  if (er) er.style.display = 'none';
 }
 
-async function doLogin() {
-  const email = (document.getElementById('loginEmail')?.value || '').trim();
-  const pass  =  document.getElementById('loginPass')?.value  || '';
-  if (!email || !pass) { showAuthError('Please fill in all fields.'); return; }
-  const btn = document.getElementById('loginBtn');
-  if (btn) { btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Logging in...'; btn.disabled = true; }
+async function avDoLogin() {
+  const email = (document.getElementById('av_email')?.value || '').trim();
+  const pass  =  document.getElementById('av_pass')?.value  || '';
+  if (!email || !pass) { avShowErr('Please fill in all fields.'); return; }
+  const btn = document.getElementById('av_loginBtn');
+  if (btn) {
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Logging in...';
+    btn.disabled  = true;
+  }
   try {
     await auth.signInWithEmailAndPassword(email, pass);
+    closeAuthModal();
   } catch(e) {
-    showAuthError(getAuthError(e.code));
-    if (btn) { btn.innerHTML = '<i class="fas fa-right-to-bracket"></i> Login'; btn.disabled = false; }
+    avShowErr(getAuthErr(e.code));
+    if (btn) {
+      btn.innerHTML = '<i class="fas fa-right-to-bracket"></i> Login';
+      btn.disabled  = false;
+    }
   }
 }
 
-async function doSignup() {
-  const name  = (document.getElementById('signupName')?.value  || '').trim();
-  const email = (document.getElementById('signupEmail')?.value || '').trim();
-  const pass  =  document.getElementById('signupPass')?.value  || '';
-  if (!name)           { showAuthError('Enter your name.'); return; }
-  if (!email)          { showAuthError('Enter your email.'); return; }
-  if (pass.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
-  const btn = document.getElementById('signupBtn');
-  if (btn) { btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Creating...'; btn.disabled = true; }
+async function avDoSignup() {
+  const name  = (document.getElementById('av_name')?.value     || '').trim();
+  const email = (document.getElementById('av_regEmail')?.value  || '').trim();
+  const pass  =  document.getElementById('av_regPass')?.value   || '';
+  if (!name)           { avShowErr('Enter your name.'); return; }
+  if (!email)          { avShowErr('Enter your email.'); return; }
+  if (pass.length < 6) { avShowErr('Password must be at least 6 characters.'); return; }
+  const btn = document.getElementById('av_signupBtn');
+  if (btn) {
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Creating...';
+    btn.disabled  = true;
+  }
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
     await cred.user.updateProfile({ displayName: name });
     await db.collection('users').doc(cred.user.uid).set({
-      name, email, watchlist: [],
+      name, email,
+      watchlist: [],
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    showAuthSuccess('Account created! Welcome to Anime Verse.');
+    avShowOk('Account created! Welcome to Anime Verse 🎌');
+    if (btn) {
+      btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+      btn.disabled  = false;
+    }
   } catch(e) {
-    showAuthError(getAuthError(e.code));
-    if (btn) { btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account'; btn.disabled = false; }
+    avShowErr(getAuthErr(e.code));
+    if (btn) {
+      btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+      btn.disabled  = false;
+    }
   }
 }
 
-async function doForgotPassword() {
-  const email = (document.getElementById('loginEmail')?.value || '').trim();
-  if (!email) { showAuthError('Enter your email first.'); return; }
+async function avForgotPw() {
+  const email = (document.getElementById('av_email')?.value || '').trim();
+  if (!email) { avShowErr('Enter your email first.'); return; }
   try {
     await auth.sendPasswordResetEmail(email);
-    showAuthSuccess('Reset email sent! Check your inbox.');
-  } catch(e) { showAuthError(getAuthError(e.code)); }
+    avShowOk('Reset email sent! Check your inbox.');
+  } catch(e) { avShowErr(getAuthErr(e.code)); }
 }
 
-function getAuthError(code) {
+function getAuthErr(code) {
   const map = {
     'auth/user-not-found':         'No account with this email.',
     'auth/wrong-password':         'Wrong password.',
@@ -328,7 +352,11 @@ function getAuthError(code) {
   return map[code] || `Error: ${code}`;
 }
 
-function openAuthModal() { showAuthWall(); }
+// Keep old names as aliases for backward compatibility
+window.doLogin       = avDoLogin;
+window.doSignup      = avDoSignup;
+window.doForgotPassword = avForgotPw;
+window.switchAuthTab = avSwitchTab;
 
 // ===== UPDATE AUTH UI =====
 async function updateAuthUI(user) {
@@ -344,52 +372,79 @@ async function updateAuthUI(user) {
   const avatar  = userData.photoURL || '';
   const initial = name.charAt(0).toUpperCase();
 
-  const profileBtn  = document.getElementById('profileBtn');
-  const profileIcon = document.getElementById('profileIcon');
+  // ===== PROFILE BUTTON — circle PFP, no square =====
+  const profileBtn = document.getElementById('profileBtn');
   if (profileBtn) {
+    // Clear all children
+    profileBtn.innerHTML = '';
+    profileBtn.removeAttribute('style');
+    // Apply circle style
+    profileBtn.style.cssText = `
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      overflow: hidden;
+      padding: 0;
+      border: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--accent);
+      flex-shrink: 0;
+    `;
+
     if (avatar) {
-      if (profileIcon) profileIcon.style.display = 'none';
-      profileBtn.querySelector('img')?.remove();
       const img = document.createElement('img');
       img.src   = avatar;
-      img.style.cssText = 'width:32px;height:32px;border-radius:50%;object-fit:cover;display:block';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
       img.onerror = () => {
-        img.remove();
-        profileBtn.textContent  = initial;
-        profileBtn.style.fontWeight = '700';
-        profileBtn.style.fontSize   = '15px';
+        profileBtn.innerHTML =
+          `<span style="font-size:15px;font-weight:700;color:#fff">${initial}</span>`;
       };
-      profileBtn.textContent = '';
       profileBtn.appendChild(img);
     } else {
-      if (profileIcon) profileIcon.style.display = 'none';
-      profileBtn.textContent  = initial;
-      profileBtn.style.fontWeight = '700';
-      profileBtn.style.fontSize   = '15px';
+      profileBtn.innerHTML =
+        `<span style="font-size:15px;font-weight:700;color:#fff">${initial}</span>`;
     }
-    profileBtn.style.background = 'var(--accent)';
-    profileBtn.style.color      = '#fff';
     profileBtn.onclick = () => { window.location.href = 'profile.html'; };
   }
 
   updateSidebarProfile({ name, avatar, initial, email: user.email });
 
-  const watchlist = userData.watchlist || [];
+  // Update sidebar login/logout buttons
+  const loginBtn  = document.getElementById('sidebarLoginBtn');
+  const logoutBtn = document.getElementById('sidebarLogoutBtn');
+  if (loginBtn)  loginBtn.style.display  = 'none';
+  if (logoutBtn) logoutBtn.style.display = 'flex';
+
+  // Show admin link if needed
+  // (check email or a flag in Firestore if you want)
+  const adminSec = document.getElementById('adminSidebarSection');
+  if (adminSec) adminSec.style.display = 'block';
+
   const badge = document.getElementById('myListBadge');
-  if (badge && watchlist.length > 0) {
-    badge.textContent = watchlist.length;
+  const wl    = userData.watchlist || [];
+  if (badge && wl.length > 0) {
+    badge.textContent = wl.length;
     badge.style.display = 'flex';
   }
 }
 
 function setProfileBtnAnon() {
-  const profileBtn  = document.getElementById('profileBtn');
-  const profileIcon = document.getElementById('profileIcon');
+  const profileBtn = document.getElementById('profileBtn');
   if (!profileBtn) return;
-  profileBtn.textContent = '';
-  if (profileIcon) { profileIcon.style.display = ''; profileBtn.appendChild(profileIcon); }
-  profileBtn.style.background = '';
-  profileBtn.style.color      = '';
+  profileBtn.innerHTML = '';
+  profileBtn.style.cssText = `
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg3);
+    flex-shrink: 0;
+  `;
+  profileBtn.innerHTML =
+    '<i class="fas fa-user" style="color:var(--text2);font-size:15px"></i>';
   profileBtn.onclick = () => openAuthModal();
 }
 
@@ -400,7 +455,8 @@ function updateSidebarProfile(userData) {
   if (!userData) {
     if (nameEl)   nameEl.textContent  = 'Guest';
     if (emailEl)  emailEl.textContent = 'Login to save progress';
-    if (avatarEl) avatarEl.innerHTML  = '<i class="fas fa-user" style="font-size:20px;color:#fff"></i>';
+    if (avatarEl) avatarEl.innerHTML  =
+      '<i class="fas fa-user" style="font-size:20px;color:#fff"></i>';
     return;
   }
   const { name, avatar, initial, email } = userData;
@@ -408,16 +464,17 @@ function updateSidebarProfile(userData) {
   if (emailEl) emailEl.textContent = email || '';
   if (avatarEl) {
     avatarEl.innerHTML = avatar
-      ? `<img src="${avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover"
-           onerror="this.parentElement.innerHTML='<span style=\\'font-size:20px;font-weight:700;color:#fff\\'>${initial}</span>'"/>`
+      ? `<img src="${avatar}"
+           style="width:100%;height:100%;border-radius:50%;object-fit:cover"
+           onerror="this.parentElement.innerHTML='<span style=\\'font-size:22px;font-weight:700;color:#fff\\'>${initial}</span>'"/>`
       : `<span style="font-size:22px;font-weight:700;color:#fff">${initial}</span>`;
   }
 }
 
+// ===== LOGOUT =====
 async function logoutUser() {
   await auth.signOut();
   currentUser = null;
-  localStorage.removeItem('av_mylist');
   window.location.reload();
 }
 
@@ -431,9 +488,9 @@ async function toggleMyList(id, btnEl) {
   id = String(id);
   if (!currentUser) { openAuthModal(); return; }
   try {
-    const ref  = db.collection('users').doc(currentUser.uid);
-    const doc  = await ref.get();
-    let list   = doc.exists ? (doc.data().watchlist||[]).map(String) : [];
+    const ref = db.collection('users').doc(currentUser.uid);
+    const doc = await ref.get();
+    let list  = doc.exists ? (doc.data().watchlist||[]).map(String) : [];
     if (list.includes(id)) {
       list = list.filter(x => x !== id);
       if (btnEl) btnEl.classList.remove('saved');
@@ -450,14 +507,13 @@ async function handleWishlistToggle(id, btnEl) {
   await toggleMyList(id, btnEl);
 }
 
-// ===== FETCH ANIME (FIXED) =====
+// ===== FETCH ANIME =====
 async function fetchAllAnime() {
   try {
     let snap;
     try {
-      snap = await db.collection('anime').orderBy('createdAt', 'desc').get();
+      snap = await db.collection('anime').orderBy('createdAt','desc').get();
     } catch(e) {
-      console.warn('Fallback fetch (no orderBy):', e.message);
       snap = await db.collection('anime').get();
     }
     const data = [];
@@ -466,19 +522,6 @@ async function fetchAllAnime() {
     return data;
   } catch(e) {
     console.error('Fetch error:', e);
-    const grid = document.getElementById('latestGrid');
-    if (grid) grid.innerHTML = `
-      <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text2)">
-        <i class="fas fa-wifi"
-          style="font-size:28px;opacity:0.3;display:block;margin-bottom:12px"></i>
-        Failed to load content.<br/>
-        <button onclick="location.reload()"
-          style="margin-top:14px;background:var(--accent);color:#fff;
-            border:none;border-radius:8px;padding:8px 20px;
-            font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer">
-          Retry
-        </button>
-      </div>`;
     return [];
   }
 }
@@ -493,7 +536,8 @@ function renderCard(anime) {
   ).join('');
   div.innerHTML = `
     <div style="position:relative">
-      <img class="card-thumb" src="${anime.thumbnail||''}" alt="${anime.title}"
+      <img class="card-thumb"
+        src="${anime.thumbnail||''}" alt="${anime.title}"
         onerror="this.style.background='var(--bg3)'"/>
       <button class="wishlist-btn" id="wl-${anime.firestoreId}"
         onclick="event.stopPropagation();handleWishlistToggle('${anime.firestoreId}',this)">
@@ -504,10 +548,14 @@ function renderCard(anime) {
       <span class="card-badge">${(anime.type||'ANIME').toUpperCase()}</span>
       <div class="card-title">${anime.title}</div>
       <div class="card-meta">
-        <span class="card-rating"><i class="fas fa-star"></i> ${anime.rating||'N/A'}</span>
+        <span class="card-rating">
+          <i class="fas fa-star"></i> ${anime.rating||'N/A'}
+        </span>
         <span class="card-year">${anime.year||''}</span>
       </div>
-      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${genres}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+        ${genres}
+      </div>
     </div>`;
   div.addEventListener('click', () => {
     window.location.href = `anime.html?id=${anime.firestoreId}`;
@@ -518,6 +566,7 @@ function renderCard(anime) {
 // ===== INIT APP =====
 async function initApp() {
   const data = await fetchAllAnime();
+
   if (currentUser) {
     try {
       const doc  = await db.collection('users').doc(currentUser.uid).get();
@@ -528,24 +577,50 @@ async function initApp() {
       });
     } catch(e) {}
   }
+
   renderHome(data);
   initSearch(data);
   initSidebar();
+
+  // Hide loading
+  const loadingState = document.getElementById('loadingState');
+  if (loadingState) loadingState.style.display = 'none';
 }
 
 // ===== RENDER HOME =====
 function renderHome(data) {
-  renderSection('latestGrid',
-    data.filter(a => a.latest).sort((a, b) => {
-      const ta = a.createdAt?.toDate?.()?.getTime() || 0;
-      const tb = b.createdAt?.toDate?.()?.getTime() || 0;
-      return tb - ta;
-    }), 'No latest releases yet.');
-  renderSection('trendingGrid', data.filter(a => a.trending), 'No trending anime yet.');
-  renderTop10(data.filter(a => a.top10).sort((a,b)=>(a.top10rank||0)-(b.top10rank||0)));
+  const latest = data.filter(a => a.latest).sort((a,b) => {
+    const ta = a.createdAt?.toDate?.()?.getTime() || 0;
+    const tb = b.createdAt?.toDate?.()?.getTime() || 0;
+    return tb - ta;
+  });
+  const trending = data.filter(a => a.trending);
+  const top10    = data.filter(a => a.top10)
+    .sort((a,b) => (a.top10rank||0) - (b.top10rank||0));
+
+  // Show/hide sections
+  const latestSec   = document.getElementById('latestSection');
+  const trendingSec = document.getElementById('trendingSection');
+  const top10Sec    = document.getElementById('top10Section');
+  const homeSecs    = document.getElementById('homeSections');
+  const emptyState  = document.getElementById('emptyState');
+
+  if (latestSec)   latestSec.classList.toggle('hidden',   !latest.length);
+  if (trendingSec) trendingSec.classList.toggle('hidden', !trending.length);
+  if (homeSecs)    homeSecs.style.display = 'block';
+
+  if (!latest.length && !trending.length && !top10.length) {
+    if (emptyState) emptyState.classList.remove('hidden');
+  } else {
+    if (emptyState) emptyState.classList.add('hidden');
+  }
+
+  renderGrid('latestGrid',   latest,   'No latest releases yet.');
+  renderGrid('trendingGrid', trending, 'No trending anime yet.');
+  renderTop10(top10);
 }
 
-function renderSection(gridId, items, emptyMsg) {
+function renderGrid(gridId, items, emptyMsg) {
   const grid = document.getElementById(gridId);
   if (!grid) return;
   grid.innerHTML = '';
@@ -554,15 +629,15 @@ function renderSection(gridId, items, emptyMsg) {
       padding:30px;color:var(--text2);font-size:13px">${emptyMsg}</div>`;
     return;
   }
-  items.forEach(anime => grid.appendChild(renderCard(anime)));
+  items.forEach(a => grid.appendChild(renderCard(a)));
 }
 
 function renderTop10(items) {
   const grid = document.getElementById('top10Grid');
-  if (!grid) return;
-  const sec = document.getElementById('top10Section');
-  if (!items.length) { if (sec) sec.style.display = 'none'; return; }
-  if (sec) sec.style.display = 'block';
+  const sec  = document.getElementById('top10Section');
+  if (!grid || !sec) return;
+  if (!items.length) { sec.classList.add('hidden'); return; }
+  sec.classList.remove('hidden');
   grid.innerHTML = '';
   items.forEach((anime, i) => {
     const div = document.createElement('div');
@@ -575,11 +650,15 @@ function renderTop10(items) {
         onerror="this.style.background='var(--bg3)'"/>
       <div style="flex:1;min-width:0">
         <div style="font-size:14px;font-weight:700;color:var(--text);
-          white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${anime.title}</div>
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          ${anime.title}
+        </div>
         <div style="font-size:12px;color:var(--text2)">
-          ${(anime.genre||[]).slice(0,2).join(' · ')}</div>
+          ${(anime.genre||[]).slice(0,2).join(' · ')}
+        </div>
         <div style="font-size:12px;color:var(--accent);font-weight:600;margin-top:3px">
-          ★ ${anime.rating||'N/A'}</div>
+          ★ ${anime.rating||'N/A'}
+        </div>
       </div>`;
     div.addEventListener('click', () => {
       window.location.href = `anime.html?id=${anime.firestoreId}`;
@@ -591,114 +670,132 @@ function renderTop10(items) {
 // ===== FILTER =====
 function filterCategory(cat, btnEl) {
   currentCategory = cat;
-  document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.cat-pill,.pill').forEach(b => b.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
-  const filtered = cat === 'all' ? allAnimeData : allAnimeData.filter(a => a.type === cat);
+  const filtered = cat === 'all'
+    ? allAnimeData
+    : allAnimeData.filter(a => a.type === cat);
   renderHome(filtered);
 }
 
 // ===== SEARCH =====
-function initSearch(data) {
-  const searchBtn   = document.getElementById('searchBtn');
-  const searchBar   = document.getElementById('searchBar');
-  const searchInput = document.getElementById('searchInput');
-  const closeSearch = document.getElementById('closeSearch');
-  if (searchBtn) searchBtn.addEventListener('click', () => {
-    searchBar?.classList.remove('hidden');
-    searchInput?.focus();
-  });
-  if (closeSearch) closeSearch.addEventListener('click', () => {
-    searchBar?.classList.add('hidden');
-    if (searchInput) searchInput.value = '';
-    renderHome(allAnimeData);
-  });
-  if (searchInput) searchInput.addEventListener('input', e => {
-    const q = e.target.value.trim().toLowerCase();
-    if (!q) { renderHome(allAnimeData); return; }
-    const results = allAnimeData.filter(a =>
-      a.title.toLowerCase().includes(q) ||
-      (a.genre||[]).some(g => g.toLowerCase().includes(q))
-    );
-    renderSection('latestGrid', results, 'No results found.');
-    document.getElementById('trendingSection')?.style && (document.getElementById('trendingSection').style.display='none');
-    document.getElementById('top10Section')?.style && (document.getElementById('top10Section').style.display='none');
-  });
+let searchActive = false;
+
+function toggleSearch() {
+  const bar = document.getElementById('searchBar');
+  const inp = document.getElementById('searchInput');
+  if (!bar) return;
+  searchActive = !searchActive;
+  bar.classList.toggle('hidden', !searchActive);
+  if (searchActive && inp) inp.focus();
+  else if (inp) { inp.value = ''; renderHome(allAnimeData); }
 }
 
-// ===== SIDEBAR (FIXED) =====
+function closeSearch() {
+  searchActive = false;
+  const bar = document.getElementById('searchBar');
+  const inp = document.getElementById('searchInput');
+  if (bar) bar.classList.add('hidden');
+  if (inp) inp.value = '';
+  renderHome(allAnimeData);
+}
+
+function searchAnime(q) {
+  if (!q.trim()) { renderHome(allAnimeData); return; }
+  const r = allAnimeData.filter(a =>
+    a.title.toLowerCase().includes(q.toLowerCase()) ||
+    (a.genre||[]).some(g => g.toLowerCase().includes(q.toLowerCase()))
+  );
+  renderGrid('latestGrid', r, 'No results found.');
+  const sec1 = document.getElementById('trendingSection');
+  const sec2 = document.getElementById('top10Section');
+  const sec3 = document.getElementById('latestSection');
+  if (sec1) sec1.classList.add('hidden');
+  if (sec2) sec2.classList.add('hidden');
+  if (sec3) sec3.classList.remove('hidden');
+}
+
+// ===== SIDEBAR =====
 function initSidebar() {
-  const menuBtn  = document.getElementById('menuBtn');
-  const sidebar  = document.getElementById('sidebar');
-  const overlay  = document.getElementById('sidebarOverlay');
-  const closeBtn = document.getElementById('closeSidebar');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay') ||
+                  document.getElementById('overlay');
 
-  const openSb  = () => { sidebar?.classList.remove('hidden'); overlay?.classList.remove('hidden'); };
-  const closeSb = () => { sidebar?.classList.add('hidden');    overlay?.classList.add('hidden'); };
+  window.toggleSidebar = () => {
+    if (!sidebar) return;
+    sidebar.classList.toggle('hidden');
+    if (overlay) overlay.classList.toggle('hidden');
+  };
+  window.closeSidebar = () => {
+    if (sidebar) sidebar.classList.add('hidden');
+    if (overlay) overlay.classList.add('hidden');
+  };
 
-  if (menuBtn)  menuBtn.addEventListener('click', openSb);
-  if (overlay)  overlay.addEventListener('click', closeSb);
-  if (closeBtn) closeBtn.addEventListener('click', closeSb);
+  if (overlay) overlay.addEventListener('click', window.closeSidebar);
 
-  // ✅ Global for onclick= in HTML
-  window.toggleSidebar = () => sidebar?.classList.contains('hidden') ? openSb() : closeSb();
-  window.closeSidebar  = closeSb;
-
-  const sidebarProfile = document.getElementById('sidebarProfileSection');
-  if (sidebarProfile) {
-    sidebarProfile.style.cursor = 'pointer';
-    sidebarProfile.addEventListener('click', () => {
+  // Sidebar profile → profile.html
+  const pfSec = document.getElementById('sidebarProfileSection');
+  if (pfSec) {
+    pfSec.onclick = () => {
+      window.closeSidebar();
       if (currentUser) window.location.href = 'profile.html';
-      else { closeSb(); openAuthModal(); }
-    });
+      else openAuthModal();
+    };
   }
-  const logoutBtn = document.getElementById('sidebarLogout');
-  if (logoutBtn) logoutBtn.addEventListener('click', async () => {
-    closeSb(); await auth.signOut(); window.location.reload();
-  });
-  const myListBtn = document.getElementById('sidebarMyList');
-  if (myListBtn) myListBtn.addEventListener('click', () => { closeSb(); showMyListPage(); });
 }
 
 // ===== MY LIST PAGE =====
-async function showMyListPage() {
+function showMyList() {
   if (!currentUser) { openAuthModal(); return; }
-  try {
-    const doc   = await db.collection('users').doc(currentUser.uid).get();
+  const myListSec    = document.getElementById('myListSection');
+  const homeSecs     = document.getElementById('homeSections');
+  const searchSec    = document.getElementById('searchSection');
+  const categorySec  = document.getElementById('categorySection');
+
+  if (myListSec) myListSec.classList.remove('hidden');
+  if (homeSecs) homeSecs.style.display = 'none';
+  if (searchSec) searchSec.classList.add('hidden');
+  if (categorySec) categorySec.classList.add('hidden');
+
+  const grid  = document.getElementById('myListGrid');
+  const empty = document.getElementById('myListEmpty');
+
+  db.collection('users').doc(currentUser.uid).get().then(doc => {
     const ids   = doc.exists ? (doc.data().watchlist||[]) : [];
-    const items = allAnimeData.filter(a => ids.includes(a.firestoreId));
-    const grid  = document.getElementById('latestGrid');
-    document.getElementById('trendingSection')?.style && (document.getElementById('trendingSection').style.display='none');
-    document.getElementById('top10Section')?.style    && (document.getElementById('top10Section').style.display='none');
+    const items = allAnimeData.filter(a => ids.map(String).includes(String(a.firestoreId)));
+    if (!items.length) {
+      if (grid)  grid.innerHTML = '';
+      if (empty) empty.style.display = 'flex';
+      return;
+    }
+    if (empty) empty.style.display = 'none';
     if (grid) {
       grid.innerHTML = '';
-      if (!items.length) {
-        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;
-          padding:40px;color:var(--text2)">
-          <i class="fas fa-bookmark"
-            style="font-size:36px;opacity:0.3;margin-bottom:14px;display:block"></i>
-          Your list is empty.</div>`;
-      } else {
-        items.forEach(a => grid.appendChild(renderCard(a)));
-      }
+      items.forEach(a => grid.appendChild(renderCard(a)));
     }
-  } catch(e) { console.error(e); }
+  }).catch(e => console.error(e));
 }
 
 function scrollTrending() {
-  document.getElementById('trendingSection')?.scrollIntoView({ behavior:'smooth' });
+  const sec = document.getElementById('trendingSection') ||
+              document.getElementById('trendingAnchor');
+  if (sec) sec.scrollIntoView({ behavior: 'smooth' });
 }
-function showMyList() { showMyListPage(); }
 
-// ===== GLOBAL EXPORTS (for onclick= in HTML) =====
-window.toggleTheme      = toggleTheme;
-window.filterCategory   = filterCategory;
-window.scrollTrending   = scrollTrending;
-window.showMyList       = showMyList;
-window.logoutUser       = logoutUser;
-window.openAuthModal    = openAuthModal;
-window.switchAuthTab    = switchAuthTab;
-window.togglePwView     = togglePwView;
-window.doLogin          = doLogin;
-window.doSignup         = doSignup;
-window.doForgotPassword = doForgotPassword;
+// ===== GLOBAL EXPORTS =====
+window.toggleTheme          = toggleTheme;
+window.filterCategory       = filterCategory;
+window.scrollTrending       = scrollTrending;
+window.showMyList           = showMyList;
+window.logoutUser           = logoutUser;
+window.openAuthModal        = openAuthModal;
+window.closeAuthModal       = closeAuthModal;
 window.handleWishlistToggle = handleWishlistToggle;
+window.toggleSearch         = toggleSearch;
+window.closeSearch          = closeSearch;
+window.searchAnime          = searchAnime;
+window.avSwitchTab          = avSwitchTab;
+window.avDoLogin            = avDoLogin;
+window.avDoSignup           = avDoSignup;
+window.avForgotPw           = avForgotPw;
+window.avTogglePw           = avTogglePw;
