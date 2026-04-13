@@ -1378,29 +1378,55 @@
     function editEpisodeByIdx(idx) {
       const ep = seasonEpsRef[idx];
       if (!ep) return;
+
+      // Basic fields
       document.getElementById('ep_num').value      = ep.id;
       document.getElementById('ep_title').value    = ep.title||'';
       document.getElementById('ep_desc').value     = ep.description||'';
       document.getElementById('ep_duration').value = ep.duration||'';
+
+      // Thumbnail
       if (ep.thumbnail) {
         document.getElementById('ep_thumb').value = ep.thumbnail;
         setPreview(ep.thumbnail, 'epThumbPreview');
       }
-      if (ep.languages) {
-        episodeLangData = JSON.parse(JSON.stringify(ep.languages));
-        updateSavedLangsPreview();
-      }
+
+      // ✅ FIXED: Pre-fill ALL language URLs
+      // Copy languages data to episodeLangData
+      episodeLangData = ep.languages
+        ? JSON.parse(JSON.stringify(ep.languages))
+        : {};
+      updateSavedLangsPreview();
+
+      // Also fill the CURRENTLY SELECTED language tab's URL inputs
+      // so user can see and edit immediately
+      const currentTabLangData = episodeLangData[currentLangTab] || {};
+      document.getElementById('lq_480').value  = currentTabLangData['480p']  || '';
+      document.getElementById('lq_720').value  = currentTabLangData['720p']  || '';
+      document.getElementById('lq_1080').value = currentTabLangData['1080p'] || '';
+      document.getElementById('lq_4k').value   = currentTabLangData['4k']    || '';
+
+      // Episode TG links
+      document.getElementById('etg_480').value  = '';
+      document.getElementById('etg_720').value  = '';
+      document.getElementById('etg_1080').value = '';
+      document.getElementById('etg_4k').value   = '';
+      document.getElementById('etg_single').value = '';
+
       if (ep.telegramLinks) {
-        document.getElementById('etg_480').value  = ep.telegramLinks['480p'] ||'';
-        document.getElementById('etg_720').value  = ep.telegramLinks['720p'] ||'';
-        document.getElementById('etg_1080').value = ep.telegramLinks['1080p']||'';
-        document.getElementById('etg_4k').value   = ep.telegramLinks['4k']   ||'';
+        document.getElementById('etg_480').value  = ep.telegramLinks['480p']  || '';
+        document.getElementById('etg_720').value  = ep.telegramLinks['720p']  || '';
+        document.getElementById('etg_1080').value = ep.telegramLinks['1080p'] || '';
+        document.getElementById('etg_4k').value   = ep.telegramLinks['4k']    || '';
       }
       if (ep.telegramUrl) {
         document.getElementById('etg_single').value = ep.telegramUrl;
       }
-      document.getElementById('ep_num').scrollIntoView({behavior:'smooth',block:'center'});
-      showEpSuccess(`Editing Ep ${ep.id} — edit then click Add Episode to save`);
+
+      document.getElementById('ep_num').scrollIntoView({
+        behavior: 'smooth', block: 'center'
+      });
+      showEpSuccess(`Editing Ep ${ep.id} — make changes then click Add Episode`);
     }
 
     // ===== ADD NEW PACK =====
