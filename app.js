@@ -1,12 +1,10 @@
-// ================================================
+ // ================================================
 // ANIME VERSE — Main App
 // ================================================
 
-// ===== GLOBALS =====
 let currentUser     = null;
 let allAnimeData    = [];
 let currentCategory = 'all';
-let searchActive    = false;
 
 // ===== THEME =====
 function toggleTheme() {
@@ -14,9 +12,7 @@ function toggleTheme() {
   const btn  = document.getElementById('themeBtn');
   const dark = html.getAttribute('data-theme') === 'dark';
   html.setAttribute('data-theme', dark ? 'light' : 'dark');
-  if (btn) btn.innerHTML = dark
-    ? '<i class="fas fa-sun"></i>'
-    : '<i class="fas fa-moon"></i>';
+  if (btn) btn.innerHTML = dark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
   localStorage.setItem('av_theme', dark ? 'light' : 'dark');
 }
 function loadTheme() {
@@ -24,68 +20,48 @@ function loadTheme() {
   document.documentElement.setAttribute('data-theme', saved);
   const btn = document.getElementById('themeBtn');
   if (btn) btn.innerHTML = saved === 'dark'
-    ? '<i class="fas fa-moon"></i>'
-    : '<i class="fas fa-sun"></i>';
+    ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
 }
+loadTheme();
 
 // ===== AUTH LOADING SPLASH =====
-// Show while Firebase resolves — prevents auth wall flash for returning users
 function showAuthLoading() {
   if (document.getElementById('authLoadingScreen')) return;
-  const loader = document.createElement('div');
-  loader.id = 'authLoadingScreen';
-  loader.style.cssText = `
-    position:fixed;inset:0;z-index:9998;
-    background:var(--bg,#0d0d0d);
-    display:flex;align-items:center;justify-content:center;
-    flex-direction:column;gap:16px;
-  `;
-  loader.innerHTML = `
-    <div style="font-family:'Bebas Neue',sans-serif;
-      font-size:34px;letter-spacing:3px;color:var(--text,#fff)">
+  const el = document.createElement('div');
+  el.id = 'authLoadingScreen';
+  el.style.cssText =
+    'position:fixed;inset:0;z-index:9998;background:var(--bg,#0d0d0d);' +
+    'display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px';
+  el.innerHTML = `
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:34px;
+      letter-spacing:3px;color:var(--text,#fff)">
       ANIME <span style="color:var(--accent,#C87740)">VERSE</span>
     </div>
     <div style="width:36px;height:36px;
       border:3px solid rgba(200,119,64,0.2);
       border-top-color:var(--accent,#C87740);
-      border-radius:50%;
-      animation:avAuthSpin 0.7s linear infinite">
-    </div>
-    <style>
-      @keyframes avAuthSpin { to { transform:rotate(360deg); } }
-    </style>
-  `;
-  document.body.appendChild(loader);
+      border-radius:50%;animation:_spin 0.7s linear infinite"></div>
+    <style>@keyframes _spin{to{transform:rotate(360deg)}}</style>`;
+  document.body.appendChild(el);
 }
 function hideAuthLoading() {
-  const loader = document.getElementById('authLoadingScreen');
-  if (loader) {
-    loader.style.opacity = '0';
-    loader.style.transition = 'opacity 0.2s';
-    setTimeout(() => loader.remove(), 200);
-  }
+  const el = document.getElementById('authLoadingScreen');
+  if (el) el.remove();
 }
-
-// Show loading immediately on page load
-loadTheme();
 showAuthLoading();
 
 // ===== AUTH GATE =====
-const PROTECTED_PAGES = ['index.html', 'anime.html', 'watch.html', 'profile.html'];
+const PROTECTED_PAGES = ['index.html','anime.html','watch.html','profile.html'];
 const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 
 auth.onAuthStateChanged(async user => {
   hideAuthLoading();
   currentUser = user;
-
   if (!user) {
-    // User not logged in
     if (PROTECTED_PAGES.includes(currentPage) || currentPage === '') {
       showAuthWall();
-      return;
     }
   } else {
-    // User already logged in — hide any auth wall, show content
     const wall = document.getElementById('authWall');
     if (wall) wall.style.display = 'none';
     const main = document.getElementById('appContent');
@@ -95,155 +71,182 @@ auth.onAuthStateChanged(async user => {
   }
 });
 
+// ===== AUTH WALL =====
 function showAuthWall() {
   const main = document.getElementById('appContent');
   if (main) main.style.display = 'none';
+
   let wall = document.getElementById('authWall');
-  if (!wall) {
-    wall = document.createElement('div');
-    wall.id = 'authWall';
-    wall.style.cssText = `
-      position:fixed;inset:0;background:var(--bg);
-      z-index:9999;display:flex;align-items:center;
-      justify-content:center;padding:20px;flex-direction:column;
-    `;
-    wall.innerHTML = `
-      <div style="text-align:center;max-width:380px;width:100%">
-        <div style="font-family:'Bebas Neue',sans-serif;
-          font-size:36px;letter-spacing:2px;margin-bottom:8px">
-          ANIME <span style="color:var(--accent)">VERSE</span>
-        </div>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:32px">
-          Your anime streaming destination
-        </p>
-        <div style="background:var(--card-bg);border:1px solid var(--border);
-          border-radius:20px;padding:24px;text-align:left">
-          <div style="display:flex;gap:0;margin-bottom:20px;
-            background:var(--bg3);border-radius:10px;padding:4px">
-            <button id="authTabLogin"
-              onclick="switchAuthTab('login')"
-              style="flex:1;padding:8px;border-radius:8px;border:none;
-                background:var(--accent);color:#fff;font-family:'Poppins',sans-serif;
-                font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s">
-              Login
-            </button>
-            <button id="authTabSignup"
-              onclick="switchAuthTab('signup')"
-              style="flex:1;padding:8px;border-radius:8px;border:none;
-                background:none;color:var(--text2);font-family:'Poppins',sans-serif;
-                font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s">
-              Sign Up
-            </button>
-          </div>
-          <div id="authError"
-            style="display:none;background:rgba(229,9,20,0.1);
-              border:1px solid #e50914;color:#e50914;padding:10px 12px;
-              border-radius:8px;font-size:12px;margin-bottom:14px"></div>
-          <div id="authSuccess"
-            style="display:none;background:rgba(39,174,96,0.1);
-              border:1px solid #27ae60;color:#27ae60;padding:10px 12px;
-              border-radius:8px;font-size:12px;margin-bottom:14px"></div>
-          <div id="loginForm">
-            <div class="form-group">
-              <label style="font-size:11px;font-weight:600;
-                color:var(--text2);letter-spacing:0.5px">EMAIL</label>
-              <input type="email" id="loginEmail"
-                placeholder="your@email.com"
-                onkeydown="if(event.key==='Enter')doLogin()"/>
-            </div>
-            <div class="form-group" style="position:relative">
-              <label style="font-size:11px;font-weight:600;
-                color:var(--text2);letter-spacing:0.5px">PASSWORD</label>
-              <input type="password" id="loginPass"
-                placeholder="Password"
-                style="padding-right:44px"
-                onkeydown="if(event.key==='Enter')doLogin()"/>
-              <button onclick="togglePwView('loginPass','eyeLogin')"
-                style="position:absolute;right:10px;bottom:10px;
-                  background:none;border:none;color:var(--text2);
-                  cursor:pointer;font-size:15px">
-                <i class="fas fa-eye" id="eyeLogin"></i>
-              </button>
-            </div>
-            <div style="text-align:right;margin-bottom:16px;margin-top:-8px">
-              <button onclick="doForgotPassword()"
-                style="background:none;border:none;color:var(--accent);
-                  font-size:12px;cursor:pointer;font-family:'Poppins',sans-serif">
-                Forgot password?
-              </button>
-            </div>
-            <button class="btn-primary" onclick="doLogin()"
-              id="loginBtn" style="width:100%">
-              <i class="fas fa-right-to-bracket"></i> Login
-            </button>
-          </div>
-          <div id="signupForm" style="display:none">
-            <div class="form-group">
-              <label style="font-size:11px;font-weight:600;
-                color:var(--text2);letter-spacing:0.5px">DISPLAY NAME</label>
-              <input type="text" id="signupName" placeholder="Your name"/>
-            </div>
-            <div class="form-group">
-              <label style="font-size:11px;font-weight:600;
-                color:var(--text2);letter-spacing:0.5px">EMAIL</label>
-              <input type="email" id="signupEmail" placeholder="your@email.com"/>
-            </div>
-            <div class="form-group" style="position:relative">
-              <label style="font-size:11px;font-weight:600;
-                color:var(--text2);letter-spacing:0.5px">PASSWORD</label>
-              <input type="password" id="signupPass"
-                placeholder="Min 6 characters"
-                style="padding-right:44px"
-                onkeydown="if(event.key==='Enter')doSignup()"/>
-              <button onclick="togglePwView('signupPass','eyeSignup')"
-                style="position:absolute;right:10px;bottom:10px;
-                  background:none;border:none;color:var(--text2);
-                  cursor:pointer;font-size:15px">
-                <i class="fas fa-eye" id="eyeSignup"></i>
-              </button>
-            </div>
-            <button class="btn-primary" onclick="doSignup()"
-              id="signupBtn" style="width:100%">
-              <i class="fas fa-user-plus"></i> Create Account
-            </button>
-          </div>
-        </div>
-        <p style="font-size:11px;color:var(--text2);margin-top:16px">
-          By continuing, you agree to our terms of service.
-        </p>
+  if (wall) { wall.style.display = 'flex'; return; }
+
+  wall = document.createElement('div');
+  wall.id = 'authWall';
+  wall.style.cssText =
+    'position:fixed;inset:0;background:var(--bg);z-index:9999;' +
+    'display:flex;align-items:center;justify-content:center;padding:20px;flex-direction:column';
+
+  wall.innerHTML = `
+    <div style="text-align:center;max-width:380px;width:100%">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;
+        letter-spacing:2px;margin-bottom:8px;color:var(--text)">
+        ANIME <span style="color:var(--accent)">VERSE</span>
       </div>
-    `;
-    document.body.appendChild(wall);
-  } else {
-    wall.style.display = 'flex';
-  }
+      <p style="font-size:13px;color:var(--text2);margin-bottom:28px">
+        Your anime streaming destination
+      </p>
+
+      <div style="background:var(--card-bg);border:1px solid var(--border);
+        border-radius:20px;padding:24px">
+
+        <!-- Tabs -->
+        <div style="display:flex;background:var(--bg3);
+          border-radius:10px;padding:4px;margin-bottom:20px">
+          <button id="authTabLogin" onclick="switchAuthTab('login')"
+            style="flex:1;padding:9px;border-radius:8px;border:none;
+              background:var(--accent);color:#fff;
+              font-family:'Poppins',sans-serif;font-size:13px;
+              font-weight:700;cursor:pointer">
+            Login
+          </button>
+          <button id="authTabSignup" onclick="switchAuthTab('signup')"
+            style="flex:1;padding:9px;border-radius:8px;border:none;
+              background:transparent;color:var(--text2);
+              font-family:'Poppins',sans-serif;font-size:13px;
+              font-weight:600;cursor:pointer">
+            Sign Up
+          </button>
+        </div>
+
+        <!-- Error / Success -->
+        <div id="authError" style="display:none;
+          background:rgba(229,9,20,0.12);border:1px solid #e50914;
+          color:#e50914;padding:10px 12px;border-radius:8px;
+          font-size:12px;margin-bottom:14px;font-family:'Poppins',sans-serif">
+        </div>
+        <div id="authSuccess" style="display:none;
+          background:rgba(39,174,96,0.12);border:1px solid #27ae60;
+          color:#27ae60;padding:10px 12px;border-radius:8px;
+          font-size:12px;margin-bottom:14px;font-family:'Poppins',sans-serif">
+        </div>
+
+        <!-- LOGIN FORM -->
+        <div id="loginForm">
+          <div style="margin-bottom:14px">
+            <div style="font-size:11px;font-weight:600;color:var(--text2);
+              letter-spacing:0.5px;margin-bottom:6px">EMAIL</div>
+            <input type="email" id="loginEmail" placeholder="your@email.com"
+              onkeydown="if(event.key==='Enter')doLogin()"
+              style="width:100%;padding:11px 14px;border-radius:10px;
+                border:1px solid var(--border);background:var(--bg3);
+                color:var(--text);font-family:'Poppins',sans-serif;
+                font-size:13px;box-sizing:border-box"/>
+          </div>
+          <div style="margin-bottom:6px;position:relative">
+            <div style="font-size:11px;font-weight:600;color:var(--text2);
+              letter-spacing:0.5px;margin-bottom:6px">PASSWORD</div>
+            <input type="password" id="loginPass" placeholder="Password"
+              onkeydown="if(event.key==='Enter')doLogin()"
+              style="width:100%;padding:11px 40px 11px 14px;border-radius:10px;
+                border:1px solid var(--border);background:var(--bg3);
+                color:var(--text);font-family:'Poppins',sans-serif;
+                font-size:13px;box-sizing:border-box"/>
+            <button onclick="togglePwView('loginPass','eyeLogin')"
+              style="position:absolute;right:10px;bottom:10px;
+                background:none;border:none;color:var(--text2);
+                cursor:pointer;font-size:15px">
+              <i class="fas fa-eye" id="eyeLogin"></i>
+            </button>
+          </div>
+          <div style="text-align:right;margin-bottom:18px">
+            <button onclick="doForgotPassword()"
+              style="background:none;border:none;color:var(--accent);
+                font-size:12px;cursor:pointer;font-family:'Poppins',sans-serif">
+              Forgot password?
+            </button>
+          </div>
+          <button onclick="doLogin()" id="loginBtn"
+            style="width:100%;padding:12px;border-radius:10px;border:none;
+              background:var(--accent);color:#fff;font-family:'Poppins',sans-serif;
+              font-size:14px;font-weight:700;cursor:pointer">
+            <i class="fas fa-right-to-bracket"></i> Login
+          </button>
+        </div>
+
+        <!-- SIGNUP FORM -->
+        <div id="signupForm" style="display:none">
+          <div style="margin-bottom:14px">
+            <div style="font-size:11px;font-weight:600;color:var(--text2);
+              letter-spacing:0.5px;margin-bottom:6px">DISPLAY NAME</div>
+            <input type="text" id="signupName" placeholder="Your name"
+              style="width:100%;padding:11px 14px;border-radius:10px;
+                border:1px solid var(--border);background:var(--bg3);
+                color:var(--text);font-family:'Poppins',sans-serif;
+                font-size:13px;box-sizing:border-box"/>
+          </div>
+          <div style="margin-bottom:14px">
+            <div style="font-size:11px;font-weight:600;color:var(--text2);
+              letter-spacing:0.5px;margin-bottom:6px">EMAIL</div>
+            <input type="email" id="signupEmail" placeholder="your@email.com"
+              style="width:100%;padding:11px 14px;border-radius:10px;
+                border:1px solid var(--border);background:var(--bg3);
+                color:var(--text);font-family:'Poppins',sans-serif;
+                font-size:13px;box-sizing:border-box"/>
+          </div>
+          <div style="margin-bottom:18px;position:relative">
+            <div style="font-size:11px;font-weight:600;color:var(--text2);
+              letter-spacing:0.5px;margin-bottom:6px">PASSWORD</div>
+            <input type="password" id="signupPass"
+              placeholder="Min 6 characters"
+              onkeydown="if(event.key==='Enter')doSignup()"
+              style="width:100%;padding:11px 40px 11px 14px;border-radius:10px;
+                border:1px solid var(--border);background:var(--bg3);
+                color:var(--text);font-family:'Poppins',sans-serif;
+                font-size:13px;box-sizing:border-box"/>
+            <button onclick="togglePwView('signupPass','eyeSignup')"
+              style="position:absolute;right:10px;bottom:10px;
+                background:none;border:none;color:var(--text2);
+                cursor:pointer;font-size:15px">
+              <i class="fas fa-eye" id="eyeSignup"></i>
+            </button>
+          </div>
+          <button onclick="doSignup()" id="signupBtn"
+            style="width:100%;padding:12px;border-radius:10px;border:none;
+              background:var(--accent);color:#fff;font-family:'Poppins',sans-serif;
+              font-size:14px;font-weight:700;cursor:pointer">
+            <i class="fas fa-user-plus"></i> Create Account
+          </button>
+        </div>
+
+      </div>
+      <p style="font-size:11px;color:var(--text2);margin-top:14px">
+        By continuing, you agree to our terms of service.
+      </p>
+    </div>`;
+
+  document.body.appendChild(wall);
 }
 
+// ===== AUTH FUNCTIONS =====
 function switchAuthTab(tab) {
   const loginForm  = document.getElementById('loginForm');
   const signupForm = document.getElementById('signupForm');
   const loginTab   = document.getElementById('authTabLogin');
   const signupTab  = document.getElementById('authTabSignup');
-  if (!loginForm) return;
+  if (!loginForm || !signupForm) return;
+
   if (tab === 'login') {
     loginForm.style.display  = 'block';
     signupForm.style.display = 'none';
-    loginTab.style.background  = 'var(--accent)';
-    loginTab.style.color       = '#fff';
-    signupTab.style.background = 'none';
-    signupTab.style.color      = 'var(--text2)';
+    if (loginTab)  { loginTab.style.background = 'var(--accent)'; loginTab.style.color = '#fff'; }
+    if (signupTab) { signupTab.style.background = 'transparent'; signupTab.style.color = 'var(--text2)'; }
   } else {
     loginForm.style.display  = 'none';
     signupForm.style.display = 'block';
-    signupTab.style.background = 'var(--accent)';
-    signupTab.style.color      = '#fff';
-    loginTab.style.background  = 'none';
-    loginTab.style.color       = 'var(--text2)';
+    if (signupTab) { signupTab.style.background = 'var(--accent)'; signupTab.style.color = '#fff'; }
+    if (loginTab)  { loginTab.style.background = 'transparent'; loginTab.style.color = 'var(--text2)'; }
   }
-  const errEl = document.getElementById('authError');
-  const sucEl = document.getElementById('authSuccess');
-  if (errEl) errEl.style.display = 'none';
-  if (sucEl) sucEl.style.display = 'none';
+  document.getElementById('authError')?.style && (document.getElementById('authError').style.display = 'none');
+  document.getElementById('authSuccess')?.style && (document.getElementById('authSuccess').style.display = 'none');
 }
 
 function togglePwView(inputId, iconId) {
@@ -251,8 +254,7 @@ function togglePwView(inputId, iconId) {
   const icon = document.getElementById(iconId);
   if (!inp) return;
   inp.type = inp.type === 'password' ? 'text' : 'password';
-  if (icon) icon.className = inp.type === 'password'
-    ? 'fas fa-eye' : 'fas fa-eye-slash';
+  if (icon) icon.className = inp.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
 }
 
 function showAuthError(msg) {
@@ -260,36 +262,35 @@ function showAuthError(msg) {
   if (el) { el.textContent = msg; el.style.display = 'block'; }
 }
 function showAuthSuccess(msg) {
-  const el = document.getElementById('authSuccess');
-  if (el) { el.textContent = msg; el.style.display = 'block'; }
-  const errEl = document.getElementById('authError');
-  if (errEl) errEl.style.display = 'none';
+  const s = document.getElementById('authSuccess');
+  const e = document.getElementById('authError');
+  if (s) { s.textContent = msg; s.style.display = 'block'; }
+  if (e) e.style.display = 'none';
 }
 
 async function doLogin() {
-  const email = (document.getElementById('loginEmail')?.value||'').trim();
-  const pass  = document.getElementById('loginPass')?.value||'';
-  if (!email || !pass) { showAuthError('Fill in all fields.'); return; }
+  const email = (document.getElementById('loginEmail')?.value || '').trim();
+  const pass  =  document.getElementById('loginPass')?.value  || '';
+  if (!email || !pass) { showAuthError('Please fill in all fields.'); return; }
   const btn = document.getElementById('loginBtn');
-  if (btn) { btn.innerHTML='<i class="fas fa-circle-notch fa-spin"></i> Logging in...'; btn.disabled=true; }
+  if (btn) { btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Logging in...'; btn.disabled = true; }
   try {
     await auth.signInWithEmailAndPassword(email, pass);
-    // onAuthStateChanged handles the rest
   } catch(e) {
     showAuthError(getAuthError(e.code));
-    if (btn) { btn.innerHTML='<i class="fas fa-right-to-bracket"></i> Login'; btn.disabled=false; }
+    if (btn) { btn.innerHTML = '<i class="fas fa-right-to-bracket"></i> Login'; btn.disabled = false; }
   }
 }
 
 async function doSignup() {
-  const name  = (document.getElementById('signupName')?.value||'').trim();
-  const email = (document.getElementById('signupEmail')?.value||'').trim();
-  const pass  = document.getElementById('signupPass')?.value||'';
-  if (!name)  { showAuthError('Enter your name.'); return; }
-  if (!email) { showAuthError('Enter your email.'); return; }
+  const name  = (document.getElementById('signupName')?.value  || '').trim();
+  const email = (document.getElementById('signupEmail')?.value || '').trim();
+  const pass  =  document.getElementById('signupPass')?.value  || '';
+  if (!name)           { showAuthError('Enter your name.'); return; }
+  if (!email)          { showAuthError('Enter your email.'); return; }
   if (pass.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
   const btn = document.getElementById('signupBtn');
-  if (btn) { btn.innerHTML='<i class="fas fa-circle-notch fa-spin"></i> Creating...'; btn.disabled=true; }
+  if (btn) { btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Creating...'; btn.disabled = true; }
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
     await cred.user.updateProfile({ displayName: name });
@@ -297,52 +298,41 @@ async function doSignup() {
       name, email, watchlist: [],
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    await cred.user.sendEmailVerification();
-    showAuthSuccess('Account created! You can now browse.');
-    setTimeout(() => {
-      const wall = document.getElementById('authWall');
-      if (wall) wall.style.display = 'none';
-      const main = document.getElementById('appContent');
-      if (main) main.style.display = 'block';
-    }, 1500);
+    showAuthSuccess('Account created! Welcome to Anime Verse.');
   } catch(e) {
     showAuthError(getAuthError(e.code));
-    if (btn) { btn.innerHTML='<i class="fas fa-user-plus"></i> Create Account'; btn.disabled=false; }
+    if (btn) { btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account'; btn.disabled = false; }
   }
 }
 
 async function doForgotPassword() {
-  const email = (document.getElementById('loginEmail')?.value||'').trim();
+  const email = (document.getElementById('loginEmail')?.value || '').trim();
   if (!email) { showAuthError('Enter your email first.'); return; }
   try {
     await auth.sendPasswordResetEmail(email);
     showAuthSuccess('Reset email sent! Check your inbox.');
-  } catch(e) {
-    showAuthError(getAuthError(e.code));
-  }
+  } catch(e) { showAuthError(getAuthError(e.code)); }
 }
 
 function getAuthError(code) {
   const map = {
     'auth/user-not-found':         'No account with this email.',
     'auth/wrong-password':         'Wrong password.',
-    'auth/email-already-in-use':   'Email already in use.',
+    'auth/email-already-in-use':   'Email already registered.',
     'auth/invalid-email':          'Invalid email address.',
     'auth/weak-password':          'Password too weak (min 6 chars).',
     'auth/too-many-requests':      'Too many attempts. Try later.',
     'auth/network-request-failed': 'Network error. Check connection.',
     'auth/invalid-credential':     'Wrong email or password.',
   };
-  return map[code] || 'Something went wrong. Try again.';
+  return map[code] || `Error: ${code}`;
 }
+
+function openAuthModal() { showAuthWall(); }
 
 // ===== UPDATE AUTH UI =====
 async function updateAuthUI(user) {
-  if (!user) {
-    setProfileBtnAnon();
-    updateSidebarProfile(null);
-    return;
-  }
+  if (!user) { setProfileBtnAnon(); updateSidebarProfile(null); return; }
 
   let userData = {};
   try {
@@ -356,26 +346,24 @@ async function updateAuthUI(user) {
 
   const profileBtn  = document.getElementById('profileBtn');
   const profileIcon = document.getElementById('profileIcon');
-  if (profileBtn && profileIcon) {
+  if (profileBtn) {
     if (avatar) {
-      profileIcon.style.display = 'none';
-      const existImg = profileBtn.querySelector('img');
-      if (existImg) existImg.remove();
+      if (profileIcon) profileIcon.style.display = 'none';
+      profileBtn.querySelector('img')?.remove();
       const img = document.createElement('img');
       img.src   = avatar;
       img.style.cssText = 'width:32px;height:32px;border-radius:50%;object-fit:cover;display:block';
       img.onerror = () => {
         img.remove();
-        profileIcon.style.display = '';
-        profileBtn.textContent = initial;
+        profileBtn.textContent  = initial;
         profileBtn.style.fontWeight = '700';
         profileBtn.style.fontSize   = '15px';
       };
       profileBtn.textContent = '';
       profileBtn.appendChild(img);
     } else {
-      profileIcon.style.display = 'none';
-      profileBtn.textContent    = initial;
+      if (profileIcon) profileIcon.style.display = 'none';
+      profileBtn.textContent  = initial;
       profileBtn.style.fontWeight = '700';
       profileBtn.style.fontSize   = '15px';
     }
@@ -399,10 +387,7 @@ function setProfileBtnAnon() {
   const profileIcon = document.getElementById('profileIcon');
   if (!profileBtn) return;
   profileBtn.textContent = '';
-  if (profileIcon) {
-    profileIcon.style.display = '';
-    profileBtn.appendChild(profileIcon);
-  }
+  if (profileIcon) { profileIcon.style.display = ''; profileBtn.appendChild(profileIcon); }
   profileBtn.style.background = '';
   profileBtn.style.color      = '';
   profileBtn.onclick = () => openAuthModal();
@@ -412,33 +397,23 @@ function updateSidebarProfile(userData) {
   const nameEl   = document.getElementById('sidebarUserName');
   const emailEl  = document.getElementById('sidebarUserEmail');
   const avatarEl = document.getElementById('sidebarAvatar');
-
   if (!userData) {
     if (nameEl)   nameEl.textContent  = 'Guest';
     if (emailEl)  emailEl.textContent = 'Login to save progress';
-    if (avatarEl) avatarEl.innerHTML  =
-      '<i class="fas fa-user" style="font-size:20px;color:#fff"></i>';
+    if (avatarEl) avatarEl.innerHTML  = '<i class="fas fa-user" style="font-size:20px;color:#fff"></i>';
     return;
   }
-
   const { name, avatar, initial, email } = userData;
   if (nameEl)  nameEl.textContent  = name;
   if (emailEl) emailEl.textContent = email || '';
-
   if (avatarEl) {
-    if (avatar) {
-      avatarEl.innerHTML = `
-        <img src="${avatar}"
-          style="width:100%;height:100%;border-radius:50%;object-fit:cover"
-          onerror="this.parentElement.innerHTML='<span style=\\'font-size:20px;font-weight:700;color:#fff\\'>${initial}</span>'"/>`;
-    } else {
-      avatarEl.innerHTML =
-        `<span style="font-size:22px;font-weight:700;color:#fff">${initial}</span>`;
-    }
+    avatarEl.innerHTML = avatar
+      ? `<img src="${avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover"
+           onerror="this.parentElement.innerHTML='<span style=\\'font-size:20px;font-weight:700;color:#fff\\'>${initial}</span>'"/>`
+      : `<span style="font-size:22px;font-weight:700;color:#fff">${initial}</span>`;
   }
 }
 
-// ===== LOGOUT =====
 async function logoutUser() {
   await auth.signOut();
   currentUser = null;
@@ -446,12 +421,7 @@ async function logoutUser() {
   window.location.reload();
 }
 
-// ===== OPEN AUTH MODAL =====
-function openAuthModal() {
-  showAuthWall();
-}
-
-// ===== MY LIST HELPERS =====
+// ===== MY LIST =====
 function getMyListLocal() {
   try { return JSON.parse(localStorage.getItem('av_mylist') || '[]'); }
   catch(e) { return []; }
@@ -459,48 +429,35 @@ function getMyListLocal() {
 
 async function toggleMyList(id, btnEl) {
   id = String(id);
-  if (currentUser) {
-    try {
-      const ref = db.collection('users').doc(currentUser.uid);
-      const doc = await ref.get();
-      let list  = doc.exists ? (doc.data().watchlist||[]).map(String) : [];
-      if (list.includes(id)) {
-        list = list.filter(x => x !== id);
-        if (btnEl) btnEl.classList.remove('saved');
-      } else {
-        list.push(id);
-        if (btnEl) btnEl.classList.add('saved');
-      }
-      await ref.set({ watchlist: list }, { merge: true });
-    } catch(e) {
-      console.error('Watchlist error:', e);
+  if (!currentUser) { openAuthModal(); return; }
+  try {
+    const ref  = db.collection('users').doc(currentUser.uid);
+    const doc  = await ref.get();
+    let list   = doc.exists ? (doc.data().watchlist||[]).map(String) : [];
+    if (list.includes(id)) {
+      list = list.filter(x => x !== id);
+      if (btnEl) btnEl.classList.remove('saved');
+    } else {
+      list.push(id);
+      if (btnEl) btnEl.classList.add('saved');
     }
-  } else {
-    openAuthModal();
-  }
+    await ref.set({ watchlist: list }, { merge: true });
+  } catch(e) { console.error('Watchlist error:', e); }
 }
 
-async function isInMyList(animeId) {
-  animeId = String(animeId);
-  if (currentUser) {
-    try {
-      const doc = await db.collection('users').doc(currentUser.uid).get();
-      return doc.exists && (doc.data().watchlist||[]).map(String).includes(animeId);
-    } catch(e) { return false; }
-  }
-  return getMyListLocal().map(String).includes(animeId);
+async function handleWishlistToggle(id, btnEl) {
+  if (!currentUser) { openAuthModal(); return; }
+  await toggleMyList(id, btnEl);
 }
 
-// ===== FETCH ALL ANIME (FIXED — orderBy fallback) =====
+// ===== FETCH ANIME (FIXED) =====
 async function fetchAllAnime() {
   try {
     let snap;
     try {
-      // Try with orderBy (needs Firestore index on createdAt)
       snap = await db.collection('anime').orderBy('createdAt', 'desc').get();
     } catch(e) {
-      // Firestore index missing or createdAt field missing — fetch without sort
-      console.warn('Falling back to unordered fetch:', e.message);
+      console.warn('Fallback fetch (no orderBy):', e.message);
       snap = await db.collection('anime').get();
     }
     const data = [];
@@ -509,7 +466,6 @@ async function fetchAllAnime() {
     return data;
   } catch(e) {
     console.error('Fetch error:', e);
-    // Show error message in grid
     const grid = document.getElementById('latestGrid');
     if (grid) grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text2)">
@@ -537,12 +493,9 @@ function renderCard(anime) {
   ).join('');
   div.innerHTML = `
     <div style="position:relative">
-      <img class="card-thumb"
-        src="${anime.thumbnail||''}"
-        alt="${anime.title}"
+      <img class="card-thumb" src="${anime.thumbnail||''}" alt="${anime.title}"
         onerror="this.style.background='var(--bg3)'"/>
-      <button class="wishlist-btn"
-        id="wl-${anime.firestoreId}"
+      <button class="wishlist-btn" id="wl-${anime.firestoreId}"
         onclick="event.stopPropagation();handleWishlistToggle('${anime.firestoreId}',this)">
         <i class="fas fa-heart"></i>
       </button>
@@ -551,14 +504,10 @@ function renderCard(anime) {
       <span class="card-badge">${(anime.type||'ANIME').toUpperCase()}</span>
       <div class="card-title">${anime.title}</div>
       <div class="card-meta">
-        <span class="card-rating">
-          <i class="fas fa-star"></i> ${anime.rating||'N/A'}
-        </span>
+        <span class="card-rating"><i class="fas fa-star"></i> ${anime.rating||'N/A'}</span>
         <span class="card-year">${anime.year||''}</span>
       </div>
-      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
-        ${genres}
-      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${genres}</div>
     </div>`;
   div.addEventListener('click', () => {
     window.location.href = `anime.html?id=${anime.firestoreId}`;
@@ -566,16 +515,9 @@ function renderCard(anime) {
   return div;
 }
 
-async function handleWishlistToggle(id, btnEl) {
-  if (!currentUser) { openAuthModal(); return; }
-  await toggleMyList(id, btnEl);
-}
-
 // ===== INIT APP =====
 async function initApp() {
-  loadTheme();
   const data = await fetchAllAnime();
-
   if (currentUser) {
     try {
       const doc  = await db.collection('users').doc(currentUser.uid).get();
@@ -586,7 +528,6 @@ async function initApp() {
       });
     } catch(e) {}
   }
-
   renderHome(data);
   initSearch(data);
   initSidebar();
@@ -600,12 +541,8 @@ function renderHome(data) {
       const tb = b.createdAt?.toDate?.()?.getTime() || 0;
       return tb - ta;
     }), 'No latest releases yet.');
-
-  renderSection('trendingGrid',
-    data.filter(a => a.trending), 'No trending anime yet.');
-
-  renderTop10(data.filter(a => a.top10)
-    .sort((a, b) => (a.top10rank||0) - (b.top10rank||0)));
+  renderSection('trendingGrid', data.filter(a => a.trending), 'No trending anime yet.');
+  renderTop10(data.filter(a => a.top10).sort((a,b)=>(a.top10rank||0)-(b.top10rank||0)));
 }
 
 function renderSection(gridId, items, emptyMsg) {
@@ -624,10 +561,7 @@ function renderTop10(items) {
   const grid = document.getElementById('top10Grid');
   if (!grid) return;
   const sec = document.getElementById('top10Section');
-  if (!items.length) {
-    if (sec) sec.style.display = 'none';
-    return;
-  }
+  if (!items.length) { if (sec) sec.style.display = 'none'; return; }
   if (sec) sec.style.display = 'block';
   grid.innerHTML = '';
   items.forEach((anime, i) => {
@@ -641,15 +575,11 @@ function renderTop10(items) {
         onerror="this.style.background='var(--bg3)'"/>
       <div style="flex:1;min-width:0">
         <div style="font-size:14px;font-weight:700;color:var(--text);
-          white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-          ${anime.title}
-        </div>
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${anime.title}</div>
         <div style="font-size:12px;color:var(--text2)">
-          ${(anime.genre||[]).slice(0,2).join(' · ')}
-        </div>
+          ${(anime.genre||[]).slice(0,2).join(' · ')}</div>
         <div style="font-size:12px;color:var(--accent);font-weight:600;margin-top:3px">
-          ★ ${anime.rating||'N/A'}
-        </div>
+          ★ ${anime.rating||'N/A'}</div>
       </div>`;
     div.addEventListener('click', () => {
       window.location.href = `anime.html?id=${anime.firestoreId}`;
@@ -658,14 +588,12 @@ function renderTop10(items) {
   });
 }
 
-// ===== FILTER BY CATEGORY =====
+// ===== FILTER =====
 function filterCategory(cat, btnEl) {
   currentCategory = cat;
   document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
-  const filtered = cat === 'all'
-    ? allAnimeData
-    : allAnimeData.filter(a => a.type === cat);
+  const filtered = cat === 'all' ? allAnimeData : allAnimeData.filter(a => a.type === cat);
   renderHome(filtered);
 }
 
@@ -675,7 +603,6 @@ function initSearch(data) {
   const searchBar   = document.getElementById('searchBar');
   const searchInput = document.getElementById('searchInput');
   const closeSearch = document.getElementById('closeSearch');
-
   if (searchBtn) searchBtn.addEventListener('click', () => {
     searchBar?.classList.remove('hidden');
     searchInput?.focus();
@@ -693,10 +620,8 @@ function initSearch(data) {
       (a.genre||[]).some(g => g.toLowerCase().includes(q))
     );
     renderSection('latestGrid', results, 'No results found.');
-    const secTrend = document.getElementById('trendingSection');
-    const secTop10 = document.getElementById('top10Section');
-    if (secTrend) secTrend.style.display = 'none';
-    if (secTop10) secTop10.style.display = 'none';
+    document.getElementById('trendingSection')?.style && (document.getElementById('trendingSection').style.display='none');
+    document.getElementById('top10Section')?.style && (document.getElementById('top10Section').style.display='none');
   });
 }
 
@@ -707,49 +632,31 @@ function initSidebar() {
   const overlay  = document.getElementById('sidebarOverlay');
   const closeBtn = document.getElementById('closeSidebar');
 
-  const open = () => {
-    sidebar?.classList.remove('hidden');
-    overlay?.classList.remove('hidden');
-  };
-  const close = () => {
-    sidebar?.classList.add('hidden');
-    overlay?.classList.add('hidden');
-  };
+  const openSb  = () => { sidebar?.classList.remove('hidden'); overlay?.classList.remove('hidden'); };
+  const closeSb = () => { sidebar?.classList.add('hidden');    overlay?.classList.add('hidden'); };
 
-  if (menuBtn)  menuBtn.addEventListener('click', open);
-  if (overlay)  overlay.addEventListener('click', close);
-  if (closeBtn) closeBtn.addEventListener('click', close);
+  if (menuBtn)  menuBtn.addEventListener('click', openSb);
+  if (overlay)  overlay.addEventListener('click', closeSb);
+  if (closeBtn) closeBtn.addEventListener('click', closeSb);
 
-  // ✅ Global functions for onclick= attributes in HTML
-  window.toggleSidebar = () => {
-    sidebar?.classList.contains('hidden') ? open() : close();
-  };
-  window.closeSidebar = close;
+  // ✅ Global for onclick= in HTML
+  window.toggleSidebar = () => sidebar?.classList.contains('hidden') ? openSb() : closeSb();
+  window.closeSidebar  = closeSb;
 
-  // Sidebar profile click → profile page
-  const sidebarProfileEl = document.getElementById('sidebarProfileSection');
-  if (sidebarProfileEl) {
-    sidebarProfileEl.style.cursor = 'pointer';
-    sidebarProfileEl.addEventListener('click', () => {
+  const sidebarProfile = document.getElementById('sidebarProfileSection');
+  if (sidebarProfile) {
+    sidebarProfile.style.cursor = 'pointer';
+    sidebarProfile.addEventListener('click', () => {
       if (currentUser) window.location.href = 'profile.html';
-      else { close(); openAuthModal(); }
+      else { closeSb(); openAuthModal(); }
     });
   }
-
-  // Logout
   const logoutBtn = document.getElementById('sidebarLogout');
   if (logoutBtn) logoutBtn.addEventListener('click', async () => {
-    close();
-    await auth.signOut();
-    window.location.reload();
+    closeSb(); await auth.signOut(); window.location.reload();
   });
-
-  // My list
   const myListBtn = document.getElementById('sidebarMyList');
-  if (myListBtn) myListBtn.addEventListener('click', () => {
-    close();
-    showMyListPage();
-  });
+  if (myListBtn) myListBtn.addEventListener('click', () => { closeSb(); showMyListPage(); });
 }
 
 // ===== MY LIST PAGE =====
@@ -759,50 +666,39 @@ async function showMyListPage() {
     const doc   = await db.collection('users').doc(currentUser.uid).get();
     const ids   = doc.exists ? (doc.data().watchlist||[]) : [];
     const items = allAnimeData.filter(a => ids.includes(a.firestoreId));
-    const latestGrid = document.getElementById('latestGrid');
-    const latestSec  = document.getElementById('latestSection');
-    const trendSec   = document.getElementById('trendingSection');
-    const top10Sec   = document.getElementById('top10Section');
-    if (trendSec) trendSec.style.display = 'none';
-    if (top10Sec) top10Sec.style.display = 'none';
-    if (latestSec) {
-      const title = latestSec.querySelector('h2,h3,.section-title,span');
-      if (title) title.textContent = 'My List';
-    }
-    if (latestGrid) {
-      latestGrid.innerHTML = '';
+    const grid  = document.getElementById('latestGrid');
+    document.getElementById('trendingSection')?.style && (document.getElementById('trendingSection').style.display='none');
+    document.getElementById('top10Section')?.style    && (document.getElementById('top10Section').style.display='none');
+    if (grid) {
+      grid.innerHTML = '';
       if (!items.length) {
-        latestGrid.innerHTML = `
-          <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text2)">
-            <i class="fas fa-bookmark"
-              style="font-size:36px;opacity:0.3;margin-bottom:14px;display:block"></i>
-            Your list is empty.
-          </div>`;
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;
+          padding:40px;color:var(--text2)">
+          <i class="fas fa-bookmark"
+            style="font-size:36px;opacity:0.3;margin-bottom:14px;display:block"></i>
+          Your list is empty.</div>`;
       } else {
-        items.forEach(a => latestGrid.appendChild(renderCard(a)));
+        items.forEach(a => grid.appendChild(renderCard(a)));
       }
     }
   } catch(e) { console.error(e); }
 }
 
-// ===== SCROLL TO TRENDING =====
 function scrollTrending() {
-  const sec = document.getElementById('trendingSection');
-  if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('trendingSection')?.scrollIntoView({ behavior:'smooth' });
 }
+function showMyList() { showMyListPage(); }
 
-function showMyList() {
-  showMyListPage();
-}
-
-// Make these global for onclick= in HTML
-window.scrollTrending  = scrollTrending;
-window.showMyList      = showMyList;
-window.filterCategory  = filterCategory;
-window.logoutUser      = logoutUser;
-window.doLogin         = doLogin;
-window.doSignup        = doSignup;
+// ===== GLOBAL EXPORTS (for onclick= in HTML) =====
+window.toggleTheme      = toggleTheme;
+window.filterCategory   = filterCategory;
+window.scrollTrending   = scrollTrending;
+window.showMyList       = showMyList;
+window.logoutUser       = logoutUser;
+window.openAuthModal    = openAuthModal;
+window.switchAuthTab    = switchAuthTab;
+window.togglePwView     = togglePwView;
+window.doLogin          = doLogin;
+window.doSignup         = doSignup;
 window.doForgotPassword = doForgotPassword;
-window.switchAuthTab   = switchAuthTab;
-window.togglePwView    = togglePwView;
-window.openAuthModal   = openAuthModal;
+window.handleWishlistToggle = handleWishlistToggle;
