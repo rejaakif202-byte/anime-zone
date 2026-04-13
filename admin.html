@@ -1559,17 +1559,19 @@
 
     // ===== LANG TABS =====
     function switchLangTab(lang, btn) {
-      currentLangTab=lang;
+      currentLangTab = lang;
       document.querySelectorAll('#langTabsBar .season-tab')
         .forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      document.getElementById('customLangField').style.display=
-        lang==='Custom'?'block':'none';
-      const saved=episodeLangData[lang]||{};
-      document.getElementById('lq_480').value  =saved['480p'] ||'';
-      document.getElementById('lq_720').value  =saved['720p'] ||'';
-      document.getElementById('lq_1080').value =saved['1080p']||'';
-      document.getElementById('lq_4k').value   =saved['4k']   ||'';
+      document.getElementById('customLangField').style.display =
+        lang==='Custom' ? 'block' : 'none';
+
+      // ✅ Always load saved URLs for this language
+      const saved = episodeLangData[lang] || {};
+      document.getElementById('lq_480').value  = saved['480p']  || '';
+      document.getElementById('lq_720').value  = saved['720p']  || '';
+      document.getElementById('lq_1080').value = saved['1080p'] || '';
+      document.getElementById('lq_4k').value   = saved['4k']    || '';
     }
     function saveLangUrls() {
       let lang=currentLangTab;
