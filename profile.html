@@ -12,7 +12,7 @@
     body { background: var(--bg); }
     .pf-page { max-width: 500px; margin: 0 auto; padding-bottom: 40px; }
 
-    /* ===== TOP GRADIENT ===== */
+    /* ===== TOP HERO ===== */
     .pf-hero {
       width: 100%;
       height: 180px;
@@ -22,6 +22,29 @@
         #C87740 0%, #8e44ad 50%, #2ca5e0 100%);
       flex-shrink: 0;
     }
+    .pf-hero-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    /* Banner edit button */
+    .pf-banner-btn {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: rgba(0,0,0,0.45);
+      border: none;
+      border-radius: 20px;
+      padding: 6px 12px;
+      color: #fff;
+      font-size: 12px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      backdrop-filter: blur(4px);
+      transition: background 0.2s;
+    }
+    .pf-banner-btn:hover { background: rgba(0,0,0,0.65); }
 
     /* ===== AVATAR ===== */
     .pf-avatar-wrap {
@@ -60,7 +83,7 @@
     }
     .pf-cam-btn:hover { background: var(--accent); color: #fff; }
 
-    /* ===== ACTION BUTTONS ROW (like Telegram) ===== */
+    /* ===== ACTION BUTTONS ROW ===== */
     .pf-actions {
       display: flex;
       gap: 10px;
@@ -70,7 +93,7 @@
     }
     .pf-action-btn {
       flex: 1;
-      max-width: 120px;
+      max-width: 110px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -88,15 +111,8 @@
       background: rgba(200,119,64,0.05);
       transform: translateY(-1px);
     }
-    .pf-action-btn i {
-      font-size: 20px;
-      color: var(--accent);
-    }
-    .pf-action-btn span {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text2);
-    }
+    .pf-action-btn i { font-size: 20px; color: var(--accent); }
+    .pf-action-btn span { font-size: 11px; font-weight: 600; color: var(--text2); }
     .pf-action-logout i { color: #e50914; }
     .pf-action-logout:hover { border-color: #e50914; }
 
@@ -123,20 +139,15 @@
       font-size: 15px; flex-shrink: 0;
       margin-top: 2px;
     }
-    .pf-info-label {
-      font-size: 11px; color: var(--text2);
-      margin-bottom: 2px; font-weight: 500;
-    }
+    .pf-info-label { font-size: 11px; color: var(--text2); margin-bottom: 2px; font-weight: 500; }
     .pf-info-value {
       font-size: 14px; color: var(--text);
       font-weight: 600; line-height: 1.3;
       word-break: break-all;
     }
     .pf-info-value.bio {
-      font-weight: 400;
-      color: var(--text2);
-      font-size: 13px;
-      line-height: 1.6;
+      font-weight: 400; color: var(--text2);
+      font-size: 13px; line-height: 1.6;
     }
 
     /* ===== STATS ===== */
@@ -179,7 +190,6 @@
       color: var(--text); margin: 0;
     }
     .pf-edit-body { padding: 16px; }
-
     .username-check { font-size:11px; margin-top:4px; display:none; }
     .username-check.ok      { color:#27ae60; display:block; }
     .username-check.error   { color:#e50914; display:block; }
@@ -199,7 +209,7 @@
       display: flex; align-items: center; gap: 8px;
     }
 
-    /* ===== AVATAR SHEET ===== */
+    /* ===== SHEET (avatar + banner) ===== */
     .pf-overlay {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.65);
@@ -233,13 +243,16 @@
       display: flex; align-items: center; justify-content: center;
       color: #fff; font-size: 18px; flex-shrink: 0;
     }
-    #galleryInput { display: none; }
+    #galleryInput  { display: none; }
+    #bannerInput   { display: none; }
   </style>
 </head>
 <body>
 
   <input type="file" id="galleryInput" accept="image/*"
     onchange="onGalleryPick(this)"/>
+  <input type="file" id="bannerInput" accept="image/*"
+    onchange="onBannerPick(this)"/>
 
   <!-- AVATAR SHEET -->
   <div class="pf-overlay hidden" id="avatarOverlay">
@@ -300,6 +313,80 @@
     </div>
   </div>
 
+  <!-- BANNER SHEET -->
+  <div class="pf-overlay hidden" id="bannerOverlay">
+    <div class="pf-sheet">
+      <div class="pf-sheet-title">Change Banner Photo</div>
+
+      <div id="bnPreviewWrap"
+        style="display:none;text-align:center;margin-bottom:14px">
+        <img id="bnPreviewImg"
+          style="width:100%;height:100px;border-radius:12px;
+            object-fit:cover;background:var(--bg3);display:block"
+          src="" alt=""/>
+        <p style="font-size:12px;color:var(--text2);margin-top:8px">Preview</p>
+      </div>
+
+      <div id="bnUploading"
+        style="display:none;text-align:center;padding:20px 0">
+        <i class="fas fa-circle-notch fa-spin"
+          style="font-size:28px;color:var(--accent);
+            margin-bottom:10px;display:block"></i>
+        <div style="font-size:13px;color:var(--text2)">Saving banner...</div>
+      </div>
+
+      <div id="bnSheetOpts">
+        <div class="pf-sheet-opt"
+          onclick="document.getElementById('bannerInput').click()">
+          <div class="pf-sheet-opt-icon"
+            style="background:linear-gradient(135deg,#C87740,#8e44ad)">
+            <i class="fas fa-image"></i>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">
+              Choose Banner Image
+            </div>
+            <div style="font-size:12px;color:var(--text2)">
+              Wide landscape photo works best
+            </div>
+          </div>
+          <i class="fas fa-chevron-right"
+            style="color:var(--text2);margin-left:auto;font-size:12px"></i>
+        </div>
+
+        <div class="pf-sheet-opt" onclick="removeBanner()"
+          style="border-color:rgba(229,9,20,0.3)">
+          <div class="pf-sheet-opt-icon" style="background:#e50914">
+            <i class="fas fa-trash"></i>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">
+              Remove Banner
+            </div>
+            <div style="font-size:12px;color:var(--text2)">
+              Go back to default gradient
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="bnActionRow"
+        style="display:none;gap:10px;margin-top:4px">
+        <button class="btn-outline"
+          onclick="cancelBannerPick()" style="flex:1">Cancel</button>
+        <button class="btn-primary"
+          onclick="confirmBanner()" style="flex:1">
+          <i class="fas fa-check"></i> Save Banner
+        </button>
+      </div>
+
+      <div id="bnCloseRow" style="margin-top:4px">
+        <button class="btn-outline"
+          onclick="closeBannerSheet()" style="width:100%">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- HEADER -->
   <header class="header">
     <div class="header-left">
@@ -349,6 +436,7 @@
 
     let currentUserData={};
     let pendingB64=null;
+    let pendingBannerB64=null;
     let unameTimer=null;
 
     async function ensureDoc(user) {
@@ -383,6 +471,27 @@
       });
     }
 
+    function compressBanner(file){
+      return new Promise((res,rej)=>{
+        const reader=new FileReader();
+        reader.onload=e=>{
+          const img=new Image();
+          img.onload=()=>{
+            let w=img.width,h=img.height;
+            const maxW=900;
+            if(w>maxW){h=(h*maxW)/w;w=maxW;}
+            const c=document.createElement('canvas');
+            c.width=w;c.height=h;
+            c.getContext('2d').drawImage(img,0,0,w,h);
+            res(c.toDataURL('image/jpeg',0.75));
+          };
+          img.onerror=rej;img.src=e.target.result;
+        };
+        reader.onerror=rej;reader.readAsDataURL(file);
+      });
+    }
+
+    // ===== AVATAR SHEET =====
     function openAvatarSheet(){
       pendingB64=null;
       document.getElementById('avatarOverlay').classList.remove('hidden');
@@ -433,6 +542,73 @@
       }catch(e){alert('Error: '+e.message);closeAvatarSheet();}
     }
 
+    // ===== BANNER SHEET =====
+    function openBannerSheet(){
+      pendingBannerB64=null;
+      document.getElementById('bannerOverlay').classList.remove('hidden');
+      document.getElementById('bnSheetOpts').style.display='block';
+      document.getElementById('bnPreviewWrap').style.display='none';
+      document.getElementById('bnActionRow').style.display='none';
+      document.getElementById('bnCloseRow').style.display='block';
+      document.getElementById('bnUploading').style.display='none';
+    }
+    function closeBannerSheet(){
+      document.getElementById('bannerOverlay').classList.add('hidden');
+    }
+    function cancelBannerPick(){
+      pendingBannerB64=null;
+      document.getElementById('bnPreviewWrap').style.display='none';
+      document.getElementById('bnActionRow').style.display='none';
+      document.getElementById('bnSheetOpts').style.display='block';
+      document.getElementById('bnCloseRow').style.display='block';
+    }
+    async function onBannerPick(input){
+      const file=input.files&&input.files[0];
+      if(!file) return; input.value='';
+      try{
+        const b64=await compressBanner(file);
+        pendingBannerB64=b64;
+        document.getElementById('bnPreviewImg').src=b64;
+        document.getElementById('bnPreviewWrap').style.display='block';
+        document.getElementById('bnSheetOpts').style.display='none';
+        document.getElementById('bnCloseRow').style.display='none';
+        const ar=document.getElementById('bnActionRow');
+        ar.style.display='flex';ar.style.flexDirection='row';
+      }catch(e){alert('Could not load image.');}
+    }
+    async function confirmBanner(){
+      if(!pendingBannerB64) return;
+      const user=auth.currentUser;
+      if(!user) return;
+      ['bnPreviewWrap','bnActionRow','bnSheetOpts','bnCloseRow']
+        .forEach(id=>document.getElementById(id).style.display='none');
+      document.getElementById('bnUploading').style.display='block';
+      try{
+        await db.collection('users').doc(user.uid).set(
+          {bannerURL:pendingBannerB64,
+           updatedAt:firebase.firestore.FieldValue.serverTimestamp()},
+          {merge:true}
+        );
+        closeBannerSheet();
+        loadProfile(user);
+      }catch(e){alert('Error: '+e.message);closeBannerSheet();}
+    }
+    async function removeBanner(){
+      const user=auth.currentUser;
+      if(!user) return;
+      if(!confirm('Remove banner photo?')) return;
+      try{
+        await db.collection('users').doc(user.uid).set(
+          {bannerURL:'',
+           updatedAt:firebase.firestore.FieldValue.serverTimestamp()},
+          {merge:true}
+        );
+        closeBannerSheet();
+        loadProfile(user);
+      }catch(e){alert('Error: '+e.message);}
+    }
+
+    // ===== USERNAME =====
     async function checkUname(val,uid){
       const el=document.getElementById('usernameCheck');
       if(!val){el.className='username-check';return false;}
@@ -461,6 +637,7 @@
       unameTimer=setTimeout(()=>checkUname(val,uid),700);
     }
 
+    // ===== SAVE PROFILE =====
     async function saveProfile(uid){
       const name=document.getElementById('pfNameInput').value.trim();
       const uname=document.getElementById('usernameInput').value.trim().toLowerCase();
@@ -493,23 +670,41 @@
       }
     }
 
+    // ===== LOAD PROFILE =====
     async function loadProfile(user){
       let userData={};
       try{userData=await ensureDoc(user);}catch(e){}
       currentUserData={...userData,
         displayName:user.displayName||userData.name||'User',
-        email:user.email,photoURL:userData.photoURL||''
+        email:user.email,
+        photoURL:userData.photoURL||'',
+        bannerURL:userData.bannerURL||''
       };
       const name=currentUserData.displayName;
       const uname=currentUserData.username||'';
       const bio=currentUserData.bio||'';
       const avatar=currentUserData.photoURL||'';
+      const banner=currentUserData.bannerURL||'';
       const watchlist=userData.watchlist||[];
       const initial=name.charAt(0).toUpperCase();
 
       document.getElementById('pfPage').innerHTML=`
         <!-- HERO -->
-        <div class="pf-hero">
+        <div class="pf-hero" style="${banner
+          ? ''
+          : 'background:linear-gradient(135deg,#C87740 0%,#8e44ad 50%,#2ca5e0 100%)'}">
+          ${banner
+            ? `<img class="pf-hero-img" src="${banner}" alt="banner"
+                onerror="this.style.display='none'">`
+            : ''}
+
+          <!-- Banner edit button -->
+          <button class="pf-banner-btn" onclick="openBannerSheet()">
+            <i class="fas fa-camera"></i>
+            ${banner ? 'Change Banner' : 'Add Banner'}
+          </button>
+
+          <!-- Avatar -->
           <div class="pf-avatar-wrap" onclick="openAvatarSheet()">
             ${avatar
               ?`<img class="pf-avatar-img" src="${avatar}" alt="${name}"
@@ -524,7 +719,7 @@
           </div>
         </div>
 
-        <!-- NAME + USERNAME (below avatar) -->
+        <!-- NAME + USERNAME -->
         <div style="padding-top:62px;text-align:center;padding-bottom:4px">
           <div style="font-size:22px;font-weight:700;color:var(--text);
             margin-bottom:2px">${name}</div>
@@ -534,18 +729,21 @@
             :`<div style="font-size:12px;color:var(--text2)">No username set</div>`}
         </div>
 
-        <!-- ACTION BUTTONS (Telegram style) -->
+        <!-- ACTION BUTTONS -->
         <div class="pf-actions">
           <div class="pf-action-btn" onclick="openAvatarSheet()">
             <i class="fas fa-camera"></i>
             <span>Set Photo</span>
           </div>
+          <div class="pf-action-btn" onclick="openBannerSheet()">
+            <i class="fas fa-image"></i>
+            <span>Banner</span>
+          </div>
           <div class="pf-action-btn" onclick="toggleEdit()">
             <i class="fas fa-pen"></i>
             <span>Edit Info</span>
           </div>
-          <div class="pf-action-btn pf-action-logout"
-            onclick="doLogout()">
+          <div class="pf-action-btn pf-action-logout" onclick="doLogout()">
             <i class="fas fa-right-from-bracket"></i>
             <span>Logout</span>
           </div>
@@ -568,8 +766,7 @@
           <div class="pf-info-row">
             <div class="pf-info-icon"
               style="background:rgba(44,165,224,0.12)">
-              <i class="fas fa-envelope"
-                style="color:#2ca5e0"></i>
+              <i class="fas fa-envelope" style="color:#2ca5e0"></i>
             </div>
             <div style="flex:1">
               <div class="pf-info-label">Email</div>
@@ -585,8 +782,7 @@
           <div class="pf-info-row">
             <div class="pf-info-icon"
               style="background:rgba(39,174,96,0.12)">
-              <i class="fas fa-calendar"
-                style="color:#27ae60"></i>
+              <i class="fas fa-calendar" style="color:#27ae60"></i>
             </div>
             <div style="flex:1">
               <div class="pf-info-label">Joined</div>
@@ -682,8 +878,7 @@
             ${watchlist.length} saved
           </span>
         </div>
-        <div id="pfWatchlist"
-          class="grid" style="padding:0 16px">
+        <div id="pfWatchlist" class="grid" style="padding:0 16px">
           <div style="grid-column:1/-1;text-align:center;
             padding:20px;color:var(--text2)">
             <i class="fas fa-circle-notch fa-spin"></i>
@@ -784,6 +979,9 @@
     });
     document.getElementById('avatarOverlay').addEventListener('click',function(e){
       if(e.target===this) closeAvatarSheet();
+    });
+    document.getElementById('bannerOverlay').addEventListener('click',function(e){
+      if(e.target===this) closeBannerSheet();
     });
   </script>
 </body>
