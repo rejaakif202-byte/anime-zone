@@ -2,11 +2,456 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <title>Watch — Anime Verse</title>
   <link rel="stylesheet" href="style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    /* ============ CUSTOM VIDEO PLAYER ============ */
+    .av-player-wrap {
+      position: relative;
+      width: 100%;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      aspect-ratio: 16/9;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .av-player-wrap.av-fs {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      aspect-ratio: unset !important;
+      border-radius: 0 !important;
+      z-index: 9999 !important;
+    }
+
+    /* video/iframe fill */
+    .av-video {
+      width: 100%; height: 100%;
+      display: block; object-fit: contain;
+      background: #000;
+    }
+    .av-iframe {
+      width: 100%; height: 100%;
+      border: none; display: block;
+    }
+
+    /* loading */
+    .av-loader {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.4); z-index: 4; pointer-events: none;
+    }
+    .av-spin {
+      width: 44px; height: 44px;
+      border: 3px solid rgba(255,255,255,0.15);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: avSpin 0.7s linear infinite;
+    }
+    @keyframes avSpin { to { transform: rotate(360deg); } }
+
+    /* seek flash */
+    .av-seek-flash {
+      position: absolute; top: 50%; width: 70px; height: 70px;
+      border-radius: 50%; background: rgba(255,255,255,0.15);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: #fff; font-size: 12px; font-weight: 700;
+      transform: translateY(-50%);
+      pointer-events: none; opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 6;
+    }
+    .av-seek-flash.left  { left: 10%; }
+    .av-seek-flash.right { right: 10%; }
+    .av-seek-flash.show  { opacity: 1; }
+    .av-seek-flash i { font-size: 20px; margin-bottom: 2px; }
+
+    /* tap zone */
+    .av-tap-left, .av-tap-right {
+      position: absolute; top: 0; bottom: 52px; width: 35%;
+      z-index: 3; cursor: pointer;
+    }
+    .av-tap-left  { left: 0; }
+    .av-tap-right { right: 0; }
+
+    /* center play/pause */
+    .av-center-play {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 5; pointer-events: none; opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .av-center-play.show { opacity: 1; pointer-events: all; }
+    .av-center-icon {
+      width: 64px; height: 64px;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 26px;
+      border: 2px solid rgba(255,255,255,0.3);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .av-center-icon:active { transform: scale(0.92); }
+
+    /* controls overlay */
+    .av-controls {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0) 0%,
+        rgba(0,0,0,0) 45%,
+        rgba(0,0,0,0.75) 100%
+      );
+      z-index: 7;
+      opacity: 1; transition: opacity 0.3s;
+    }
+    .av-controls.hidden { opacity: 0; pointer-events: none; }
+
+    .av-top-bar {
+      position: absolute; top: 0; left: 0; right: 0;
+      padding: 10px 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .av-title {
+      font-size: 12px; color: rgba(255,255,255,0.9);
+      font-weight: 600; flex: 1;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .av-bottom {
+      padding: 0 10px 8px;
+    }
+
+    /* progress bar */
+    .av-prog-wrap {
+      position: relative; height: 20px;
+      display: flex; align-items: center;
+      cursor: pointer; margin-bottom: 2px;
+    }
+    .av-prog-track {
+      position: absolute; left: 0; right: 0;
+      height: 4px; background: rgba(255,255,255,0.2);
+      border-radius: 2px; overflow: hidden;
+      transition: height 0.15s;
+    }
+    .av-prog-wrap:hover .av-prog-track,
+    .av-prog-wrap:active .av-prog-track { height: 6px; }
+    .av-prog-buf {
+      position: absolute; height: 100%;
+      background: rgba(255,255,255,0.3);
+      border-radius: 2px; width: 0;
+    }
+    .av-prog-fill {
+      position: absolute; height: 100%;
+      background: var(--accent, #C87740);
+      border-radius: 2px; width: 0;
+    }
+    .av-prog-thumb {
+      position: absolute; top: 50%;
+      width: 14px; height: 14px;
+      background: #fff; border-radius: 50%;
+      transform: translateY(-50%) translateX(-50%);
+      left: 0; pointer-events: none;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      opacity: 0; transition: opacity 0.15s;
+    }
+    .av-prog-wrap:hover .av-prog-thumb,
+    .av-prog-wrap:active .av-prog-thumb { opacity: 1; }
+    .av-seek-input {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer; width: 100%;
+    }
+
+    /* control row */
+    .av-ctrl-row {
+      display: flex; align-items: center; gap: 2px;
+    }
+    .av-btn {
+      background: none; border: none; color: #fff;
+      cursor: pointer; width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; border-radius: 6px;
+      transition: background 0.15s; flex-shrink: 0;
+    }
+    .av-btn:hover { background: rgba(255,255,255,0.1); }
+    .av-btn.sm { width: 30px; font-size: 14px; }
+
+    .av-time {
+      font-size: 11px; color: rgba(255,255,255,0.85);
+      font-family: 'Poppins', sans-serif;
+      white-space: nowrap; flex-shrink: 0; margin: 0 4px;
+    }
+    .av-spacer { flex: 1; }
+
+    /* speed badge */
+    .av-speed {
+      font-size: 11px; font-weight: 700;
+      color: rgba(255,255,255,0.85);
+      padding: 3px 7px; border-radius: 5px;
+      border: 1px solid rgba(255,255,255,0.3);
+      cursor: pointer; white-space: nowrap;
+      font-family: 'Poppins', sans-serif;
+    }
+    .av-speed:hover { background: rgba(255,255,255,0.1); }
+
+    /* speed menu */
+    .av-speed-menu {
+      position: absolute; bottom: 56px; right: 44px;
+      background: rgba(20,20,20,0.96);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; overflow: hidden;
+      z-index: 10; display: none;
+      backdrop-filter: blur(8px);
+    }
+    .av-speed-menu.open { display: block; }
+    .av-speed-opt {
+      padding: 9px 22px; font-size: 13px;
+      color: #fff; cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      transition: background 0.15s;
+      text-align: center;
+    }
+    .av-speed-opt:hover { background: rgba(255,255,255,0.1); }
+    .av-speed-opt.active { color: var(--accent, #C87740); font-weight: 700; }
+
+    /* subtitle overlay */
+    .av-subtitle-text {
+      position: absolute; bottom: 60px; left: 8px; right: 8px;
+      text-align: center; pointer-events: none; z-index: 8;
+    }
+    .av-subtitle-text span {
+      background: rgba(0,0,0,0.75);
+      color: #fff; font-size: 14px; line-height: 1.5;
+      padding: 3px 10px; border-radius: 4px;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    /* subtitle settings panel */
+    .av-sub-panel {
+      position: absolute; bottom: 56px; right: 44px;
+      background: rgba(20,20,20,0.96);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; padding: 12px 16px;
+      z-index: 10; display: none;
+      min-width: 180px;
+      backdrop-filter: blur(8px);
+    }
+    .av-sub-panel.open { display: block; }
+    .av-sub-row {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 8px;
+      font-size: 12px; color: #fff; margin-bottom: 10px;
+      font-family: 'Poppins', sans-serif;
+    }
+    .av-sub-row:last-child { margin-bottom: 0; }
+    .av-toggle {
+      width: 36px; height: 20px; border-radius: 10px;
+      border: none; cursor: pointer; position: relative;
+      transition: background 0.2s;
+    }
+    .av-toggle::after {
+      content: ''; position: absolute;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #fff; top: 3px; left: 3px;
+      transition: left 0.2s;
+    }
+    .av-toggle.on  { background: var(--accent, #C87740); }
+    .av-toggle.off { background: #555; }
+    .av-toggle.on::after  { left: 19px; }
+
+    /* iframe overlay fullscreen btn */
+    .av-iframe-fs {
+      position: absolute; bottom: 10px; right: 10px;
+      background: rgba(0,0,0,0.65); border: none;
+      color: #fff; border-radius: 8px;
+      width: 38px; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 16px; z-index: 9;
+      backdrop-filter: blur(4px);
+    }
+
+    /* volume slider */
+    .av-vol-wrap {
+      display: flex; align-items: center; gap: 4px;
+      max-width: 0; overflow: hidden;
+      transition: max-width 0.3s;
+    }
+    .av-vol-wrap.show { max-width: 72px; }
+    .av-vol-slider {
+      width: 64px; height: 4px;
+      -webkit-appearance: none; appearance: none;
+      background: rgba(255,255,255,0.3);
+      border-radius: 2px; outline: none; cursor: pointer;
+    }
+    .av-vol-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px;
+      background: #fff; border-radius: 50%;
+    }
+
+    /* ============ LIKE / DISLIKE ============ */
+    .like-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .like-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text2);
+      font-family: 'Poppins', sans-serif;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .like-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .like-btn.active-like {
+      background: rgba(200,119,64,0.12);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .like-btn.active-dislike {
+      background: rgba(229,9,20,0.1);
+      border-color: #e50914;
+      color: #e50914;
+    }
+    .like-divider {
+      width: 1px; height: 24px;
+      background: var(--border); flex-shrink: 0;
+    }
+
+    /* ============ COMMENTS ============ */
+    .comment-section { margin-top: 4px; }
+    .comment-title {
+      font-size: 15px; font-weight: 700;
+      color: var(--text); margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .comment-input-wrap {
+      display: flex; gap: 10px; margin-bottom: 16px;
+      align-items: flex-start;
+    }
+    .comment-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--accent); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 700; color: #fff;
+      overflow: hidden;
+    }
+    .comment-avatar img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .comment-box {
+      flex: 1; background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px 14px;
+      color: var(--text); font-family: 'Poppins', sans-serif;
+      font-size: 13px; resize: none; min-height: 44px;
+      max-height: 120px; outline: none;
+      transition: border-color 0.2s;
+      overflow-y: auto;
+    }
+    .comment-box:focus { border-color: var(--accent); }
+    .comment-box:empty::before {
+      content: attr(data-ph);
+      color: var(--text2);
+    }
+    .comment-post-btn {
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 8px;
+      padding: 8px 16px; font-family: 'Poppins', sans-serif;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      transition: opacity 0.2s; margin-top: 8px;
+    }
+    .comment-post-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .comment-post-btn:hover:not(:disabled) { opacity: 0.85; }
+
+    .comment-item {
+      display: flex; gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .comment-item:last-child { border-bottom: none; }
+    .comment-body { flex: 1; min-width: 0; }
+    .comment-header {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 4px; flex-wrap: wrap;
+    }
+    .comment-name {
+      font-size: 13px; font-weight: 700; color: var(--text);
+    }
+    .comment-time {
+      font-size: 11px; color: var(--text2);
+    }
+    .comment-text {
+      font-size: 13px; color: var(--text2);
+      line-height: 1.6; word-break: break-word;
+    }
+    .comment-delete-btn {
+      background: none; border: none;
+      color: #e50914; cursor: pointer;
+      font-size: 12px; padding: 4px 8px;
+      border-radius: 6px; opacity: 0;
+      transition: opacity 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+    .comment-item:hover .comment-delete-btn,
+    .comment-item.long-pressed .comment-delete-btn {
+      opacity: 1;
+    }
+    .comment-delete-btn:hover { background: rgba(229,9,20,0.1); }
+
+    .comments-empty {
+      text-align: center; padding: 30px;
+      color: var(--text2); font-size: 13px;
+    }
+    .comments-loading {
+      text-align: center; padding: 20px;
+      color: var(--text2);
+    }
+
+    /* login prompt for comments */
+    .comment-login-prompt {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px;
+      text-align: center; margin-bottom: 16px;
+      font-size: 13px; color: var(--text2);
+    }
+
+    /* thumbnail-only state (no video, no telegram) */
+    .ep-thumb-only {
+      width: 100%; aspect-ratio: 16/9;
+      border-radius: 12px; overflow: hidden;
+      background: var(--bg3);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .ep-thumb-only img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .ep-thumb-only-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px; color: #fff;
+    }
+  </style>
 </head>
 <body>
 
@@ -41,11 +486,9 @@
       </div>
     </div>
     <div style="display:flex;flex:1;overflow:hidden">
-      <!-- Seasons -->
       <div style="width:28%;border-right:1px solid var(--border);
         overflow-y:auto;background:var(--bg2);flex-shrink:0"
         id="selectorSeasonList"></div>
-      <!-- Episodes -->
       <div style="flex:1;overflow-y:auto;padding:14px"
         id="selectorEpGrid"></div>
     </div>
@@ -65,6 +508,9 @@
   <script src="firebase-config.js"></script>
   <script src="data.js"></script>
   <script>
+    // =============================================
+    // THEME
+    // =============================================
     function toggleTheme() {
       const html = document.documentElement;
       const btn  = document.getElementById('themeBtn');
@@ -80,23 +526,31 @@
       if (btn) btn.innerHTML = saved === 'dark'
         ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
     }
+    loadTheme();
 
+    // =============================================
+    // CONSTANTS
+    // =============================================
     const qualityOrder  = ['4k','1080p','720p','480p'];
     const qualityConfig = {
-      '480p':  { label:'480p SD',  color:'#666' },
-      '720p':  { label:'720p HD',  color:'#2a6dd9' },
-      '1080p': { label:'1080p FHD',color:'#27ae60' },
-      '4k':    { label:'4K UHD',   color:'#C87740' },
+      '480p':  { label:'480p SD',   color:'#666' },
+      '720p':  { label:'720p HD',   color:'#2a6dd9' },
+      '1080p': { label:'1080p FHD', color:'#27ae60' },
+      '4k':    { label:'4K UHD',    color:'#C87740' },
     };
     const langFlags = {
       'Japanese':'🇯🇵','English Dub':'🇺🇸','Hindi Dub':'🇮🇳',
-      'Korean':'🇰🇷','Chinese':'🇨🇳'
+      'Korean':'🇰🇷','Chinese':'🇨🇳','Spanish':'🇪🇸',
+      'French':'🇫🇷','Portuguese':'🇧🇷'
     };
 
     let globalAnime     = null;
     let globalAnimeId   = null;
     let currentSeasonId = null;
     let currentEpId     = null;
+    let currentUser     = null;
+
+    auth.onAuthStateChanged(u => { currentUser = u; });
 
     // =============================================
     // VIDEO HELPERS
@@ -136,85 +590,518 @@
       return Object.keys(langData)[0] || '';
     }
 
-    // =============================================
-    // EMBED URL — Google Drive, YouTube, Direct
-    // =============================================
-    function getEmbedUrl(url) {
+    function driveUrl(url) {
+      if (!url) return null;
+      const m1 = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+      if (m1) return `https://drive.google.com/file/d/${m1[1]}/preview`;
+      const m2 = url.match(/id=([a-zA-Z0-9_-]{10,})/);
+      if (m2) return `https://drive.google.com/file/d/${m2[1]}/preview`;
+      return null;
+    }
+
+    function getVideoType(url) {
       if (!url || !url.trim()) return null;
       url = url.trim();
+      if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) return 'youtube';
+      if (url.includes('drive.google.com')) return 'drive';
+      if (url.match(/\.(mp4|webm|ogg|m3u8)(\?|$)/i)) return 'direct';
+      if (url.match(/\.mkv(\?|$)/i)) return 'direct';
+      if (url.includes('gofile.io')) return 'direct';
+      return 'iframe';
+    }
 
-      // YouTube
-      if (url.includes('youtube.com/watch')) {
+    function getIframeSrc(url) {
+      const type = getVideoType(url);
+      if (type === 'youtube') {
+        if (url.includes('youtu.be/')) {
+          const id = url.split('youtu.be/')[1].split('?')[0];
+          return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+        }
         try {
           const id = new URL(url).searchParams.get('v');
-          if (id) return { type:'iframe',
-            src:`https://www.youtube.com/embed/${id}?autoplay=1&rel=0&modestbranding=1` };
+          if (id) return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
         } catch {}
       }
-      if (url.includes('youtu.be/')) {
-        const id = url.split('youtu.be/')[1].split('?')[0];
-        return { type:'iframe',
-          src:`https://www.youtube.com/embed/${id}?autoplay=1&rel=0` };
-      }
+      if (type === 'drive') return driveUrl(url);
+      return url;
+    }
 
-      // Google Drive — convert any Drive URL to preview
-      if (url.includes('drive.google.com')) {
-        let fileId = null;
-        const m1 = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
-        if (m1) fileId = m1[1];
-        else {
-          const m2 = url.match(/id=([a-zA-Z0-9_-]{10,})/);
-          if (m2) fileId = m2[1];
-        }
-        if (fileId) return { type:'iframe',
-          src:`https://drive.google.com/file/d/${fileId}/preview?usp=sharing` };
-      }
-
-      // Direct video files (mp4, mkv, etc.)
-      if (url.match(/\.(mp4|webm|ogg|m3u8)(\?|$)/i))
-        return { type:'video', src: url };
-      if (url.match(/\.mkv(\?|$)/i))
-        return { type:'video', src: url };
-
-      // GoFile or other direct hosting
-      if (url.includes('gofile.io')) return { type:'video', src: url };
-
-      // Fallback
-      return { type:'iframe', src: url };
+    function formatTime(s) {
+      if (isNaN(s) || s < 0) return '0:00';
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = Math.floor(s % 60);
+      if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+      return `${m}:${String(sec).padStart(2,'0')}`;
     }
 
     // =============================================
-    // LOAD VIDEO INTO PLAYER
+    // FULLSCREEN
     // =============================================
-    function loadVideoUrl(url, quality) {
+    function enterFs(el) {
+      if (el.requestFullscreen)            el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (el.mozRequestFullScreen)    el.mozRequestFullScreen();
+      else { el.classList.add('av-fs'); fsPolyfill = true; }
+    }
+    function exitFs() {
+      if (document.exitFullscreen)            document.exitFullscreen().catch(()=>{});
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      else if (document.mozCancelFullScreen)  document.mozCancelFullScreen();
+      const el = document.querySelector('.av-fs');
+      if (el) { el.classList.remove('av-fs'); fsPolyfill = false; }
+    }
+    let fsPolyfill = false;
+    document.addEventListener('fullscreenchange',       updateFsBtn);
+    document.addEventListener('webkitfullscreenchange', updateFsBtn);
+    function updateFsBtn() {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      const btn  = document.getElementById('avFsBtn');
+      if (btn) btn.innerHTML = isFs
+        ? '<i class="fas fa-compress"></i>'
+        : '<i class="fas fa-expand"></i>';
+    }
+
+    // =============================================
+    // SUBTITLE DATA (for direct video)
+    // =============================================
+    let subtitleTracks = {};   // lang → array of {start, end, text}
+    let currentSubLang = null;
+    let subEnabled     = true;
+
+    function parseVTT(text) {
+      const cues = [];
+      const blocks = text.split(/\n\n+/);
+      for (const b of blocks) {
+        const m = b.match(/(\d+:\d+[:.]\d+)\s*-->\s*(\d+:\d+[:.]\d+)([\s\S]*)/);
+        if (!m) continue;
+        const t1 = vttTime(m[1]);
+        const t2 = vttTime(m[2]);
+        const txt = m[3].trim().replace(/<[^>]+>/g,'');
+        if (txt) cues.push({ start: t1, end: t2, text: txt });
+      }
+      return cues;
+    }
+    function vttTime(s) {
+      const p = s.replace(',','.').split(':');
+      if (p.length === 3) return +p[0]*3600 + +p[1]*60 + +p[2];
+      return +p[0]*60 + +p[1];
+    }
+
+    // =============================================
+    // DIRECT VIDEO PLAYER
+    // =============================================
+    let playerState = {
+      playing: false, volume: 1, muted: false,
+      speed: 1, controlsTimer: null,
+      volVisible: false
+    };
+
+    function buildDirectPlayer(url, title) {
+      return `
+        <div class="av-player-wrap" id="avWrap">
+          <video class="av-video" id="avVideo"
+            playsinline webkit-playsinline preload="metadata">
+            <source src="${url}"/>
+          </video>
+
+          <!-- subtitle text -->
+          <div class="av-subtitle-text" id="avSubText" style="display:none">
+            <span id="avSubSpan"></span>
+          </div>
+
+          <!-- loader -->
+          <div class="av-loader" id="avLoader" style="display:none">
+            <div class="av-spin"></div>
+          </div>
+
+          <!-- double-tap seek flashes -->
+          <div class="av-seek-flash left"  id="avFlashL">
+            <i class="fas fa-backward"></i><span>10s</span>
+          </div>
+          <div class="av-seek-flash right" id="avFlashR">
+            <i class="fas fa-forward"></i><span>10s</span>
+          </div>
+
+          <!-- double-tap zones -->
+          <div class="av-tap-left"  id="avTapL"></div>
+          <div class="av-tap-right" id="avTapR"></div>
+
+          <!-- center play/pause icon -->
+          <div class="av-center-play" id="avCenterPlay">
+            <div class="av-center-icon" id="avCenterIcon"
+              onclick="togglePlay()">
+              <i class="fas fa-play"></i>
+            </div>
+          </div>
+
+          <!-- CONTROLS -->
+          <div class="av-controls" id="avControls">
+            <div class="av-top-bar">
+              <span class="av-title">${title}</span>
+            </div>
+
+            <!-- speed menu -->
+            <div class="av-speed-menu" id="avSpeedMenu">
+              ${[0.25,0.5,0.75,1,1.25,1.5,1.75,2].map(s =>
+                `<div class="av-speed-opt ${s===1?'active':''}"
+                  onclick="setSpeed(${s})">${s}x</div>`
+              ).join('')}
+            </div>
+
+            <!-- subtitle panel -->
+            <div class="av-sub-panel" id="avSubPanel">
+              <div class="av-sub-row">
+                <span>Subtitles</span>
+                <button class="av-toggle ${subEnabled?'on':'off'}"
+                  id="avSubToggle" onclick="toggleSub()"></button>
+              </div>
+              <div id="avSubLangList" style="margin-top:6px"></div>
+            </div>
+
+            <div class="av-bottom">
+              <!-- progress -->
+              <div class="av-prog-wrap" id="avProgWrap">
+                <div class="av-prog-track">
+                  <div class="av-prog-buf"  id="avProgBuf"></div>
+                  <div class="av-prog-fill" id="avProgFill"></div>
+                </div>
+                <div class="av-prog-thumb" id="avProgThumb"></div>
+                <input type="range" class="av-seek-input"
+                  id="avSeekInput" min="0" max="100" step="0.01" value="0"/>
+              </div>
+
+              <!-- button row -->
+              <div class="av-ctrl-row">
+                <!-- play/pause -->
+                <button class="av-btn" id="avPlayBtn" onclick="togglePlay()">
+                  <i class="fas fa-play"></i>
+                </button>
+                <!-- -10s -->
+                <button class="av-btn sm" onclick="seekRel(-10)"
+                  title="-10s" style="position:relative">
+                  <i class="fas fa-rotate-left"></i>
+                  <span style="position:absolute;font-size:8px;
+                    bottom:4px;font-weight:700;color:#fff">10</span>
+                </button>
+                <!-- +10s -->
+                <button class="av-btn sm" onclick="seekRel(10)"
+                  title="+10s" style="position:relative">
+                  <i class="fas fa-rotate-right"></i>
+                  <span style="position:absolute;font-size:8px;
+                    bottom:4px;font-weight:700;color:#fff">10</span>
+                </button>
+
+                <span class="av-time" id="avTime">0:00 / 0:00</span>
+
+                <div class="av-spacer"></div>
+
+                <!-- subtitles (only if tracks loaded) -->
+                <button class="av-btn sm" id="avSubBtn"
+                  onclick="toggleSubPanel()"
+                  style="display:none" title="Subtitles">
+                  <i class="fas fa-closed-captioning"></i>
+                </button>
+
+                <!-- speed -->
+                <span class="av-speed" id="avSpeedBadge"
+                  onclick="toggleSpeedMenu()">1x</span>
+
+                <!-- volume -->
+                <button class="av-btn sm" id="avVolBtn"
+                  onclick="toggleMute()"
+                  onmouseenter="showVolSlider()"
+                  onmouseleave="hideVolSlider()">
+                  <i class="fas fa-volume-high"></i>
+                </button>
+                <div class="av-vol-wrap" id="avVolWrap"
+                  onmouseenter="showVolSlider()"
+                  onmouseleave="hideVolSlider()">
+                  <input type="range" class="av-vol-slider"
+                    id="avVolSlider" min="0" max="100" value="100"
+                    oninput="setVolume(this.value)"/>
+                </div>
+
+                <!-- fullscreen -->
+                <button class="av-btn" id="avFsBtn"
+                  onclick="toggleFs()">
+                  <i class="fas fa-expand"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // =============================================
+    // IFRAME PLAYER (YouTube / Drive / other)
+    // =============================================
+    function buildIframePlayer(url, title) {
+      const src = getIframeSrc(url);
+      return `
+        <div class="av-player-wrap" id="avWrap" style="aspect-ratio:16/9">
+          <iframe class="av-iframe" id="avIframe"
+            src="${src}"
+            allowfullscreen webkitallowfullscreen
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture">
+          </iframe>
+          <button class="av-iframe-fs" id="avFsBtn" onclick="toggleFs()">
+            <i class="fas fa-expand"></i>
+          </button>
+        </div>`;
+    }
+
+    // =============================================
+    // PLAYER INIT EVENTS (direct video only)
+    // =============================================
+    function initDirectPlayerEvents() {
+      const wrap      = document.getElementById('avWrap');
+      const video     = document.getElementById('avVideo');
+      const controls  = document.getElementById('avControls');
+      const playBtn   = document.getElementById('avPlayBtn');
+      const centerPlay= document.getElementById('avCenterPlay');
+      const centerIcon= document.getElementById('avCenterIcon');
+      const loader    = document.getElementById('avLoader');
+      const progFill  = document.getElementById('avProgFill');
+      const progBuf   = document.getElementById('avProgBuf');
+      const progThumb = document.getElementById('avProgThumb');
+      const seekInput = document.getElementById('avSeekInput');
+      const timeEl    = document.getElementById('avTime');
+      const tapL      = document.getElementById('avTapL');
+      const tapR      = document.getElementById('avTapR');
+      const flashL    = document.getElementById('avFlashL');
+      const flashR    = document.getElementById('avFlashR');
+
+      if (!video) return;
+
+      // show/hide controls
+      function showCtrls() {
+        controls.classList.remove('hidden');
+        clearTimeout(playerState.controlsTimer);
+        if (playerState.playing) {
+          playerState.controlsTimer = setTimeout(() => {
+            controls.classList.add('hidden');
+          }, 3500);
+        }
+      }
+      wrap.addEventListener('touchstart', showCtrls, { passive: true });
+      wrap.addEventListener('mousemove',  showCtrls);
+
+      // video events
+      video.addEventListener('play', () => {
+        playerState.playing = true;
+        playBtn.innerHTML   = '<i class="fas fa-pause"></i>';
+        centerIcon.innerHTML= '<i class="fas fa-pause"></i>';
+        centerPlay.classList.remove('show');
+        loader.style.display = 'none';
+        showCtrls();
+      });
+      video.addEventListener('pause', () => {
+        playerState.playing = false;
+        playBtn.innerHTML   = '<i class="fas fa-play"></i>';
+        centerIcon.innerHTML= '<i class="fas fa-play"></i>';
+        centerPlay.classList.add('show');
+        controls.classList.remove('hidden');
+        clearTimeout(playerState.controlsTimer);
+      });
+      video.addEventListener('ended', () => {
+        playerState.playing = false;
+        playBtn.innerHTML   = '<i class="fas fa-rotate-right"></i>';
+        centerIcon.innerHTML= '<i class="fas fa-rotate-right"></i>';
+        centerPlay.classList.add('show');
+      });
+      video.addEventListener('waiting',   () => { loader.style.display = 'flex'; });
+      video.addEventListener('canplay',   () => { loader.style.display = 'none'; });
+      video.addEventListener('loadstart', () => { loader.style.display = 'flex'; });
+      video.addEventListener('error',     () => { loader.style.display = 'none'; });
+
+      video.addEventListener('timeupdate', () => {
+        if (!video.duration) return;
+        const pct = (video.currentTime / video.duration) * 100;
+        progFill.style.width  = pct + '%';
+        progThumb.style.left  = pct + '%';
+        seekInput.value = pct;
+        timeEl.textContent =
+          `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+        updateSubtitle(video.currentTime);
+      });
+
+      video.addEventListener('progress', () => {
+        if (!video.duration || !video.buffered.length) return;
+        const pct = (video.buffered.end(video.buffered.length-1) / video.duration)*100;
+        progBuf.style.width = pct + '%';
+      });
+
+      seekInput.addEventListener('input', function() {
+        if (!video.duration) return;
+        const t = (this.value / 100) * video.duration;
+        video.currentTime = t;
+        progFill.style.width = this.value + '%';
+        progThumb.style.left = this.value + '%';
+      });
+
+      // double-tap detect
+      let tapTimer = null, lastTapSide = null;
+      function handleTap(side) {
+        if (tapTimer && lastTapSide === side) {
+          clearTimeout(tapTimer); tapTimer = null;
+          seekRel(side === 'R' ? 10 : -10);
+          const flash = side === 'R' ? flashR : flashL;
+          flash.classList.add('show');
+          setTimeout(() => flash.classList.remove('show'), 600);
+        } else {
+          lastTapSide = side;
+          tapTimer = setTimeout(() => {
+            tapTimer = null;
+            togglePlay();
+          }, 250);
+        }
+      }
+      tapL.addEventListener('click', () => handleTap('L'));
+      tapR.addEventListener('click', () => handleTap('R'));
+
+      // center play click
+      centerPlay.addEventListener('click', togglePlay);
+
+      // autoplay
+      video.play().then(() => {
+        centerPlay.classList.remove('show');
+      }).catch(() => {
+        centerPlay.classList.add('show');
+      });
+    }
+
+    // =============================================
+    // PLAYER CONTROLS
+    // =============================================
+    window.togglePlay = function() {
+      const v = document.getElementById('avVideo');
+      if (!v) return;
+      if (v.paused) v.play(); else v.pause();
+    };
+
+    window.seekRel = function(sec) {
+      const v = document.getElementById('avVideo');
+      if (!v) return;
+      v.currentTime = Math.max(0, Math.min(v.duration||0, v.currentTime+sec));
+    };
+
+    window.setVolume = function(val) {
+      const v = document.getElementById('avVideo');
+      if (!v) return;
+      v.volume = val/100;
+      playerState.volume = val/100;
+      playerState.muted  = val == 0;
+      updateVolIcon(val/100);
+    };
+    window.toggleMute = function() {
+      const v = document.getElementById('avVideo');
+      if (!v) return;
+      v.muted = !v.muted;
+      playerState.muted = v.muted;
+      const sl = document.getElementById('avVolSlider');
+      if (sl) sl.value = v.muted ? 0 : playerState.volume*100;
+      updateVolIcon(v.muted ? 0 : playerState.volume);
+    };
+    function updateVolIcon(v) {
+      const btn = document.getElementById('avVolBtn');
+      if (!btn) return;
+      if (v === 0)     btn.innerHTML = '<i class="fas fa-volume-xmark"></i>';
+      else if (v<0.5)  btn.innerHTML = '<i class="fas fa-volume-low"></i>';
+      else             btn.innerHTML = '<i class="fas fa-volume-high"></i>';
+    }
+    window.showVolSlider = () => document.getElementById('avVolWrap')?.classList.add('show');
+    window.hideVolSlider = () => document.getElementById('avVolWrap')?.classList.remove('show');
+
+    window.setSpeed = function(s) {
+      const v = document.getElementById('avVideo');
+      if (v) v.playbackRate = s;
+      playerState.speed = s;
+      const badge = document.getElementById('avSpeedBadge');
+      if (badge) badge.textContent = s + 'x';
+      document.querySelectorAll('.av-speed-opt').forEach(el =>
+        el.classList.toggle('active', parseFloat(el.textContent) === s));
+      document.getElementById('avSpeedMenu')?.classList.remove('open');
+    };
+    window.toggleSpeedMenu = function() {
+      const m = document.getElementById('avSpeedMenu');
+      const s = document.getElementById('avSubPanel');
+      if (s) s.classList.remove('open');
+      m?.classList.toggle('open');
+    };
+
+    window.toggleFs = function() {
+      const wrap = document.getElementById('avWrap');
+      if (!wrap) return;
+      const isFs = !!(document.fullscreenElement||document.webkitFullscreenElement)
+                   || wrap.classList.contains('av-fs');
+      if (isFs) exitFs(); else enterFs(wrap);
+    };
+
+    // =============================================
+    // SUBTITLES
+    // =============================================
+    window.toggleSub = function() {
+      subEnabled = !subEnabled;
+      const btn = document.getElementById('avSubToggle');
+      if (btn) { btn.classList.toggle('on', subEnabled); btn.classList.toggle('off', !subEnabled); }
+      const txt = document.getElementById('avSubText');
+      if (txt) txt.style.display = subEnabled && currentSubLang ? 'block' : 'none';
+    };
+    window.toggleSubPanel = function() {
+      const p = document.getElementById('avSubPanel');
+      const m = document.getElementById('avSpeedMenu');
+      if (m) m.classList.remove('open');
+      p?.classList.toggle('open');
+    };
+    window.setSubLang = function(lang) {
+      currentSubLang = lang;
+      document.querySelectorAll('.sub-lang-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.lang === lang));
+      document.getElementById('avSubPanel')?.classList.remove('open');
+    };
+    function updateSubtitle(t) {
+      const textEl = document.getElementById('avSubText');
+      const spanEl = document.getElementById('avSubSpan');
+      if (!textEl || !spanEl || !subEnabled || !currentSubLang) {
+        if (textEl) textEl.style.display = 'none';
+        return;
+      }
+      const cues = subtitleTracks[currentSubLang] || [];
+      const cue  = cues.find(c => t >= c.start && t <= c.end);
+      if (cue) {
+        spanEl.textContent = cue.text;
+        textEl.style.display = 'block';
+      } else {
+        textEl.style.display = 'none';
+      }
+    }
+
+    // =============================================
+    // LOAD VIDEO URL (called when switching quality)
+    // =============================================
+    let currentVideoTitle = '';
+    window.loadVideoUrl = function(url, quality) {
       document.querySelectorAll('.quality-btn').forEach(b =>
         b.classList.toggle('active', b.dataset.quality === quality));
 
-      const container = document.getElementById('playerContainer');
-      if (!container) return;
-      const embed = getEmbedUrl(url);
-      if (!embed) {
-        container.innerHTML = `<div class="no-video-msg">
-          <i class="fas fa-film"></i><span>Cannot play this video.</span></div>`;
-        return;
-      }
-      if (embed.type === 'iframe') {
-        container.innerHTML = `
-          <iframe src="${embed.src}"
-            allowfullscreen webkitallowfullscreen mozallowfullscreen
-            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-            style="width:100%;height:100%;border:none;display:block">
-          </iframe>`;
+      const type = getVideoType(url);
+      const pSection = document.getElementById('playerSection');
+      if (!pSection) return;
+
+      if (type === 'direct') {
+        const v = document.getElementById('avVideo');
+        if (v) {
+          v.src = url; v.load(); v.play().catch(()=>{});
+        } else {
+          // rebuild
+          pSection.innerHTML = buildDirectPlayer(url, currentVideoTitle);
+          setTimeout(initDirectPlayerEvents, 80);
+        }
       } else {
-        container.innerHTML = `
-          <video controls autoplay playsinline
-            controlsList="nodownload"
-            style="width:100%;height:100%;background:#000;display:block">
-            <source src="${embed.src}"/>
-            Your browser does not support video.
-          </video>`;
+        pSection.innerHTML = buildIframePlayer(url, currentVideoTitle);
       }
-    }
+    };
 
     window.switchLanguage = function(lang, safeData) {
       const langData = JSON.parse(safeData.replace(/&quot;/g,'"'));
@@ -234,20 +1121,19 @@
     };
 
     // =============================================
-    // EPISODE-ONLY TELEGRAM SECTION
-    // (Season packs are NEVER shown on watch page)
+    // TG SECTION (episode-only, no season packs)
     // =============================================
-    function buildEpTgHTML(episode) {
-      let btns = '';
+    function buildEpTgButtons(episode) {
       if (episode.telegramUrl) {
-        btns = `<a href="${episode.telegramUrl}" target="_blank" rel="noopener"
+        return `<a href="${episode.telegramUrl}" target="_blank" rel="noopener"
           class="tg-btn-main">
           <i class="fab fa-telegram"></i> Watch on Telegram
         </a>`;
-      } else if (episode.telegramLinks) {
+      }
+      if (episode.telegramLinks) {
         const keys = qualityOrder.filter(q => episode.telegramLinks[q]);
         if (!keys.length) return '';
-        btns = `<div class="tg-quality-row">
+        return `<div class="tg-quality-row">
           ${keys.map(q => {
             const cfg = qualityConfig[q]||{label:q,color:'#2ca5e0'};
             return `<a href="${episode.telegramLinks[q]}" target="_blank"
@@ -258,37 +1144,222 @@
           }).join('')}
         </div>`;
       }
-      if (!btns) return '';
-      const thumb = episode.thumbnail || '';
-      return `
-        <div class="tg-only-player">
-          ${thumb
-            ? `<div class="tg-only-thumb"
-                style="background-image:url('${thumb}')">
-                <div class="tg-only-overlay">
-                  <i class="fab fa-telegram"
-                    style="font-size:52px;color:#2ca5e0;opacity:0.9"></i>
-                  <div style="color:#fff;font-size:15px;font-weight:700;
-                    margin-top:12px;text-shadow:0 2px 8px rgba(0,0,0,0.8)">
-                    Watch on Telegram
-                  </div>
-                </div>
-              </div>`
-            : `<div class="tg-only-thumb tg-only-thumb-empty">
-                <i class="fab fa-telegram"
-                  style="font-size:56px;color:#2ca5e0"></i>
-              </div>`}
-        </div>
-        <div class="tg-section">
-          <div class="tg-label">
-            <i class="fab fa-telegram"></i> Watch on Telegram
-          </div>
-          ${btns}
-        </div>`;
+      return '';
     }
 
     // =============================================
-    // RENDER PLAYER
+    // LIKE / DISLIKE
+    // =============================================
+    let likeState = null; // 'like' | 'dislike' | null
+
+    async function initLikeDislike(animeId, epKey) {
+      if (!currentUser) return;
+      const docId = `${animeId}_${epKey}`;
+      try {
+        const doc = await db.collection('ep_reactions')
+          .doc(currentUser.uid + '_' + docId).get();
+        if (doc.exists) {
+          likeState = doc.data().type;
+          refreshLikeUI();
+        }
+      } catch(e) {}
+    }
+
+    async function toggleLike(type, animeId, epKey) {
+      if (!currentUser) { alert('Please login to react.'); return; }
+      const docId  = currentUser.uid + '_' + animeId + '_' + epKey;
+      const epDocId= animeId + '_' + epKey;
+      const ref    = db.collection('ep_reactions').doc(docId);
+
+      if (likeState === type) {
+        // un-react
+        likeState = null;
+        try {
+          await ref.delete();
+          await db.collection('ep_counts').doc(epDocId).set({
+            [type]: firebase.firestore.FieldValue.increment(-1)
+          }, { merge: true });
+        } catch(e) {}
+      } else {
+        // switch or new
+        const prev = likeState;
+        likeState = type;
+        try {
+          await ref.set({ type, uid: currentUser.uid, ts: firebase.firestore.FieldValue.serverTimestamp() });
+          const upd = { [type]: firebase.firestore.FieldValue.increment(1) };
+          if (prev) upd[prev] = firebase.firestore.FieldValue.increment(-1);
+          await db.collection('ep_counts').doc(epDocId).set(upd, { merge: true });
+        } catch(e) {}
+      }
+      refreshLikeUI();
+      loadLikeCounts(animeId, epKey);
+    }
+
+    function refreshLikeUI() {
+      const lb = document.getElementById('likeBtn');
+      const db2= document.getElementById('dislikeBtn');
+      if (lb)  { lb.classList.toggle('active-like',    likeState==='like'); }
+      if (db2) { db2.classList.toggle('active-dislike', likeState==='dislike'); }
+    }
+
+    async function loadLikeCounts(animeId, epKey) {
+      const epDocId = animeId + '_' + epKey;
+      try {
+        const doc = await db.collection('ep_counts').doc(epDocId).get();
+        const data = doc.exists ? doc.data() : {};
+        const likeCount    = data.like    || 0;
+        const dislikeCount = data.dislike || 0;
+        const lEl = document.getElementById('likeCount');
+        const dEl = document.getElementById('dislikeCount');
+        if (lEl) lEl.textContent = likeCount    > 0 ? likeCount    : '';
+        if (dEl) dEl.textContent = dislikeCount > 0 ? dislikeCount : '';
+      } catch(e) {}
+    }
+
+    // =============================================
+    // COMMENTS
+    // =============================================
+    let commentEpKey = '';
+    let commentAnimeId = '';
+
+    async function loadComments() {
+      const container = document.getElementById('commentsList');
+      if (!container) return;
+      container.innerHTML = `<div class="comments-loading">
+        <i class="fas fa-circle-notch fa-spin"></i></div>`;
+      try {
+        const snap = await db.collection('ep_comments')
+          .where('epKey', '==', commentAnimeId + '_' + commentEpKey)
+          .orderBy('ts', 'desc')
+          .limit(50)
+          .get();
+
+        if (snap.empty) {
+          container.innerHTML = `<div class="comments-empty">
+            <i class="fas fa-comment" style="font-size:28px;opacity:0.3;
+              display:block;margin-bottom:10px"></i>
+            No comments yet. Be the first!
+          </div>`;
+          return;
+        }
+
+        container.innerHTML = '';
+        snap.forEach(doc => {
+          const d = doc.data();
+          const el = buildCommentEl(doc.id, d);
+          container.appendChild(el);
+        });
+      } catch(e) {
+        container.innerHTML = `<div class="comments-empty">
+          Could not load comments.</div>`;
+      }
+    }
+
+    function buildCommentEl(docId, d) {
+      const div = document.createElement('div');
+      div.className = 'comment-item';
+      div.dataset.id = docId;
+
+      const isOwn = currentUser && currentUser.uid === d.uid;
+      const initial = (d.name||'U')[0].toUpperCase();
+      const ts = d.ts?.toDate ? d.ts.toDate().toLocaleDateString('en-US',{
+        month:'short', day:'numeric'
+      }) : '';
+
+      div.innerHTML = `
+        <div class="comment-avatar">
+          ${d.avatar
+            ? `<img src="${d.avatar}"
+                onerror="this.parentElement.textContent='${initial}'"/>`
+            : initial}
+        </div>
+        <div class="comment-body">
+          <div class="comment-header">
+            <span class="comment-name">${d.name||'User'}</span>
+            <span class="comment-time">${ts}</span>
+          </div>
+          <div class="comment-text">${escHtml(d.text||'')}</div>
+        </div>
+        ${isOwn ? `<button class="comment-delete-btn"
+          onclick="deleteComment('${docId}',this)"
+          title="Delete">
+          <i class="fas fa-trash" style="font-size:13px"></i>
+        </button>` : ''}
+      `;
+
+      // long-press for delete on own comments
+      if (isOwn) {
+        let pressTimer;
+        div.addEventListener('touchstart', () => {
+          pressTimer = setTimeout(() => {
+            div.classList.add('long-pressed');
+          }, 600);
+        }, { passive: true });
+        div.addEventListener('touchend', () => clearTimeout(pressTimer));
+        div.addEventListener('touchmove', () => clearTimeout(pressTimer));
+      }
+      return div;
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')
+              .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    async function postComment() {
+      if (!currentUser) { alert('Please login to comment.'); return; }
+      const box = document.getElementById('commentBox');
+      const text = box?.innerText?.trim() || '';
+      if (!text) return;
+
+      const btn = document.getElementById('commentPostBtn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Posting...'; }
+
+      // get user avatar from Firestore
+      let avatar = '';
+      let name   = currentUser.displayName || 'User';
+      try {
+        const udoc = await db.collection('users').doc(currentUser.uid).get();
+        if (udoc.exists) {
+          avatar = udoc.data().photoURL || '';
+          name   = udoc.data().name || name;
+        }
+      } catch(e) {}
+
+      try {
+        await db.collection('ep_comments').add({
+          epKey:  commentAnimeId + '_' + commentEpKey,
+          uid:    currentUser.uid,
+          name, avatar, text,
+          ts: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        if (box) box.innerText = '';
+        if (btn) { btn.disabled = false; btn.textContent = 'Post'; }
+        loadComments();
+      } catch(e) {
+        alert('Failed to post comment.');
+        if (btn) { btn.disabled = false; btn.textContent = 'Post'; }
+      }
+    }
+
+    async function deleteComment(docId, btnEl) {
+      if (!currentUser) return;
+      if (!confirm('Delete this comment?')) return;
+      try {
+        await db.collection('ep_comments').doc(docId).delete();
+        const item = btnEl?.closest('.comment-item');
+        if (item) item.remove();
+        // if empty show message
+        const list = document.getElementById('commentsList');
+        if (list && !list.children.length) {
+          list.innerHTML = `<div class="comments-empty">
+            No comments yet.</div>`;
+        }
+      } catch(e) { alert('Could not delete.'); }
+    }
+
+    // =============================================
+    // RENDER PLAYER PAGE
     // =============================================
     function renderPlayer(anime, season, episode, allEps, seasonId, animeId) {
       const hasVid  = hasVideoContent(episode);
@@ -300,6 +1371,12 @@
       const initLD   = defLang ? langs[defLang] : {};
       const initBest = getBestQuality(initLD);
       const initQs   = qualityOrder.filter(q => initLD[q]&&initLD[q].trim());
+
+      const epTitle = `${anime.title} — ${season.title} — Ep ${episode.id}`;
+      currentVideoTitle = epTitle;
+      commentEpKey   = `${seasonId}_${episode.id}`;
+      commentAnimeId = animeId;
+      likeState      = null;
 
       const langBtns = langKeys.map(lang => {
         const flag = langFlags[lang]||'🌐';
@@ -337,33 +1414,21 @@
             style="opacity:0.4;font-size:13px;cursor:not-allowed">
             Next <i class="fas fa-forward-step"></i></button>`;
 
-      let topHTML = '';
-
-      // ============================================
-      // SMART DISPLAY:
-      // hasVid   → ONLY player (no TG at all)
-      // !hasVid + hasEpTg → ONLY episode TG
-      // nothing  → no content message
-      // Season packs → NEVER shown here
-      // ============================================
-      // Replace the smart display section in renderPlayer:
+      // ---- BUILD TOP SECTION ----
+      let playerHTML = '';
+      let langQualHTML = '';
+      let tgHTML = '';
 
       if (hasVid) {
-        topHTML = `
-          <div class="player-wrapper">
-            <div id="playerContainer"
-              style="width:100%;height:100%;background:#000;
-                display:flex;align-items:center;justify-content:center">
-              <div style="color:rgba(255,255,255,0.5);text-align:center">
-                <i class="fas fa-circle-notch fa-spin"
-                  style="font-size:28px;display:block;margin-bottom:10px"></i>
-                Loading...
-              </div>
-            </div>
-          </div>`;
+        const type = getVideoType(initLD[initBest] || '');
+        if (type === 'direct') {
+          playerHTML = `<div id="playerSection">${buildDirectPlayer(initLD[initBest], epTitle)}</div>`;
+        } else {
+          playerHTML = `<div id="playerSection">${buildIframePlayer(initLD[initBest]||'', epTitle)}</div>`;
+        }
 
         if (langKeys.length > 0 || initQs.length > 1) {
-          topHTML += `
+          langQualHTML = `
             <div class="lang-quality-box">
               ${langKeys.length > 0 ? `
               <div class="lq-row">
@@ -384,46 +1449,62 @@
             </div>`;
         }
 
-        // ✅ ALSO show episode TG if it exists (both video AND telegram)
+        // Also show episode TG if present (video + telegram both)
         if (hasEpTg) {
-          let tgBtns = '';
-          if (episode.telegramUrl) {
-            tgBtns = `<a href="${episode.telegramUrl}" target="_blank"
-              rel="noopener" class="tg-btn-main">
-              <i class="fab fa-telegram"></i> Watch on Telegram
-            </a>`;
-          } else if (episode.telegramLinks) {
-            const keys = qualityOrder.filter(q=>episode.telegramLinks[q]);
-            if (keys.length) {
-              tgBtns = `<div class="tg-quality-row">
-                ${keys.map(q=>{
-                  const cfg=qualityConfig[q]||{label:q,color:'#2ca5e0'};
-                  return `<a href="${episode.telegramLinks[q]}"
-                    target="_blank" rel="noopener"
-                    class="tg-quality-btn"
-                    style="--tgcolor:${cfg.color}">
-                    <i class="fab fa-telegram"></i>${cfg.label}
-                  </a>`;
-                }).join('')}
-              </div>`;
-            }
-          }
-          if (tgBtns) {
-            topHTML += `
+          const btns = buildEpTgButtons(episode);
+          if (btns) {
+            tgHTML = `
               <div class="tg-section" style="margin-top:10px">
                 <div class="tg-label">
-                  <i class="fab fa-telegram"></i>
-                  Also on Telegram
+                  <i class="fab fa-telegram"></i> Also on Telegram
                 </div>
-                ${tgBtns}
+                ${btns}
               </div>`;
           }
         }
-
       } else if (hasEpTg) {
-        topHTML = buildEpTgHTML(episode);
+        // thumbnail + TG buttons only
+        const thumb = episode.thumbnail || '';
+        const tgBtns = buildEpTgButtons(episode);
+        playerHTML = `
+          <div class="tg-only-player">
+            ${thumb
+              ? `<div class="tg-only-thumb"
+                  style="background-image:url('${thumb}')">
+                  <div class="tg-only-overlay">
+                    <i class="fab fa-telegram"
+                      style="font-size:52px;color:#2ca5e0;opacity:0.9"></i>
+                    <div style="color:#fff;font-size:15px;font-weight:700;
+                      margin-top:12px;text-shadow:0 2px 8px rgba(0,0,0,0.8)">
+                      Watch on Telegram
+                    </div>
+                  </div>
+                </div>`
+              : `<div class="tg-only-thumb tg-only-thumb-empty">
+                  <i class="fab fa-telegram"
+                    style="font-size:56px;color:#2ca5e0"></i>
+                </div>`}
+          </div>
+          <div class="tg-section">
+            <div class="tg-label">
+              <i class="fab fa-telegram"></i> Watch on Telegram
+            </div>
+            ${tgBtns}
+          </div>`;
+      } else if (episode.thumbnail) {
+        // just show thumbnail, no video, no telegram
+        playerHTML = `
+          <div class="ep-thumb-only">
+            <img src="${episode.thumbnail}" alt="${episode.title||''}"/>
+            <div class="ep-thumb-only-overlay">
+              <i class="fas fa-film" style="font-size:40px;opacity:0.6"></i>
+              <span style="font-size:13px;font-weight:600">
+                Video not available yet
+              </span>
+            </div>
+          </div>`;
       } else {
-        topHTML = `
+        playerHTML = `
           <div class="player-wrapper"
             style="display:flex;align-items:center;
               justify-content:center;background:#111">
@@ -434,8 +1515,11 @@
           </div>`;
       }
 
+      // ---- RENDER EVERYTHING ----
       document.getElementById('watchMain').innerHTML = `
-        ${topHTML}
+        ${playerHTML}
+        ${langQualHTML}
+        ${tgHTML}
 
         <!-- Episodes button -->
         <button onclick="openSelector()"
@@ -496,7 +1580,7 @@
             <span class="info-chip" style="font-size:12px;color:var(--text2)">
               <i class="fas fa-language"
                 style="color:var(--accent)"></i>
-              ${langKeys.length} lang${langKeys.length>1?'s':''}
+              ${langKeys.length} language${langKeys.length>1?'s':''}
             </span>` : ''}
           </div>
           ${episode.description ? `
@@ -504,11 +1588,95 @@
             line-height:1.7;margin-top:10px">
             ${episode.description}</p>` : ''}
         </div>
+
+        <!-- Like / Dislike -->
+        <div class="like-bar">
+          <button class="like-btn" id="likeBtn"
+            onclick="toggleLike('like','${animeId}','${seasonId}_${episode.id}')">
+            <i class="fas fa-thumbs-up"></i>
+            <span id="likeCount"></span>
+          </button>
+          <div class="like-divider"></div>
+          <button class="like-btn" id="dislikeBtn"
+            onclick="toggleLike('dislike','${animeId}','${seasonId}_${episode.id}')">
+            <i class="fas fa-thumbs-down"></i>
+            <span id="dislikeCount"></span>
+          </button>
+        </div>
+
+        <!-- Comments -->
+        <div class="comment-section">
+          <div class="comment-title">
+            <i class="fas fa-comments"
+              style="color:var(--accent)"></i>
+            Comments
+          </div>
+
+          <!-- Input -->
+          ${currentUser ? `
+          <div class="comment-input-wrap">
+            <div class="comment-avatar" id="commentAvatar">
+              ${currentUser.displayName
+                ? currentUser.displayName[0].toUpperCase()
+                : 'U'}
+            </div>
+            <div style="flex:1">
+              <div class="comment-box" id="commentBox"
+                contenteditable="true"
+                data-ph="Write a comment..."
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();postComment()}"
+              ></div>
+              <button class="comment-post-btn"
+                id="commentPostBtn"
+                onclick="postComment()">Post</button>
+            </div>
+          </div>` : `
+          <div class="comment-login-prompt">
+            <i class="fas fa-lock" style="font-size:20px;
+              opacity:0.4;margin-bottom:8px;display:block"></i>
+            <a href="index.html"
+              style="color:var(--accent);font-weight:600;text-decoration:none">
+              Login
+            </a> to leave a comment
+          </div>`}
+
+          <div id="commentsList">
+            <div class="comments-loading">
+              <i class="fas fa-circle-notch fa-spin"></i>
+            </div>
+          </div>
+        </div>
       `;
 
-      if (hasVid && initBest && initLD[initBest]) {
-        setTimeout(() => loadVideoUrl(initLD[initBest], initBest), 200);
+      // init player
+      if (hasVid) {
+        const type = getVideoType(initLD[initBest] || '');
+        if (type === 'direct') {
+          setTimeout(initDirectPlayerEvents, 120);
+        }
       }
+
+      // load avatar for comment box
+      if (currentUser) {
+        db.collection('users').doc(currentUser.uid).get().then(doc => {
+          const av = document.getElementById('commentAvatar');
+          if (!av) return;
+          const data = doc.exists ? doc.data() : {};
+          const avatar = data.photoURL || '';
+          const name   = data.name || currentUser.displayName || 'U';
+          if (avatar) {
+            av.innerHTML = `<img src="${avatar}"
+              onerror="this.parentElement.textContent='${name[0].toUpperCase()}'"/>`;
+          } else {
+            av.textContent = name[0].toUpperCase();
+          }
+        }).catch(()=>{});
+      }
+
+      // async load
+      loadLikeCounts(animeId, `${seasonId}_${episode.id}`);
+      initLikeDislike(animeId, `${seasonId}_${episode.id}`);
+      loadComments();
     }
 
     // =============================================
@@ -518,30 +1686,25 @@
       if (!globalAnime) return;
       const page = document.getElementById('episodeSelectorPage');
       page.style.display = 'flex';
-      document.getElementById('selectorTitle').textContent =
-        globalAnime.title;
+      document.getElementById('selectorTitle').textContent = globalAnime.title;
       buildSelectorSeasons(globalAnime.seasons || []);
     }
     function closeSelector() {
       document.getElementById('episodeSelectorPage').style.display = 'none';
     }
-
     function buildSelectorSeasons(seasons) {
       const list = document.getElementById('selectorSeasonList');
       list.innerHTML = seasons.map((s, i) => `
         <div class="sel-season-item ${i===0?'active':''}"
-          id="ssel-${s.id}"
           onclick="selectSeason(${s.id}, this)">
           <span>${s.title}</span>
-          <span style="font-size:10px;color:inherit;opacity:0.7;
-            margin-top:3px;display:block">
+          <span style="font-size:10px;opacity:0.7;margin-top:3px;display:block">
             ${(s.episodes||[]).length} ep
           </span>
         </div>`).join('');
-      if (seasons.length > 0) selectSeason(seasons[0].id,
-        list.querySelector('.sel-season-item'));
+      if (seasons.length > 0)
+        selectSeason(seasons[0].id, list.querySelector('.sel-season-item'));
     }
-
     function selectSeason(seasonId, el) {
       document.querySelectorAll('.sel-season-item')
         .forEach(i=>i.classList.remove('active'));
@@ -551,78 +1714,41 @@
       const grid = document.getElementById('selectorEpGrid');
       const eps  = season.episodes || [];
       if (!eps.length) {
-        grid.innerHTML = `
-          <div style="text-align:center;color:var(--text2);
-            padding:40px;font-size:13px">
-            No episodes yet.
-          </div>`;
+        grid.innerHTML = `<div style="text-align:center;color:var(--text2);
+          padding:40px;font-size:13px">No episodes yet.</div>`;
         return;
       }
       grid.innerHTML = `
-        <div style="font-size:11px;color:var(--text2);
-          font-weight:600;margin-bottom:12px;letter-spacing:0.5px">
+        <div style="font-size:12px;color:var(--text2);
+          font-weight:600;margin-bottom:12px">
           ${season.title} — ${eps.length} Episodes
         </div>
         <div class="ep-num-grid">
           ${eps.map(ep => {
-            const hasVid = hasVideoContent(ep);
-            const hasTg  = hasEpTelegram(ep);
-            const clickable = hasVid || hasTg;
-            const isCurrent = ep.id === currentEpId &&
-              season.id === currentSeasonId;
-            let style = '';
-            if (isCurrent) {
-              style = `background:var(--accent);color:#fff;
-                border-color:var(--accent)`;
-            } else if (hasVid) {
-              style = `background:var(--bg3);color:var(--text);
-                border-color:var(--border)`;
-            } else if (hasTg) {
-              style = `background:rgba(44,165,224,0.12);
-                color:#2ca5e0;border-color:rgba(44,165,224,0.4)`;
-            } else {
-              style = `background:var(--bg3);color:var(--text2);
-                border-color:var(--border);opacity:0.4`;
-            }
-            return `
-              <div class="ep-num-box"
-                style="${style};cursor:${clickable?'pointer':'default'}"
-                ${clickable ? `onclick="goToEp('${globalAnimeId}',${season.id},${ep.id})"` : ''}>
-                ${ep.id}
-                ${isCurrent ? '<i class="fas fa-play" style="font-size:7px;display:block;margin-top:2px"></i>' : ''}
-              </div>`;
+            const hasV = hasVideoContent(ep);
+            const hasTg= hasEpTelegram(ep);
+            const click= hasV || hasTg;
+            const isCur= ep.id===currentEpId && season.id===currentSeasonId;
+            let bg = 'background:var(--bg3);color:var(--text2);border-color:var(--border);opacity:0.45';
+            if (isCur)     bg = 'background:var(--accent);color:#fff;border-color:var(--accent)';
+            else if (hasV) bg = 'background:var(--bg3);color:var(--text);border-color:var(--border)';
+            else if (hasTg)bg = 'background:rgba(44,165,224,0.12);color:#2ca5e0;border-color:rgba(44,165,224,0.4)';
+            return `<div class="ep-num-box"
+              style="${bg};cursor:${click?'pointer':'default'}"
+              ${click?`onclick="goToEp('${globalAnimeId}',${season.id},${ep.id})"`:''}>
+              ${ep.id}
+            </div>`;
           }).join('')}
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;
-          margin-top:14px;font-size:11px;color:var(--text2)">
-          <span style="display:flex;align-items:center;gap:4px">
-            <span style="width:10px;height:10px;border-radius:3px;
-              background:var(--bg3);border:1px solid var(--border);
-              display:inline-block"></span>Available
-          </span>
-          <span style="display:flex;align-items:center;gap:4px">
-            <span style="width:10px;height:10px;border-radius:3px;
-              background:rgba(44,165,224,0.12);
-              border:1px solid rgba(44,165,224,0.4);
-              display:inline-block"></span>Telegram
-          </span>
-          <span style="display:flex;align-items:center;gap:4px">
-            <span style="width:10px;height:10px;border-radius:3px;
-              background:var(--accent);display:inline-block"></span>Current
-          </span>
         </div>`;
     }
-
     function goToEp(animeId, seasonId, epId) {
       closeSelector();
-      window.location.href =
-        `watch.html?id=${animeId}&season=${seasonId}&ep=${epId}`;
+      window.location.href = `watch.html?id=${animeId}&season=${seasonId}&ep=${epId}`;
     }
 
     // =============================================
     // INIT
     // =============================================
-    loadTheme();
     const params    = new URLSearchParams(window.location.search);
     const animeId   = params.get('id');
     const seasonId  = parseInt(params.get('season'));
