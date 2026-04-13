@@ -2010,3 +2010,25 @@ a { text-decoration: none; color: inherit; }
   font-size: 15px; font-weight: 700;
   color: var(--text); margin-bottom: 12px; padding-top: 4px;
 }
+
+/* ===== AUTH WALL ===== */
+#authWall .form-group label {
+  display: block;
+  margin-bottom: 6px;
+}
+#authWall input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+#authWall input:focus { border-color: var(--accent); }
+
+/* ===== PROFILE TELEGRAM STYLE ===== */
+.pf-action-btn:hover { border-color: var(--accent); }
