@@ -313,30 +313,75 @@
     .tg-only-inner i { font-size: 54px; color: #2ca5e0; }
     .tg-only-inner span { font-size: 15px; font-weight: 800; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.9); font-family: 'Poppins', sans-serif; }
 
-    /* Like/dislike */
-    .ld-wrap { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    /* Like/dislike — YouTube style */
+    .ld-wrap {
+      display: flex; align-items: center;
+      gap: 8px; padding: 12px 0 4px; flex-wrap: wrap;
+    }
     .ld-bar {
       display: flex; align-items: center;
       background: var(--card-bg); border: 1.5px solid var(--border);
-      border-radius: 50px; overflow: hidden;
-      box-shadow: 0 3px 0 var(--btn-3d), 0 5px 12px var(--shadow);
+      border-radius: 8px; overflow: hidden;
+      box-shadow: 0 4px 0 var(--btn-3d), 0 6px 14px var(--shadow);
     }
     .ld-btn {
-      display: flex; align-items: center; gap: 7px;
-      padding: 11px 20px; background: none; border: none;
+      display: flex; align-items: center; gap: 8px;
+      padding: 11px 18px; background: none; border: none;
       cursor: pointer; color: var(--text2); font-family: 'Poppins', sans-serif;
-      font-size: 13px; font-weight: 700; transition: color 0.2s, background 0.2s;
+      font-size: 14px; font-weight: 800; transition: all 0.18s;
       -webkit-tap-highlight-color: transparent;
+      position: relative; overflow: hidden;
     }
-    .ld-btn i { font-size: 18px; display: block; }
-    .ld-btn.liked { color: var(--accent); background: rgba(151,135,243,0.1); }
-    .ld-btn.disliked { color: #2ca5e0; background: rgba(44,165,224,0.1); }
-    .ld-sep { width: 1px; height: 26px; background: var(--border); flex-shrink: 0; }
-    .ld-count { min-width: 14px; font-weight: 800; font-size: 13px; }
-    @keyframes ldPop { 0%{transform:scale(1)} 35%{transform:scale(1.6)} 65%{transform:scale(0.85)} 100%{transform:scale(1.2)} }
-    @keyframes ldShake { 0%,100%{transform:scale(1)rotate(0)} 25%{transform:scale(1.45)rotate(-14deg)} 75%{transform:scale(1.45)rotate(14deg)} }
-    .ld-btn.anim-like i { animation: ldPop 0.42s cubic-bezier(0.34,1.56,0.64,1); }
-    .ld-btn.anim-dislike i { animation: ldShake 0.38s ease; }
+    .ld-btn:hover { background: var(--bg3); }
+    .ld-btn:active { transform: scale(0.94); }
+    .ld-btn i { font-size: 20px; display: block; transition: transform 0.22s; }
+    /* Blue like, Red dislike */
+    .ld-btn.liked { color: #1a73e8; background: rgba(26,115,232,0.1); }
+    .ld-btn.liked i { color: #1a73e8; }
+    .ld-btn.disliked { color: #e53935; background: rgba(229,57,53,0.1); }
+    .ld-btn.disliked i { color: #e53935; }
+    .ld-sep { width: 1.5px; height: 28px; background: var(--border); flex-shrink: 0; }
+    .ld-count {
+      min-width: 14px; font-weight: 800; font-size: 13px;
+      transition: all 0.2s;
+    }
+    /* Share button */
+    .ld-share-btn {
+      display: flex; align-items: center; gap: 7px;
+      padding: 11px 16px;
+      background: var(--card-bg); border: 1.5px solid var(--border);
+      border-radius: 8px; color: var(--text2);
+      font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 800;
+      cursor: pointer; transition: all 0.18s;
+      box-shadow: 0 4px 0 var(--btn-3d), 0 6px 14px var(--shadow);
+    }
+    .ld-share-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+    .ld-share-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--btn-3d); }
+    .ld-share-btn i { font-size: 16px; }
+    /* Episodes button */
+    .ep-inline-btn {
+      display: flex; align-items: center; gap: 7px;
+      padding: 11px 16px; margin-left: auto;
+      background: var(--card-bg); border: 1.5px solid var(--border);
+      border-radius: 8px; color: var(--text2);
+      font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 800;
+      cursor: pointer; transition: all 0.18s;
+      box-shadow: 0 4px 0 var(--btn-3d), 0 6px 14px var(--shadow);
+    }
+    .ep-inline-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+    .ep-inline-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--btn-3d); }
+    @keyframes ldPop { 0%{transform:scale(1)} 35%{transform:scale(1.7)} 65%{transform:scale(0.85)} 100%{transform:scale(1.15)} }
+    @keyframes ldShake { 0%,100%{transform:scale(1) rotate(0)} 25%{transform:scale(1.5) rotate(-16deg)} 75%{transform:scale(1.5) rotate(16deg)} }
+    .ld-btn.anim-like i { animation: ldPop 0.45s cubic-bezier(0.34,1.56,0.64,1); }
+    .ld-btn.anim-dislike i { animation: ldShake 0.4s ease; }
+    /* ripple on click */
+    .ld-btn::after {
+      content:''; position:absolute; inset:0;
+      background:rgba(255,255,255,0.12);
+      transform:scale(0); border-radius:8px;
+      transition:transform 0.3s, opacity 0.3s; opacity:0;
+    }
+    .ld-btn.rippling::after { transform:scale(1.5); opacity:0; }
 
     /* Comment section */
     .comment-section {
@@ -1017,7 +1062,7 @@
     // Animate
     const btn=document.getElementById(type==='like'?'ldLikeBtn':'ldDislikeBtn');
     const ac=type==='like'?'anim-like':'anim-dislike';
-    if(btn){btn.classList.add(ac);setTimeout(()=>btn.classList.remove(ac),500);}
+    if(btn){btn.classList.add(ac,'rippling');setTimeout(()=>btn.classList.remove(ac,'rippling'),500);}
 
     if (likeState===type) {
       likeState=null;
@@ -1084,17 +1129,53 @@
   window.postComment = async ()=>{
     if (!currentUser) { showToast('Login to comment'); return; }
     const ta=document.getElementById('commentTextarea');
-    const text=ta?.value?.trim()||''; if(!text)return;
+    const text=ta?.value?.trim()||''; if(!text){showToast('Write something first!');return;}
     const btn=document.getElementById('commentPostBtn');
-    if(btn){btn.disabled=true;btn.textContent='Posting...';}
+    if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-circle-notch fa-spin"></i> Posting...';}
     let avatar='',name=currentUser.displayName||'User';
-    try{const u=await db.collection('users').doc(currentUser.uid).get();if(u.exists){avatar=u.data().photoURL||'';name=u.data().name||name;}}catch(e){}
     try{
-      await db.collection('ep_comments').add({epKey:`${currentAnimeId}_${currentEpKey}`,uid:currentUser.uid,name,avatar,text,ts:firebase.firestore.FieldValue.serverTimestamp()});
-      if(ta) ta.value='';
+      const u=await db.collection('users').doc(currentUser.uid).get();
+      if(u.exists){avatar=u.data().photoURL||'';name=u.data().name||name;}
+    }catch(e){}
+    // Retry up to 3 times
+    let success=false;
+    for(let attempt=0;attempt<3;attempt++){
+      try{
+        await db.collection('ep_comments').add({
+          epKey:`${currentAnimeId}_${currentEpKey}`,
+          uid:currentUser.uid,name,avatar,text,
+          ts:firebase.firestore.FieldValue.serverTimestamp()
+        });
+        success=true;
+        break;
+      }catch(e){
+        if(attempt<2){await new Promise(r=>setTimeout(r,800*(attempt+1)));}
+        else{
+          const errMsg=e.code==='permission-denied'
+            ?'Permission denied. Check Firebase rules.'
+            :e.code==='unavailable'
+            ?'No internet. Check connection.'
+            :`Error: ${e.message||'Unknown error'}`;
+          showToast(errMsg);
+          console.error('Comment post error:',e);
+        }
+      }
+    }
+    if(success){
+      if(ta)ta.value='';
       if(btn){btn.disabled=false;btn.textContent='Post';}
-      loadComments();
-    }catch(e){showToast('Failed to post');if(btn){btn.disabled=false;btn.textContent='Post';}}
+      // Insert optimistically at top
+      const container=document.getElementById('commentsList');
+      const emptyMsg=container?.querySelector('.comments-empty');
+      if(emptyMsg)emptyMsg.remove();
+      const fakeDoc={id:'tmp'+Date.now(),name,avatar,text,uid:currentUser.uid,ts:null};
+      const newEl=buildCommentEl(fakeDoc.id,fakeDoc);
+      if(container)container.prepend(newEl);
+      // Reload after short delay to get real timestamp
+      setTimeout(()=>loadComments(),1200);
+    } else {
+      if(btn){btn.disabled=false;btn.textContent='Post';}
+    }
   };
 
   window.deleteComment = async (docId, btnEl)=>{
@@ -1228,27 +1309,34 @@
       ${hostingGuide}
 
       <div style="padding:0 14px">
-        <!-- LIKE/DISLIKE -->
+        <!-- LIKE/DISLIKE + SHARE + EPISODES — YouTube style -->
         <div class="ld-wrap">
+          <!-- Like/Dislike pill -->
           <div class="ld-bar">
-            <button class="ld-btn" id="ldLikeBtn" onclick="toggleLike('like')">
+            <button class="ld-btn" id="ldLikeBtn" onclick="toggleLike('like')" title="Like">
               <i class="fas fa-thumbs-up"></i>
               <span class="ld-count" id="ldLikeCount"></span>
             </button>
             <div class="ld-sep"></div>
-            <button class="ld-btn" id="ldDislikeBtn" onclick="toggleLike('dislike')">
+            <button class="ld-btn" id="ldDislikeBtn" onclick="toggleLike('dislike')" title="Dislike">
               <i class="fas fa-thumbs-down"></i>
               <span class="ld-count" id="ldDislikeCount"></span>
             </button>
           </div>
-          <div style="flex:1"></div>
-          <button onclick="openSelector()" style="display:flex;align-items:center;gap:7px;background:var(--card-bg);border:1.5px solid var(--border);border-radius:8px;padding:9px 14px;color:var(--text2);font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d)">
-            <i class="fas fa-list" style="color:var(--accent)"></i> Episodes
+          <!-- Share -->
+          <button class="ld-share-btn" onclick="shareEpisode()" title="Share">
+            <i class="fas fa-share-nodes"></i>
+            <span>Share</span>
+          </button>
+          <!-- Episodes -->
+          <button class="ep-inline-btn" onclick="openSelector()" title="All Episodes">
+            <i class="fas fa-list" style="color:var(--accent)"></i>
+            <span>Episodes</span>
           </button>
         </div>
 
         <!-- EPISODE INFO -->
-        <div style="padding:14px 0 4px">
+        <div style="padding:12px 0 4px">
           <div class="watch-label">${escHtml(anime.title)} · ${escHtml(season.title)}</div>
           <div class="watch-title">Ep ${episode.id}: ${escHtml(episode.title||'Episode '+episode.id)}</div>
           <div class="watch-chips">
@@ -1307,6 +1395,32 @@
     initLikeDislike();
     loadComments();
   }
+
+  /* ════════════════════════════════════
+     SHARE
+  ════════════════════════════════════ */
+  window.shareEpisode = async ()=>{
+    const url=window.location.href;
+    const title=document.title||'Anime Verse';
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+        return;
+      } catch(e) { /* user cancelled or not supported */ }
+    }
+    // Fallback: copy to clipboard
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('Link copied to clipboard!');
+    } catch(e) {
+      // Final fallback
+      const el=document.createElement('textarea');
+      el.value=url; el.style.cssText='position:fixed;opacity:0';
+      document.body.appendChild(el); el.select();
+      document.execCommand('copy'); document.body.removeChild(el);
+      showToast('Link copied!');
+    }
+  };
 
   /* ════════════════════════════════════
      INIT
