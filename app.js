@@ -455,8 +455,10 @@ async function updateAuthUI(user) {
   if (loginBtn)  loginBtn.style.display  = 'none';
   if (logoutBtn) logoutBtn.style.display = 'flex';
 
+  // ✅ Admin panel: only for the admin email
+  const ADMIN_EMAIL = 'rejaakif202@gmail.com';
   const adminSec = document.getElementById('adminSidebarSection');
-  if (adminSec) adminSec.style.display = 'block';
+  if (adminSec) adminSec.style.display = (user.email === ADMIN_EMAIL) ? 'block' : 'none';
 }
 
 function setProfileBtnAnon() {
