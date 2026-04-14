@@ -726,7 +726,8 @@ function toggleSearch() {
   const inp = document.getElementById('searchInput');
   if (!bar) return;
   searchActive = !searchActive;
-  bar.classList.toggle('hidden', !searchActive);
+  // ✅ FIX: CSS uses .open class, not .hidden
+  bar.classList.toggle('open', searchActive);
   if (searchActive && inp) inp.focus();
   else if (inp) { inp.value = ''; renderHome(allAnimeData); }
 }
