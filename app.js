@@ -455,10 +455,9 @@ async function updateAuthUI(user) {
   if (loginBtn)  loginBtn.style.display  = 'none';
   if (logoutBtn) logoutBtn.style.display = 'flex';
 
-  // ✅ Admin panel: only for the admin email
-  const ADMIN_EMAIL = 'rejaakif202@gmail.com';
   const adminSec = document.getElementById('adminSidebarSection');
-  if (adminSec) adminSec.style.display = (user.email === ADMIN_EMAIL) ? 'block' : 'none';
+  const ADMIN_EMAIL = 'rejaakif202@gmail.com';
+  if (adminSec) adminSec.style.display = (email === ADMIN_EMAIL) ? 'block' : 'none';
 }
 
 function setProfileBtnAnon() {
@@ -738,7 +737,7 @@ function closeSearch() {
   searchActive = false;
   const bar = document.getElementById('searchBar');
   const inp = document.getElementById('searchInput');
-  if (bar) bar.classList.add('hidden');
+  if (bar) bar.classList.remove('open');
   if (inp) inp.value = '';
   renderHome(allAnimeData);
 }
