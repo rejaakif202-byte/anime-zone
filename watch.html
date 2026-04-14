@@ -794,10 +794,23 @@
       if (!url || !url.trim()) return null;
       url = url.trim();
       if (url.includes('youtube.com/watch') || url.includes('youtu.be/') || url.includes('youtube.com/embed')) return 'youtube';
-      if (url.includes('drive.google.com')) return 'drive';
+      // Direct video file extensions — HTML5 player
       if (url.match(/\.(mp4|webm|ogg|m3u8|mov)(\?|#|$)/i)) return 'direct';
-      if (url.match(/\.mkv(\?|#|$)/i)) return 'mkv';
+      if (url.match(/\.mkv(\?|#|$)/i)) return 'direct';
+      // GoFile direct download links → HTML5
+      if (url.includes('gofile.io/download/direct') || url.includes('store') && url.includes('.gofile.io')) return 'direct';
+      // CDN / direct video hosts
       if (url.includes('cloudfront.net') || url.includes('akamaized.net') || url.includes('b-cdn.net')) return 'direct';
+      // Catbox.moe — direct hosting
+      if (url.includes('catbox.moe') || url.includes('files.catbox.moe')) return 'direct';
+      // Streamtape embed
+      if (url.includes('streamtape.com') || url.includes('streamtape.to')) return 'streamtape';
+      // Doodstream
+      if (url.includes('dood.') || url.includes('doodstream.com')) return 'dood';
+      // Archive.org video
+      if (url.includes('archive.org')) return 'iframe';
+      // Google Drive — treat as iframe (preview)
+      if (url.includes('drive.google.com')) return 'drive';
       return 'iframe';
     }
 
@@ -818,6 +831,12 @@
         const m2 = url.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
         const id  = m1?m1[1]:(m2?m2[1]:null);
         if (id) return `https://drive.google.com/file/d/${id}/preview?usp=sharing`;
+      }
+      if (type === 'streamtape') {
+        // Convert streamtape watch URL to embed
+        const m = url.match(/\/v\/([\w-]+)/);
+        if (m) return `https://streamtape.com/e/${m[1]}`;
+        return url.replace('/v/', '/e/');
       }
       return url;
     }
@@ -1130,7 +1149,7 @@
 
       // MKV banner
       const type = getVideoType(video.src || video.currentSrc || '');
-      if (type === 'mkv') {
+      if (type === 'direct') {
         const banner = document.createElement('div');
         banner.style.cssText = `background:rgba(200,119,64,0.12);border:1px solid rgba(200,119,64,0.3);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text2);display:flex;align-items:flex-start;gap:8px;margin-top:8px`;
         banner.innerHTML = `<i class="fas fa-circle-info" style="color:var(--accent);margin-top:1px;flex-shrink:0"></i><span><strong>MKV file detected.</strong> Mobile browsers may not support MKV. Upload to <strong>Google Drive</strong> and use the share link for guaranteed playback.</span>`;
@@ -1236,7 +1255,7 @@
       const type = getVideoType(url);
       const pSection = document.getElementById('playerSection');
       if (!pSection) return;
-      if (type === 'direct' || type === 'mkv') {
+      if (type === 'direct') {
         const v = document.getElementById('xpVideo');
         if (v) {
           pSection.querySelector('.xp-error-overlay')?.remove();
@@ -1656,7 +1675,7 @@
         const url  = initLD[initBest];
         const type = getVideoType(url);
         playerType = type;
-        if (type === 'direct' || type === 'mkv') {
+        if (type === 'direct') {
           playerHTML = `<div id="playerSection">${buildDirectPlayer(url, epTitle, langKeys, initQs, langBtnsXp, qualBtnsXp)}</div>`;
         } else {
           playerHTML = `<div id="playerSection">${buildIframePlayer(url, epTitle)}</div>`;
@@ -1805,7 +1824,7 @@
       `;
 
       // Init player events
-      if (hasVid && initBest && initLD[initBest] && (playerType==='direct'||playerType==='mkv')) {
+      if (hasVid && initBest && initLD[initBest] && (playerType==='direct')) {
         setTimeout(initPlayerEvents, 100);
       }
 
