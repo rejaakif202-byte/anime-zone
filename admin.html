@@ -731,44 +731,103 @@
       <div class="admin-panel" id="tab-guide">
         <div class="admin-card">
           <h3><i class="fas fa-book" style="color:var(--accent)"></i>
-            Guide</h3>
+            Video Hosting Guide</h3>
+
+          <!-- RECOMMENDED: Catbox -->
           <div style="background:var(--bg3);border-radius:10px;
-            padding:14px;margin-bottom:12px;border-left:3px solid #0f9d58">
-            <div style="font-weight:700;margin-bottom:8px">
-              <i class="fab fa-google-drive" style="color:#0f9d58"></i>
-              Google Drive (Recommended)
+            padding:14px;margin-bottom:12px;border-left:4px solid #9787F3">
+            <div style="font-weight:900;margin-bottom:8px;font-size:14px;
+              display:flex;align-items:center;gap:8px">
+              <i class="fas fa-star" style="color:#9787F3"></i>
+              Catbox.moe — BEST (Free, Direct Play, No Account)
             </div>
-            <div style="font-size:13px;color:var(--text2);line-height:1.8">
-              Upload video → Right click → Share → Anyone with link → Copy link → Paste in Video URL field.<br>
-              <strong style="color:var(--accent)">Video will play directly on the website!</strong>
+            <div style="font-size:13px;color:var(--text2);line-height:1.9">
+              1. Go to <strong style="color:var(--accent)">catbox.moe</strong><br>
+              2. Click "Choose Files" → select your video<br>
+              3. Click "Upload" (supports up to 200MB, no account needed)<br>
+              4. Copy the link (ends in .mp4) → Paste in Video URL<br>
+              <strong style="color:#9787F3">✅ Video plays directly in the built-in player! Full controls!</strong>
             </div>
           </div>
+
+          <!-- Streamtape -->
           <div style="background:var(--bg3);border-radius:10px;
-            padding:14px;margin-bottom:12px;border-left:3px solid #ff0000">
-            <div style="font-weight:700;margin-bottom:8px">
+            padding:14px;margin-bottom:12px;border-left:4px solid #ff9900">
+            <div style="font-weight:900;margin-bottom:8px;font-size:14px;
+              display:flex;align-items:center;gap:8px">
+              <i class="fas fa-film" style="color:#ff9900"></i>
+              Streamtape.com — Good (Free, Unlimited Size)
+            </div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.9">
+              1. Register at <strong style="color:var(--accent)">streamtape.com</strong> (free)<br>
+              2. Upload video → Go to file page<br>
+              3. Copy the video URL (streamtape.com/v/...)<br>
+              4. Paste in Video URL field<br>
+              <strong style="color:#ff9900">✅ Plays as embedded player. No file size limit!</strong>
+            </div>
+          </div>
+
+          <!-- YouTube -->
+          <div style="background:var(--bg3);border-radius:10px;
+            padding:14px;margin-bottom:12px;border-left:4px solid #ff0000">
+            <div style="font-weight:900;margin-bottom:8px;font-size:14px;
+              display:flex;align-items:center;gap:8px">
               <i class="fab fa-youtube" style="color:#ff0000"></i>
-              YouTube
+              YouTube (Unlisted)
             </div>
-            <div style="font-size:13px;color:var(--text2);line-height:1.8">
+            <div style="font-size:13px;color:var(--text2);line-height:1.9">
               Upload → Visibility: <strong>Unlisted</strong>
-              → Share → Copy → Paste in Video URL
+              → Share → Copy link → Paste in Video URL<br>
+              <strong style="color:#ff0000">✅ Works great. No file size limit!</strong>
             </div>
           </div>
+
+          <!-- Google Drive warning -->
+          <div style="background:rgba(229,9,20,0.08);border-radius:10px;
+            padding:14px;margin-bottom:12px;border-left:4px solid #e50914">
+            <div style="font-weight:900;margin-bottom:8px;font-size:14px;
+              display:flex;align-items:center;gap:8px">
+              <i class="fab fa-google-drive" style="color:#0f9d58"></i>
+              Google Drive — ⚠️ Often Blocked
+            </div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.9">
+              Google Drive videos often fail to load because Google blocks
+              embedding on external sites.<br>
+              <strong style="color:#e50914">❌ Not recommended. Use Catbox or Streamtape instead!</strong>
+            </div>
+          </div>
+
+          <!-- GoFile -->
+          <div style="background:var(--bg3);border-radius:10px;
+            padding:14px;margin-bottom:12px;border-left:4px solid #27ae60">
+            <div style="font-weight:900;margin-bottom:8px;font-size:14px;
+              display:flex;align-items:center;gap:8px">
+              <i class="fas fa-cloud-upload-alt" style="color:#27ae60"></i>
+              GoFile.io — Works (Free, Large Files)
+            </div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.9">
+              Upload video → Get direct download link<br>
+              Use the "direct download" URL (not the page URL)<br>
+              <strong style="color:#27ae60">✅ Works for direct playback if you get the raw file URL!</strong>
+            </div>
+          </div>
+
+          <!-- Telegram -->
           <div class="tg-admin-box">
             <div class="tg-admin-header">
               <i class="fab fa-telegram"
                 style="color:#2ca5e0;font-size:20px;flex-shrink:0"></i>
-              <div style="font-weight:700;font-size:14px">
-                When to use Telegram
+              <div style="font-weight:900;font-size:14px">
+                When to use Telegram Links
               </div>
             </div>
             <div style="font-size:13px;color:var(--text2);line-height:1.9">
               <strong style="color:var(--text)">Season Pack:</strong>
-              Add when all episodes of a season are in one Telegram folder/post.
-              These buttons show on the anime detail page only.<br><br>
+              Add Telegram folder/post link for the full season.
+              Shows on anime detail page only.<br><br>
               <strong style="color:var(--text)">Episode TG Link:</strong>
-              Add only if you DON'T have a Drive/YouTube video for that episode.
-              If video URL exists, Telegram is automatically hidden.
+              Add if you have NO video URL for that episode.
+              If video URL is present → Telegram shown alongside video.
             </div>
           </div>
         </div>
