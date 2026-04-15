@@ -8,94 +8,55 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
-    /* ── Parent Season Tabs ── */
     .parent-season-tabs {
       display: flex; gap: 8px; overflow-x: auto;
       padding: 14px 0 10px; scrollbar-width: none;
     }
     .parent-season-tabs::-webkit-scrollbar { display: none; }
-
     .parent-season-tab {
-      flex-shrink: 0;
-      background: var(--pill-bg);
-      color: var(--pill-text);
-      border: 1.5px solid var(--border);
-      padding: 9px 20px;
-      border-radius: 7px;
-      font-size: 13px; font-weight: 800;
-      font-family: 'Poppins', sans-serif;
-      cursor: pointer; transition: all 0.12s;
-      box-shadow: 0 3px 0 var(--btn-3d,rgba(0,0,0,0.25));
+      flex-shrink: 0; background: var(--pill-bg); color: var(--pill-text);
+      border: 1.5px solid var(--border); padding: 9px 20px;
+      border-radius: 7px; font-size: 13px; font-weight: 800;
+      font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.12s;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.2);
     }
-    .parent-season-tab:hover {
-      border-color: var(--accent); color: var(--accent);
-      transform: translateY(-1px);
-    }
-    .parent-season-tab:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--btn-3d); }
-    .parent-season-tab.active {
-      background: var(--accent); color: #fff; border-color: var(--accent);
-    }
+    .parent-season-tab:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+    .parent-season-tab:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.2); }
+    .parent-season-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-    /* ── Season Card (with poster) ── */
     .season-banner-wrap {
-      position: relative; width: 100%; overflow: hidden;
-      border-radius: 12px; background: var(--bg3);
-      margin-bottom: 10px; display: none;
+      display: none; position: relative; width: 100%;
+      overflow: hidden; border-radius: 12px; background: var(--bg3); margin-bottom: 10px;
     }
     .season-banner-wrap.visible { display: block; }
-    .season-banner-img {
+    .season-banner-wrap img {
       width: 100%; height: 160px; object-fit: cover;
-      display: block; filter: brightness(0.75);
+      display: block; filter: brightness(0.72);
     }
     .season-banner-overlay {
       position: absolute; inset: 0;
-      background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.8) 100%);
-      display: flex; align-items: flex-end; padding: 14px;
+      background: linear-gradient(to bottom, transparent 35%, rgba(0,0,0,0.82) 100%);
+      display: flex; align-items: flex-end; padding: 14px 16px;
     }
     .season-banner-title {
-      font-size: 20px; font-weight: 800;
-      color: #fff; letter-spacing: -0.3px;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+      font-size: 19px; font-weight: 800; color: #fff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.9);
       font-family: 'Poppins', sans-serif;
     }
 
-    /* ── Sub-Season Tabs ── */
     .sub-season-tabs {
-      display: flex; gap: 7px; overflow-x: auto;
-      padding: 4px 0 12px; scrollbar-width: none;
+      display: flex; gap: 6px; overflow-x: auto;
+      padding: 4px 0 10px; scrollbar-width: none;
     }
     .sub-season-tabs::-webkit-scrollbar { display: none; }
-
     .sub-season-tab {
-      flex-shrink: 0;
-      background: var(--bg3);
-      color: var(--text2);
-      border: 1.5px solid var(--border);
-      padding: 8px 18px;
-      border-radius: 7px;            /* square like parent tabs */
-      font-size: 12px; font-weight: 800;
-      font-family: 'Poppins', sans-serif;
+      flex-shrink: 0; background: var(--bg3); color: var(--text2);
+      border: 1.5px solid var(--border); padding: 7px 16px; border-radius: 20px;
+      font-size: 12px; font-weight: 700; font-family: 'Poppins', sans-serif;
       cursor: pointer; transition: all 0.12s;
-      box-shadow: 0 3px 0 var(--btn-3d, rgba(0,0,0,0.25));  /* 3D */
-      letter-spacing: 0.2px;
     }
-    .sub-season-tab:hover {
-      border-color: var(--accent); color: var(--accent);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 0 var(--btn-3d, rgba(0,0,0,0.25));
-    }
-    .sub-season-tab:active {
-      transform: translateY(2px);
-      box-shadow: 0 1px 0 var(--btn-3d, rgba(0,0,0,0.25));
-    }
-    .sub-season-tab.active {
-      background: var(--accent); color: #fff;
-      border-color: var(--accent);
-      box-shadow: 0 3px 0 rgba(100,80,200,0.4);
-    }
-
-    /* ── Sub-season content area ── */
-    #subSeasonContent { margin-top: 4px; }
+    .sub-season-tab:hover { border-color: var(--accent); color: var(--accent); }
+    .sub-season-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   </style>
 </head>
 <body>
@@ -129,7 +90,6 @@
   <script src="data.js"></script>
   <script>
 
-    // ===== THEME =====
     function toggleTheme() {
       const html = document.documentElement;
       const btn  = document.getElementById('themeBtn');
@@ -146,7 +106,6 @@
         ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
     }
 
-    // ===== QUALITY CONFIG =====
     const qualityOrder  = ['4k','1080p','720p','480p'];
     const qualityConfig = {
       '480p':  { label:'480p SD',   color:'#666' },
@@ -155,34 +114,32 @@
       '4k':    { label:'4K UHD',    color:'#C87740' },
     };
 
-    // ===== SHOW ERROR =====
     function showError(msg) {
       document.getElementById('detailMain').innerHTML = `
         <div class="empty-state" style="min-height:60vh">
-          <i class="fas fa-exclamation-circle"
-            style="font-size:40px;color:#e50914"></i>
+          <i class="fas fa-exclamation-circle" style="font-size:40px;color:#e50914"></i>
           <h2 style="margin-top:16px">Oops!</h2>
           <p style="color:var(--text2);font-size:13px;margin-top:8px">${msg}</p>
-          <a href="index.html"
-            style="color:var(--accent);margin-top:16px;
-              display:inline-block;font-size:14px">
-            ← Go Home
-          </a>
+          <a href="index.html" style="color:var(--accent);margin-top:16px;display:inline-block;font-size:14px">← Go Home</a>
         </div>`;
     }
 
-    // ===== FIREBASE =====
+    // ===== FIREBASE — force server fetch to avoid stale cache =====
     async function getAnime(id) {
       if (!id) return null;
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timed out')), 10000)
-      );
       try {
-        const fetchPromise = db.collection('anime').doc(id).get();
-        const doc = await Promise.race([fetchPromise, timeoutPromise]);
+        // { source: 'server' } bypasses Firestore cache so new episodes always show
+        const doc = await db.collection('anime').doc(id).get({ source: 'server' });
         if (doc.exists) return { ...doc.data(), firestoreId: doc.id };
+        // Fallback to cache if server fails
+        const cached = await db.collection('anime').doc(id).get();
+        if (cached.exists) return { ...cached.data(), firestoreId: cached.id };
         return null;
       } catch(e) {
+        try {
+          const cached = await db.collection('anime').doc(id).get();
+          if (cached.exists) return { ...cached.data(), firestoreId: cached.id };
+        } catch(e2) {}
         showError(e.message || 'Failed to load data from Firebase.');
         return null;
       }
@@ -221,12 +178,12 @@
       }
     }
 
-    // ===== GET SEASON PACKS =====
+    // ===== SEASON PACKS =====
     function getSeasonPacks(season) {
       const packs = [];
       if (season.telegramPacks && season.telegramPacks.length > 0) {
         season.telegramPacks.forEach(p => {
-          if (p && (p.single || (p.links && Object.values(p.links).some(v=>v))))
+          if (p && (p.single || (p.links && Object.values(p.links).some(v => v))))
             packs.push(p);
         });
         return packs;
@@ -242,7 +199,6 @@
       return packs;
     }
 
-    // ===== HAS VIDEO =====
     function hasVideoContent(episode) {
       if (!episode) return false;
       const langs = episode.languages || {};
@@ -259,58 +215,34 @@
       return false;
     }
 
-    // ===== BUILD SEASON TELEGRAM PACK HTML =====
+    // ===== BUILD TELEGRAM PACKS HTML =====
     function buildSeasonPacksHTML(season) {
       const packs = getSeasonPacks(season);
-      if (packs.length === 0) return '';
-
+      if (!packs.length) return '';
       return packs.map((pack, idx) => {
         const epCount = (season.episodes || []).length;
-        const range   = pack.range
-          ? `Episodes ${pack.range}`
-          : epCount > 0 ? `${epCount} Episodes` : 'Full Season';
-
+        const range   = pack.range ? `Episodes ${pack.range}` : epCount > 0 ? `${epCount} Episodes` : 'Full Season';
         let btnHTML = '';
         if (pack.single) {
-          btnHTML = `
-            <a href="${pack.single}" target="_blank" rel="noopener"
-              class="season-tg-btn-main">
-              <i class="fab fa-telegram"></i>
-              Watch ${range} on Telegram
-            </a>`;
+          btnHTML = `<a href="${pack.single}" target="_blank" rel="noopener" class="season-tg-btn-main"><i class="fab fa-telegram"></i> Watch ${range} on Telegram</a>`;
         } else if (pack.links) {
           const keys = qualityOrder.filter(q => pack.links[q] && pack.links[q].trim());
-          if (keys.length === 0) return '';
-          btnHTML = `
-            <div class="season-tg-quality-row">
-              ${keys.map(q => {
-                const cfg = qualityConfig[q] || { label: q, color: '#2ca5e0' };
-                return `
-                  <a href="${pack.links[q]}" target="_blank" rel="noopener"
-                    class="season-tg-quality-btn"
-                    style="--tgcolor:${cfg.color}">
-                    <i class="fab fa-telegram"></i> ${cfg.label}
-                  </a>`;
-              }).join('')}
-            </div>`;
+          if (!keys.length) return '';
+          btnHTML = `<div class="season-tg-quality-row">${keys.map(q => {
+            const cfg = qualityConfig[q] || { label: q, color: '#2ca5e0' };
+            return `<a href="${pack.links[q]}" target="_blank" rel="noopener" class="season-tg-quality-btn" style="--tgcolor:${cfg.color}"><i class="fab fa-telegram"></i> ${cfg.label}</a>`;
+          }).join('')}</div>`;
         }
-
         if (!btnHTML) return '';
-
         return `
           <div class="season-tg-pack" style="${idx > 0 ? 'margin-top:10px' : ''}">
             <div class="season-tg-pack-header">
-              <div class="season-tg-pack-icon">
-                <i class="fab fa-telegram"></i>
-              </div>
+              <div class="season-tg-pack-icon"><i class="fab fa-telegram"></i></div>
               <div>
                 <div class="season-tg-pack-title">
                   ${packs.length > 1 ? `Pack ${idx + 1}: ${range}` : `${season.title} — Telegram Pack`}
                 </div>
-                <div class="season-tg-pack-sub">
-                  <i class="fas fa-film" style="font-size:10px"></i>
-                  ${range} available
-                </div>
+                <div class="season-tg-pack-sub"><i class="fas fa-film" style="font-size:10px"></i> ${range} available</div>
               </div>
             </div>
             ${btnHTML}
@@ -318,11 +250,13 @@
       }).join('');
     }
 
-    // ===== RENDER SUB-SEASON CONTENT =====
-    function renderSubSeasonContent(animeId, subSeason) {
+    // ===== RENDER SEASON CONTENT (episodes + packs) =====
+    function renderSeasonContent(animeId, season) {
       const container = document.getElementById('subSeasonContent');
-      const episodes  = subSeason.episodes || [];
-      const packsHTML = buildSeasonPacksHTML(subSeason);
+      if (!container) return;
+
+      const episodes  = season.episodes || [];
+      const packsHTML = buildSeasonPacksHTML(season);
       const hasPacks  = packsHTML.trim().length > 0;
 
       let episodesHTML = '';
@@ -344,6 +278,8 @@
       if (episodes.length === 0) return;
 
       const list = document.getElementById('episodesList');
+      if (!list) return;
+
       episodes.forEach(ep => {
         const hasVid    = hasVideoContent(ep);
         const hasEpTg   = hasEpisodeTelegram(ep);
@@ -394,67 +330,57 @@
 
         if (clickable) {
           item.addEventListener('click', () => {
-            window.location.href = `watch.html?id=${animeId}&season=${subSeason.id}&ep=${ep.id}`;
+            window.location.href = `watch.html?id=${animeId}&season=${season.id}&ep=${ep.id}`;
           });
         }
         list.appendChild(item);
       });
     }
 
-    // ===== SWITCH PARENT SEASON =====
-    // A "parent season" is a season with parentId === undefined (top-level)
-    // OR we group by season.parentId if set.
-    // Logic: seasons with no parentId are "parent seasons" (Season 1, Season 2...)
-    // seasons with parentId = X are sub-seasons of X (East Blue Saga, etc.)
-    // If NO parentId system is used (legacy), treat every season as a parent
-    // and show sub-season tabs only if there's more than one season in the group.
-
+    // ===== GROUP SEASONS =====
+    // parentId == null/undefined → top-level parent season (Season 1, Season 2...)
+    // parentId = X → sub-season of X (East Blue Saga, etc.)
     function groupSeasons(seasons) {
-      // Check if any season has parentId set
-      const hasParentSystem = seasons.some(s => s.parentId !== undefined && s.parentId !== null);
+      // ✅ FIX: use == (loose) for parentId comparison to handle string/number mismatch
+      const hasParentSystem = seasons.some(s => s.parentId != null && s.parentId !== undefined);
 
       if (hasParentSystem) {
-        // Parent seasons: no parentId
-        const parents = seasons.filter(s => !s.parentId);
-        const result  = parents.map(p => ({
+        const parents = seasons.filter(s => s.parentId == null || s.parentId === undefined);
+        return parents.map(p => ({
           ...p,
-          subSeasons: seasons.filter(s => s.parentId === p.id)
+          // ✅ FIX: use == for comparison so "1" == 1 works (type coercion)
+          subSeasons: seasons.filter(s => s.parentId != null && String(s.parentId) === String(p.id))
         }));
-        // If any season has no parent but is not a parent itself, add as standalone
-        return result;
       } else {
-        // Legacy: all seasons are top-level, each is its own "parent"
-        // with no sub-seasons. Show them as sub-season tabs directly.
+        // Legacy: no parentId system — all seasons shown as sub-season tabs
         return [{ id: '__all__', title: 'All Seasons', subSeasons: seasons, _isLegacy: true }];
       }
     }
 
-    let currentParentIdx = 0;
-    let groupedSeasons   = [];
+    let groupedSeasons = [];
 
-    function switchParentSeason(idx) {
-      currentParentIdx = idx;
+    window.switchParentSeason = function(idx) {
       document.querySelectorAll('.parent-season-tab').forEach((t, i) =>
         t.classList.toggle('active', i === idx));
-
-      const parent = groupedSeasons[idx];
-      renderParentSeasonArea(window._animeId, parent);
-    }
+      renderParentSeasonArea(window._animeId, groupedSeasons[idx]);
+    };
 
     function renderParentSeasonArea(animeId, parent) {
-      const bannerWrap = document.getElementById('seasonBannerWrap');
-      const bannerImg  = document.getElementById('seasonBannerImg');
-      const bannerLbl  = document.getElementById('seasonBannerLabel');
-      const subTabsWrap= document.getElementById('subSeasonTabsWrap');
-      const subContent = document.getElementById('subSeasonContent');
+      const bannerWrap  = document.getElementById('seasonBannerWrap');
+      const bannerImg   = document.getElementById('seasonBannerImg');
+      const bannerLbl   = document.getElementById('seasonBannerLabel');
+      const subTabsWrap = document.getElementById('subSeasonTabsWrap');
+      const subContent  = document.getElementById('subSeasonContent');
 
-      // Show season banner if poster set
-      if (!parent._isLegacy && parent.poster) {
-        bannerImg.src = parent.poster;
-        bannerLbl.textContent = parent.title;
-        bannerWrap.classList.add('visible');
+      if (!subTabsWrap || !subContent) return;
+
+      // Season poster banner
+      if (!parent._isLegacy && parent.poster && parent.poster.trim()) {
+        if (bannerImg) bannerImg.src = parent.poster;
+        if (bannerLbl) bannerLbl.textContent = parent.title;
+        if (bannerWrap) bannerWrap.classList.add('visible');
       } else {
-        bannerWrap.classList.remove('visible');
+        if (bannerWrap) bannerWrap.classList.remove('visible');
       }
 
       const subSeasons = parent.subSeasons || [];
@@ -465,26 +391,23 @@
         return;
       }
 
-      // Build sub-season tabs
+      // Sub-season tabs
       subTabsWrap.innerHTML = subSeasons.map((s, i) =>
         `<button class="sub-season-tab ${i === 0 ? 'active' : ''}"
-          onclick="switchSubSeason('${animeId}', ${i})"
-          id="subTab_${i}">
+          onclick="switchSubSeason('${animeId}', ${i})">
           ${s.title}
         </button>`
       ).join('');
 
       window._currentSubSeasons = subSeasons;
-
-      // Render first sub-season
-      renderSubSeasonContent(animeId, subSeasons[0]);
+      renderSeasonContent(animeId, subSeasons[0]);
     }
 
-    function switchSubSeason(animeId, idx) {
+    window.switchSubSeason = function(animeId, idx) {
       document.querySelectorAll('.sub-season-tab').forEach((t, i) =>
         t.classList.toggle('active', i === idx));
-      renderSubSeasonContent(animeId, window._currentSubSeasons[idx]);
-    }
+      renderSeasonContent(animeId, window._currentSubSeasons[idx]);
+    };
 
     // ===== RENDER DETAIL =====
     async function renderDetail(anime) {
@@ -507,7 +430,10 @@
       const seasons = anime.seasons || [];
       groupedSeasons = groupSeasons(seasons);
 
-      // Find first watchable URL
+      // ✅ FIX: Count only TOP-LEVEL seasons (no parentId) for the season chip
+      const topLevelCount = seasons.filter(s => s.parentId == null || s.parentId === undefined).length;
+
+      // Find first watchable episode URL
       let watchUrl = '#';
       outer: for (const season of seasons) {
         const eps = season.episodes || [];
@@ -524,10 +450,9 @@
         }
       }
 
-      const genres = (anime.genre || []).map(g =>
-        `<span class="genre-tag">${g}</span>`).join('');
+      const genres = (anime.genre || []).map(g => `<span class="genre-tag">${g}</span>`).join('');
 
-      // Parent season tabs (only show if more than one group OR not legacy)
+      // Only show parent tabs if more than one parent, or NOT legacy
       const showParentTabs = !(groupedSeasons.length === 1 && groupedSeasons[0]._isLegacy);
       const parentTabsHTML = showParentTabs
         ? groupedSeasons.map((p, i) =>
@@ -561,7 +486,7 @@
                 </span>
                 <span class="info-chip">
                   <i class="fas fa-layer-group"></i>
-                  ${seasons.length} Season${seasons.length !== 1 ? 's' : ''}
+                  ${topLevelCount} Season${topLevelCount !== 1 ? 's' : ''}
                 </span>
               </div>
               <div class="genre-tags">${genres}</div>
@@ -584,23 +509,18 @@
         </div>
 
         ${seasons.length > 0 ? `
-        <!-- Parent Season Tabs (Season 1, Season 2...) -->
         ${showParentTabs ? `<div class="parent-season-tabs">${parentTabsHTML}</div>` : ''}
 
-        <!-- Season Banner / Poster -->
         <div class="season-banner-wrap" id="seasonBannerWrap">
-          <img class="season-banner-img" id="seasonBannerImg" src="" alt="Season Poster"
+          <img id="seasonBannerImg" src="" alt="Season Poster"
             onerror="this.closest('.season-banner-wrap').classList.remove('visible')"/>
           <div class="season-banner-overlay">
             <span class="season-banner-title" id="seasonBannerLabel"></span>
           </div>
         </div>
 
-        <!-- Sub-Season Tabs (East Blue Saga, Alabasta...) -->
         <div class="sub-season-tabs" id="subSeasonTabsWrap"></div>
-
-        <!-- Content -->
-        <div id="subSeasonContent"></div>
+        <div id="subSeasonContent" style="margin-top:4px"></div>
         ` : `
         <p class="empty-msg" style="padding:30px 0;text-align:center">No seasons added yet.</p>
         `}`;
