@@ -102,6 +102,13 @@
       </a>
     </div>
 
+    <div class="sidebar-section" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px">
+      <p class="sidebar-label">SUPPORT</p>
+      <a href="#" class="sidebar-item" onclick="openReportModal(); closeSidebar()">
+        <i class="fas fa-flag"></i> Report Issue
+      </a>
+    </div>
+
     <div class="sidebar-section" id="adminSidebarSection" style="display:none">
       <p class="sidebar-label">ADMIN</p>
       <a href="admin.html" class="sidebar-item admin-link">
@@ -262,6 +269,139 @@
   <script src="firebase-config.js"></script>
   <script src="data.js"></script>
   <script src="app.js"></script>
+
+  <!-- ===== REPORT MODAL ===== -->
+  <div id="reportModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(5px)">
+    <div style="background:var(--card-bg);border:1.5px solid var(--border);border-radius:18px;padding:24px 20px;width:100%;max-width:400px;position:relative;box-shadow:0 8px 0 rgba(0,0,0,0.3),0 14px 32px rgba(0,0,0,0.5)">
+      <button onclick="closeReportModal()"
+        style="position:absolute;top:14px;right:14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:6px;width:32px;height:32px;cursor:pointer;color:var(--text2);font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 rgba(0,0,0,0.2)">
+        <i class="fas fa-times"></i>
+      </button>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+        <div style="width:40px;height:40px;background:rgba(229,9,20,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="fas fa-flag" style="color:#e50914;font-size:18px"></i>
+        </div>
+        <div>
+          <div style="font-size:16px;font-weight:800;color:var(--text)">Report an Issue</div>
+          <div style="font-size:12px;color:var(--text2);font-weight:600">We'll get back to you via email</div>
+        </div>
+      </div>
+
+      <div id="reportSuccess" style="display:none;background:rgba(39,174,96,0.12);border:1.5px solid #27ae60;color:#27ae60;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:14px">
+        <i class="fas fa-check-circle"></i> Report sent successfully!
+      </div>
+      <div id="reportError" style="display:none;background:rgba(229,9,20,0.1);border:1.5px solid #e50914;color:#e50914;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:14px"></div>
+
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px">Report Type</label>
+        <select id="reportType"
+          style="width:100%;padding:10px 14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:14px;font-weight:600;outline:none">
+          <option value="Video not playing">🎬 Video not playing</option>
+          <option value="Wrong episode">📺 Wrong episode</option>
+          <option value="Broken link">🔗 Broken link</option>
+          <option value="Missing content">📂 Missing content</option>
+          <option value="Subtitle issue">💬 Subtitle issue</option>
+          <option value="Account problem">👤 Account problem</option>
+          <option value="Other">⚠️ Other</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px">Anime / Episode (optional)</label>
+        <input type="text" id="reportAnime" placeholder="e.g. One Piece Ep 5"
+          style="width:100%;padding:10px 14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;outline:none;box-sizing:border-box"/>
+      </div>
+
+      <div style="margin-bottom:18px">
+        <label style="display:block;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px">Description</label>
+        <textarea id="reportDesc" rows="3" placeholder="Describe the problem..."
+          style="width:100%;padding:10px 14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;outline:none;resize:vertical;box-sizing:border-box;min-height:80px"></textarea>
+      </div>
+
+      <button onclick="submitReport()" id="reportSubmitBtn"
+        style="width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:800;font-family:'Poppins',sans-serif;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,0.2),0 6px 12px rgba(0,0,0,0.2)">
+        <i class="fas fa-paper-plane"></i> Send Report
+      </button>
+    </div>
+  </div>
+
+  <script>
+  window.openReportModal = function() {
+    const modal = document.getElementById('reportModal');
+    modal.style.display = 'flex';
+    document.getElementById('reportSuccess').style.display = 'none';
+    document.getElementById('reportError').style.display   = 'none';
+  };
+  window.closeReportModal = function() {
+    document.getElementById('reportModal').style.display = 'none';
+  };
+  // Close on backdrop click
+  document.getElementById('reportModal').addEventListener('click', function(e) {
+    if (e.target === this) closeReportModal();
+  });
+
+  window.submitReport = async function() {
+    const type  = document.getElementById('reportType').value;
+    const anime = document.getElementById('reportAnime').value.trim();
+    const desc  = document.getElementById('reportDesc').value.trim();
+    const btn   = document.getElementById('reportSubmitBtn');
+
+    if (!desc) {
+      document.getElementById('reportError').textContent = 'Please describe the issue.';
+      document.getElementById('reportError').style.display = 'block';
+      return;
+    }
+
+    const user = typeof currentUser !== 'undefined' ? currentUser : null;
+    if (!user) {
+      document.getElementById('reportError').textContent = 'Please login to submit a report.';
+      document.getElementById('reportError').style.display = 'block';
+      return;
+    }
+
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Sending...';
+    btn.disabled  = true;
+    document.getElementById('reportError').style.display = 'none';
+
+    // Save to Firestore + send email via EmailJS free tier
+    try {
+      await db.collection('reports').add({
+        type,
+        anime:  anime || 'Not specified',
+        desc,
+        userEmail: user.email || 'Unknown',
+        userName:  user.displayName || 'Unknown',
+        uid:   user.uid,
+        status: 'open',
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // Use mailto as fallback — opens email client
+      // For automatic email, integrate EmailJS (free) or Firebase Extension
+      const subject  = encodeURIComponent(`[Anime Verse Report] ${type}`);
+      const body     = encodeURIComponent(
+        `Type: ${type}\nAnime/Episode: ${anime||'N/A'}\nDescription: ${desc}\n\nFrom: ${user.email}\nName: ${user.displayName||'N/A'}`
+      );
+      // Store email link in case user wants to follow up
+      const mailLink = `mailto:customercareverse@gmail.com?subject=${subject}&body=${body}`;
+
+      document.getElementById('reportSuccess').innerHTML =
+        `<i class="fas fa-check-circle"></i> Report submitted! <a href="${mailLink}" style="color:#27ae60;font-weight:800;text-decoration:underline">Also email us</a> for faster response.`;
+      document.getElementById('reportSuccess').style.display = 'block';
+
+      document.getElementById('reportAnime').value = '';
+      document.getElementById('reportDesc').value  = '';
+      setTimeout(closeReportModal, 3500);
+    } catch(e) {
+      document.getElementById('reportError').textContent = 'Failed to submit: ' + e.message;
+      document.getElementById('reportError').style.display = 'block';
+    }
+
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Report';
+    btn.disabled  = false;
+  };
+  </script>
 
   <script>
     function toggleLoginPass() {
