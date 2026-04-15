@@ -353,53 +353,52 @@
       return;
     }
 
-    const user = typeof currentUser !== 'undefined' ? currentUser : null;
-    if (!user) {
-      document.getElementById('reportError').textContent = 'Please login to submit a report.';
-      document.getElementById('reportError').style.display = 'block';
-      return;
-    }
-
+    document.getElementById('reportError').style.display = 'none';
     btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Sending...';
     btn.disabled  = true;
-    document.getElementById('reportError').style.display = 'none';
 
-    // Save to Firestore + send email via EmailJS free tier
+    const user = typeof currentUser !== 'undefined' ? currentUser : null;
+    const userEmail = user?.email || 'Anonymous';
+    const userName  = user?.displayName || 'Anonymous';
+
+    // Try Firestore (works if user is logged in and rules allow it)
+    // If it fails → silently continue to mailto
     try {
       await db.collection('reports').add({
         type,
         anime:  anime || 'Not specified',
         desc,
-        userEmail: user.email || 'Unknown',
-        userName:  user.displayName || 'Unknown',
-        uid:   user.uid,
+        userEmail,
+        userName,
+        uid:    user?.uid || 'anonymous',
         status: 'open',
         ts: firebase.firestore.FieldValue.serverTimestamp()
       });
-
-      // Use mailto as fallback — opens email client
-      // For automatic email, integrate EmailJS (free) or Firebase Extension
-      const subject  = encodeURIComponent(`[Anime Verse Report] ${type}`);
-      const body     = encodeURIComponent(
-        `Type: ${type}\nAnime/Episode: ${anime||'N/A'}\nDescription: ${desc}\n\nFrom: ${user.email}\nName: ${user.displayName||'N/A'}`
-      );
-      // Store email link in case user wants to follow up
-      const mailLink = `mailto:customercareverse@gmail.com?subject=${subject}&body=${body}`;
-
-      document.getElementById('reportSuccess').innerHTML =
-        `<i class="fas fa-check-circle"></i> Report submitted! <a href="${mailLink}" style="color:#27ae60;font-weight:800;text-decoration:underline">Also email us</a> for faster response.`;
-      document.getElementById('reportSuccess').style.display = 'block';
-
-      document.getElementById('reportAnime').value = '';
-      document.getElementById('reportDesc').value  = '';
-      setTimeout(closeReportModal, 3500);
     } catch(e) {
-      document.getElementById('reportError').textContent = 'Failed to submit: ' + e.message;
-      document.getElementById('reportError').style.display = 'block';
+      // Firestore failed (permission or offline) — that's OK, we use mailto below
+      console.warn('Report Firestore save failed (non-critical):', e.message);
     }
 
+    // Always open mailto — this is the reliable delivery method
+    const subject = encodeURIComponent(`[Anime Verse Report] ${type}`);
+    const body    = encodeURIComponent(
+      `Report Type: ${type}\nAnime / Episode: ${anime || 'N/A'}\nDescription: ${desc}\n\nFrom: ${userEmail}\nName: ${userName}`
+    );
+    const mailLink = `mailto:customercareverse@gmail.com?subject=${subject}&body=${body}`;
+
+    // Open mail client
+    window.location.href = mailLink;
+
+    // Show success
+    document.getElementById('reportSuccess').innerHTML =
+      `<i class="fas fa-check-circle"></i> Your email app will open to send the report. If it doesn't, <a href="${mailLink}" style="color:#27ae60;font-weight:800;text-decoration:underline">tap here</a>.`;
+    document.getElementById('reportSuccess').style.display = 'block';
+
+    document.getElementById('reportAnime').value = '';
+    document.getElementById('reportDesc').value  = '';
     btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Report';
     btn.disabled  = false;
+    setTimeout(closeReportModal, 4000);
   };
   </script>
 
