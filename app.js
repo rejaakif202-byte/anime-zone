@@ -5,6 +5,9 @@
 let currentUser     = null;
 let allAnimeData    = [];
 let currentCategory = 'all';
+let currentPage     = 1;
+const PAGE_SIZE     = 20;   // items per page on category/paginated views
+const SECTION_SIZE  = 10;   // items shown per home section
 
 // ===== THEME =====
 function toggleTheme() {
@@ -93,7 +96,6 @@ function openAuthModal() {
           </button>
         </div>
 
-        <!-- Error/Success -->
         <div id="av_authErr"
           style="display:none;background:rgba(229,9,20,0.1);
             border:1px solid #e50914;color:#e50914;
@@ -267,16 +269,13 @@ function avSwitchTab(tab) {
   const tabLogin   = document.getElementById('av_tabLogin');
   const tabSignup  = document.getElementById('av_tabSignup');
   if (!loginForm) return;
-
   const isLogin = tab === 'login';
   loginForm.style.display  = isLogin ? 'block' : 'none';
   signupForm.style.display = isLogin ? 'none'  : 'block';
-
   const activeStyle   = `background:var(--accent);color:#fff;font-weight:700`;
   const inactiveStyle = `background:transparent;color:var(--text2);font-weight:600`;
   if (tabLogin)  tabLogin.style.cssText  += ';' + (isLogin  ? activeStyle : inactiveStyle);
   if (tabSignup) tabSignup.style.cssText += ';' + (!isLogin ? activeStyle : inactiveStyle);
-
   avClearMsg();
 }
 
@@ -298,25 +297,18 @@ function avClearMsg() {
   if (e) { e.style.display = 'none'; e.innerHTML = ''; }
   if (s) { s.style.display = 'none'; s.textContent = ''; }
 }
-
 function avTogglePw(inputId, iconId) {
   const inp  = document.getElementById(inputId);
   const icon = document.getElementById(iconId);
   if (!inp) return;
-  if (inp.type === 'password') {
-    inp.type = 'text';
-    if (icon) icon.className = 'fas fa-eye-slash';
-  } else {
-    inp.type = 'password';
-    if (icon) icon.className = 'fas fa-eye';
-  }
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  if (icon) icon.className = inp.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
 }
 
 async function avDoLogin() {
   const email = (document.getElementById('av_email')?.value || '').trim();
   const pw    = document.getElementById('av_pw')?.value || '';
   if (!email || !pw) { avShowErr('Please fill in all fields.'); return; }
-
   try {
     const cred = await auth.signInWithEmailAndPassword(email, pw);
     if (!cred.user.emailVerified) {
@@ -359,17 +351,9 @@ async function avDoSignup() {
   const email = (document.getElementById('av_semail')?.value || '').trim();
   const pw    = document.getElementById('av_spw')?.value  || '';
   const pw2   = document.getElementById('av_spw2')?.value || '';
-
-  if (!name || !email || !pw || !pw2) {
-    avShowErr('Please fill in all fields.'); return;
-  }
-  if (pw.length < 6) {
-    avShowErr('Password must be at least 6 characters.'); return;
-  }
-  if (pw !== pw2) {
-    avShowErr('Passwords do not match!'); return;
-  }
-
+  if (!name || !email || !pw || !pw2) { avShowErr('Please fill in all fields.'); return; }
+  if (pw.length < 6) { avShowErr('Password must be at least 6 characters.'); return; }
+  if (pw !== pw2)    { avShowErr('Passwords do not match!'); return; }
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pw);
     await cred.user.updateProfile({ displayName: name });
@@ -396,8 +380,7 @@ async function avDoSignup() {
 
 async function avResend(email, encodedPw) {
   try {
-    const cred = await auth.signInWithEmailAndPassword(
-      email, decodeURIComponent(encodedPw));
+    const cred = await auth.signInWithEmailAndPassword(email, decodeURIComponent(encodedPw));
     await cred.user.sendEmailVerification();
     await auth.signOut();
     avShowOk('📧 Verification email resent!');
@@ -409,53 +392,42 @@ async function avResend(email, encodedPw) {
 // ===== UPDATE AUTH UI =====
 async function updateAuthUI(user) {
   const profileBtn = document.getElementById('profileBtn');
-
   let name   = user.displayName || 'User';
   let avatar = user.photoURL || '';
   let email  = user.email || '';
-
   try {
     const doc  = await db.collection('users').doc(user.uid).get();
     const data = doc.exists ? doc.data() : {};
-    if (data.name)      name   = data.name;
-    if (data.photoURL)  avatar = data.photoURL;
+    if (data.name)     name   = data.name;
+    if (data.photoURL) avatar = data.photoURL;
   } catch(e) {}
-
   const initial = name.charAt(0).toUpperCase();
-
   if (profileBtn) {
     profileBtn.innerHTML = '';
     profileBtn.style.cssText = `
       width:36px;height:36px;border-radius:50%;
       overflow:hidden;padding:0;border:2px solid var(--accent);
       cursor:pointer;display:flex;align-items:center;
-      justify-content:center;background:var(--accent);
-      flex-shrink:0;`;
-
+      justify-content:center;background:var(--accent);flex-shrink:0;`;
     if (avatar) {
-      const img     = document.createElement('img');
-      img.src       = avatar;
+      const img = document.createElement('img');
+      img.src = avatar;
       img.style.cssText = 'width:100%;height:100%;object-fit:cover';
-      img.onerror   = () => {
-        profileBtn.innerHTML =
-          `<span style="font-size:15px;font-weight:700;color:#fff">${initial}</span>`;
+      img.onerror = () => {
+        profileBtn.innerHTML = `<span style="font-size:15px;font-weight:700;color:#fff">${initial}</span>`;
       };
       profileBtn.appendChild(img);
     } else {
-      profileBtn.innerHTML =
-        `<span style="font-size:15px;font-weight:700;color:#fff">${initial}</span>`;
+      profileBtn.innerHTML = `<span style="font-size:15px;font-weight:700;color:#fff">${initial}</span>`;
     }
     profileBtn.onclick = () => { window.location.href = 'profile.html'; };
   }
-
   updateSidebarProfile({ name, avatar, initial, email });
-
   const loginBtn  = document.getElementById('sidebarLoginBtn');
   const logoutBtn = document.getElementById('sidebarLogoutBtn');
   if (loginBtn)  loginBtn.style.display  = 'none';
   if (logoutBtn) logoutBtn.style.display = 'flex';
-
-  const adminSec = document.getElementById('adminSidebarSection');
+  const adminSec    = document.getElementById('adminSidebarSection');
   const ADMIN_EMAIL = 'rejaakif202@gmail.com';
   if (adminSec) adminSec.style.display = (email === ADMIN_EMAIL) ? 'block' : 'none';
 }
@@ -469,8 +441,7 @@ function setProfileBtnAnon() {
     overflow:hidden;padding:0;border:none;
     cursor:pointer;display:flex;align-items:center;
     justify-content:center;background:var(--bg3);flex-shrink:0;`;
-  profileBtn.innerHTML =
-    '<i class="fas fa-user" style="color:var(--text2);font-size:15px"></i>';
+  profileBtn.innerHTML = '<i class="fas fa-user" style="color:var(--text2);font-size:15px"></i>';
   profileBtn.onclick = () => openAuthModal();
 }
 
@@ -582,19 +553,14 @@ function renderCard(anime) {
 
 // ===== INIT APP =====
 async function initApp() {
-  // Show loading, hide everything else
   const loadingState = document.getElementById('loadingState');
   const emptyState   = document.getElementById('emptyState');
   const homeSecs     = document.getElementById('homeSections');
   if (loadingState) loadingState.style.display = 'flex';
   if (emptyState)   emptyState.classList.add('hidden');
   if (homeSecs)     homeSecs.style.display = 'block';
-
   const data = await fetchAllAnime();
-
-  // Hide loading once data comes in
   if (loadingState) loadingState.style.display = 'none';
-
   if (currentUser) {
     try {
       const doc  = await db.collection('users').doc(currentUser.uid).get();
@@ -605,13 +571,160 @@ async function initApp() {
       });
     } catch(e) {}
   }
-
   renderHome(data);
   initSidebar();
 }
 
+// ===================================================================
+// ===== PAGINATION ENGINE ===========================================
+// ===================================================================
+
+/**
+ * Renders paginated grid + page buttons.
+ * @param {Array}  items    - Filtered array to paginate
+ * @param {number} page     - Current page (1-indexed)
+ * @param {string} gridId   - ID of the grid container
+ * @param {string} label    - Section label shown above grid
+ */
+function renderPaginatedView(items, page, gridId, label) {
+  const total      = items.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const safeP      = Math.min(Math.max(1, page), totalPages);
+  const start      = (safeP - 1) * PAGE_SIZE;
+  const end        = Math.min(start + PAGE_SIZE, total);
+  const slice      = items.slice(start, end);
+
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.innerHTML = '';
+  if (!slice.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;
+      padding:40px;color:var(--text2);font-size:13px">No content here yet.</div>`;
+  } else {
+    slice.forEach(a => grid.appendChild(renderCard(a)));
+  }
+
+  // Section title
+  const titleEl = document.getElementById('pageSectionTitle');
+  if (titleEl && label) titleEl.textContent = label;
+
+  // Pagination buttons
+  renderPageButtons(safeP, totalPages);
+}
+
+/**
+ * Renders 3D square page number buttons.
+ */
+function renderPageButtons(current, total) {
+  const wrap = document.getElementById('paginationWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  if (total <= 1) return;   // no buttons needed if only 1 page
+
+  const container = document.createElement('div');
+  container.style.cssText = `
+    display:flex; align-items:center; justify-content:center;
+    gap:7px; flex-wrap:wrap; padding:16px 0 8px;`;
+
+  // Build page list with "..." gaps
+  const pages = buildPageList(current, total);
+
+  pages.forEach(p => {
+    if (p === '...') {
+      const dot = document.createElement('span');
+      dot.textContent = '···';
+      dot.style.cssText = `
+        font-size:14px; color:var(--text2); font-weight:700;
+        padding:0 4px; font-family:'Poppins',sans-serif;`;
+      container.appendChild(dot);
+    } else {
+      const btn = document.createElement('button');
+      const isActive = p === current;
+      btn.textContent = String(p);
+      btn.style.cssText = `
+        min-width:40px; height:40px; padding:0 8px;
+        border-radius:8px;
+        background:${isActive ? 'var(--accent)' : 'var(--card-bg)'};
+        color:${isActive ? '#fff' : 'var(--text2)'};
+        border:1.5px solid ${isActive ? 'var(--accent)' : 'var(--border)'};
+        font-family:'Poppins',sans-serif; font-size:13px; font-weight:800;
+        cursor:${isActive ? 'default' : 'pointer'};
+        transition:all 0.15s;
+        box-shadow:${isActive
+          ? '0 4px 0 var(--btn-shadow,rgba(100,80,200,0.4)),0 6px 14px rgba(0,0,0,0.2)'
+          : '0 3px 0 var(--btn-3d,rgba(0,0,0,0.2)),0 4px 10px rgba(0,0,0,0.12)'};
+        outline:none;`;
+      if (!isActive) {
+        btn.onmouseover = () => {
+          btn.style.borderColor = 'var(--accent)';
+          btn.style.color       = 'var(--accent)';
+          btn.style.transform   = 'translateY(-1px)';
+        };
+        btn.onmouseout = () => {
+          btn.style.borderColor = 'var(--border)';
+          btn.style.color       = 'var(--text2)';
+          btn.style.transform   = '';
+        };
+        btn.onmousedown = () => { btn.style.transform = 'translateY(2px)'; };
+        btn.onmouseup   = () => { btn.style.transform = ''; };
+        btn.onclick     = () => goToPage(p);
+      }
+      container.appendChild(btn);
+    }
+  });
+
+  wrap.appendChild(container);
+}
+
+/** Builds smart page list: [1,2,3,...,8,9,10] for long ranges */
+function buildPageList(current, total) {
+  if (total <= 7) return Array.from({length: total}, (_,i) => i+1);
+  const pages = [];
+  const delta = 1; // pages around current
+  // Always show first 2 and last 2 + current ± delta
+  const rangeStart = Math.max(2,      current - delta);
+  const rangeEnd   = Math.min(total-1, current + delta);
+  pages.push(1);
+  if (rangeStart > 2) pages.push('...');
+  for (let p = rangeStart; p <= rangeEnd; p++) pages.push(p);
+  if (rangeEnd < total - 1) pages.push('...');
+  pages.push(total);
+  return pages;
+}
+
+/** Navigate to a page */
+function goToPage(page) {
+  currentPage = page;
+  // Hide home sections, show category section
+  const homeSecs    = document.getElementById('homeSections');
+  const catSec      = document.getElementById('pageCategorySection');
+  const myListSec   = document.getElementById('myListSection');
+  if (myListSec)  myListSec.classList.add('hidden');
+  if (homeSecs)   homeSecs.style.display    = 'none';
+  if (catSec)     catSec.style.display      = 'block';
+
+  const cat   = currentCategory;
+  const label = getCategoryLabel(cat);
+  const items = getFilteredItems(cat);
+  renderPaginatedView(items, currentPage, 'pageCategoryGrid', label);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function getCategoryLabel(cat) {
+  const map = { all:'All Anime', anime:'Anime', movie:'Movies',
+                series:'Series', news:'News' };
+  return map[cat] || cat.charAt(0).toUpperCase() + cat.slice(1);
+}
+
+function getFilteredItems(cat) {
+  if (cat === 'all') return allAnimeData;
+  return allAnimeData.filter(a => a.type === cat);
+}
+
 // ===== RENDER HOME =====
 function renderHome(data) {
+  currentPage = 1;
+
   const latest   = data.filter(a => a.latest).sort((a,b) => {
     const ta = a.createdAt?.toDate?.()?.getTime() || 0;
     const tb = b.createdAt?.toDate?.()?.getTime() || 0;
@@ -627,10 +740,15 @@ function renderHome(data) {
   const emptyState  = document.getElementById('emptyState');
   const homeSecs    = document.getElementById('homeSections');
   const myListSec   = document.getElementById('myListSection');
+  const catSec      = document.getElementById('pageCategorySection');
 
-  // Always hide myList when rendering home
   if (myListSec) myListSec.classList.add('hidden');
-  if (homeSecs)  homeSecs.style.display = 'block';
+  if (catSec)    catSec.style.display    = 'none';
+  if (homeSecs)  homeSecs.style.display  = 'block';
+
+  // Clear pagination
+  const pw = document.getElementById('paginationWrap');
+  if (pw) pw.innerHTML = '';
 
   if (data.length === 0) {
     if (emptyState)   emptyState.classList.remove('hidden');
@@ -639,12 +757,9 @@ function renderHome(data) {
     if (top10Sec)     top10Sec.classList.add('hidden');
     return;
   }
-
   if (emptyState) emptyState.classList.add('hidden');
 
-  // ✅ FIXED: If nothing tagged — show all anime in trending section
   const hasTagged = latest.length || trending.length || top10.length;
-
   if (!hasTagged) {
     if (latestSec)   latestSec.classList.add('hidden');
     if (top10Sec)    top10Sec.classList.add('hidden');
@@ -656,9 +771,20 @@ function renderHome(data) {
   if (latestSec)   latestSec.classList.toggle('hidden',   !latest.length);
   if (trendingSec) trendingSec.classList.toggle('hidden', !trending.length);
 
-  renderGrid('latestGrid',   latest,   'No latest releases yet.');
-  renderGrid('trendingGrid', trending, 'No trending anime yet.');
-  renderTop10(top10);
+  // Page 1 sections: show only first SECTION_SIZE items
+  renderGrid('latestGrid',   latest.slice(0, SECTION_SIZE),   'No latest releases yet.');
+  renderGrid('trendingGrid', trending.slice(0, SECTION_SIZE), 'No trending anime yet.');
+  renderTop10(top10.slice(0, SECTION_SIZE));
+
+  // ── "SEE MORE" pagination: if any section overflows, show page buttons ──
+  // We paginate ALL anime (entire library) across pages 2+
+  const totalItems = data.length;
+  if (totalItems > SECTION_SIZE) {
+    // Total pages = page 1 (sections) + pages for full list
+    const extraPages = Math.ceil(totalItems / PAGE_SIZE);
+    const totalPages = 1 + extraPages;
+    renderPageButtons(1, totalPages);
+  }
 }
 
 function renderGrid(gridId, items, emptyMsg) {
@@ -708,15 +834,32 @@ function renderTop10(items) {
   });
 }
 
-// ===== FILTER CATEGORY =====
+// ===== FILTER CATEGORY (pills) =====
 function filterCategory(cat, btnEl) {
   currentCategory = cat;
+  currentPage     = 1;
   document.querySelectorAll('.cat-pill,.pill').forEach(b => b.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
-  const filtered = cat === 'all'
-    ? allAnimeData
-    : allAnimeData.filter(a => a.type === cat);
-  renderHome(filtered);
+
+  const myListSec = document.getElementById('myListSection');
+  if (myListSec) myListSec.classList.add('hidden');
+
+  if (cat === 'all') {
+    // Show home sections (page 1)
+    const homeSecs = document.getElementById('homeSections');
+    const catSec   = document.getElementById('pageCategorySection');
+    if (homeSecs) homeSecs.style.display = 'block';
+    if (catSec)   catSec.style.display   = 'none';
+    renderHome(allAnimeData);
+  } else {
+    // Show paginated category grid
+    const homeSecs = document.getElementById('homeSections');
+    const catSec   = document.getElementById('pageCategorySection');
+    if (homeSecs) homeSecs.style.display = 'none';
+    if (catSec)   catSec.style.display   = 'block';
+    const items = getFilteredItems(cat);
+    renderPaginatedView(items, 1, 'pageCategoryGrid', getCategoryLabel(cat));
+  }
 }
 
 // ===== SEARCH =====
@@ -727,7 +870,6 @@ function toggleSearch() {
   const inp = document.getElementById('searchInput');
   if (!bar) return;
   searchActive = !searchActive;
-  // ✅ FIX: CSS uses .open class, not .hidden
   bar.classList.toggle('open', searchActive);
   if (searchActive && inp) inp.focus();
   else if (inp) { inp.value = ''; renderHome(allAnimeData); }
@@ -743,26 +885,35 @@ function closeSearch() {
 }
 
 function searchAnime(q) {
+  // Hide pagination during search
+  const pw = document.getElementById('paginationWrap');
+  if (pw) pw.innerHTML = '';
+
   if (!q.trim()) { renderHome(allAnimeData); return; }
   const r = allAnimeData.filter(a =>
     a.title.toLowerCase().includes(q.toLowerCase()) ||
     (a.genre||[]).some(g => g.toLowerCase().includes(q.toLowerCase()))
   );
+
+  // Show results in home latest section
   const sec1 = document.getElementById('trendingSection');
   const sec2 = document.getElementById('top10Section');
   const sec3 = document.getElementById('latestSection');
+  const catSec = document.getElementById('pageCategorySection');
+  const homeSecs = document.getElementById('homeSections');
+  if (catSec)   catSec.style.display = 'none';
+  if (homeSecs) homeSecs.style.display = 'block';
   if (sec1) sec1.classList.add('hidden');
   if (sec2) sec2.classList.add('hidden');
   if (sec3) sec3.classList.remove('hidden');
   renderGrid('latestGrid', r, 'No results found.');
 }
 
-// ===== SIDEBAR — FIXED to use .open class =====
+// ===== SIDEBAR =====
 function initSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('overlay');
 
-  // ✅ FIXED: Use .open class (matches CSS) instead of .hidden
   window.toggleSidebar = () => {
     if (!sidebar) return;
     sidebar.classList.toggle('open');
@@ -785,19 +936,20 @@ function initSidebar() {
   }
 }
 
-// ===== MY LIST PAGE =====
+// ===== MY LIST =====
 function showMyList() {
   if (!currentUser) { openAuthModal(); return; }
-
   const myListSec  = document.getElementById('myListSection');
   const homeSecs   = document.getElementById('homeSections');
-
+  const catSec     = document.getElementById('pageCategorySection');
   if (myListSec) myListSec.classList.remove('hidden');
   if (homeSecs)  homeSecs.style.display = 'none';
+  if (catSec)    catSec.style.display   = 'none';
+  const pw = document.getElementById('paginationWrap');
+  if (pw) pw.innerHTML = '';
 
   const grid  = document.getElementById('myListGrid');
   const empty = document.getElementById('myListEmpty');
-
   db.collection('users').doc(currentUser.uid).get().then(doc => {
     const ids   = doc.exists ? (doc.data().watchlist||[]) : [];
     const items = allAnimeData.filter(a =>
@@ -834,6 +986,7 @@ window.handleWishlistToggle = handleWishlistToggle;
 window.toggleSearch         = toggleSearch;
 window.closeSearch          = closeSearch;
 window.searchAnime          = searchAnime;
+window.goToPage             = goToPage;
 window.avSwitchTab          = avSwitchTab;
 window.avDoLogin            = avDoLogin;
 window.avDoSignup           = avDoSignup;
