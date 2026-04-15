@@ -197,6 +197,18 @@
       <div class="grid" id="categoryGrid"></div>
     </section>
 
+    <!-- PAGINATED CATEGORY VIEW (page 2+ of ALL, or any filtered category) -->
+    <section id="pageCategorySection" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:28px;height:28px;background:var(--accent);border-radius:6px;
+          display:flex;align-items:center;justify-content:center">
+          <i class="fas fa-border-all" style="color:#fff;font-size:12px"></i>
+        </div>
+        <h2 class="section-title" id="pageSectionTitle" style="margin-bottom:0">All Anime</h2>
+      </div>
+      <div class="grid" id="pageCategoryGrid"></div>
+    </section>
+
     <!-- HOME SECTIONS -->
     <div id="homeSections">
 
@@ -259,6 +271,67 @@
 
     </div>
   </main>
+
+  <!-- PAGINATION -->
+  <div id="paginationWrap" style="padding:0 14px 4px"></div>
+
+  <!-- FOOTER -->
+  <footer style="margin-top:24px;padding:24px 16px 32px;
+    border-top:1.5px solid var(--border);
+    background:var(--bg2)">
+    <div style="max-width:600px;margin:0 auto;text-align:center">
+      <!-- Logo -->
+      <div style="font-family:'Bebas Neue',cursive;font-size:28px;
+        letter-spacing:3px;color:var(--text);margin-bottom:14px">
+        ANIME <span style="color:var(--accent)">VERSE</span>
+      </div>
+      <!-- Links row -->
+      <div style="display:flex;align-items:center;justify-content:center;
+        gap:6px;flex-wrap:wrap;margin-bottom:14px">
+        <a href="#" onclick="openReportModal()"
+          style="color:var(--text2);font-size:13px;font-weight:700;
+            text-decoration:none;padding:6px 12px;
+            border-radius:6px;transition:color 0.15s"
+          onmouseover="this.style.color='var(--accent)'"
+          onmouseout="this.style.color='var(--text2)'">
+          Contact
+        </a>
+        <span style="color:var(--border)">·</span>
+        <a href="#"
+          style="color:var(--text2);font-size:13px;font-weight:700;
+            text-decoration:none;padding:6px 12px;
+            border-radius:6px;transition:color 0.15s"
+          onmouseover="this.style.color='var(--accent)'"
+          onmouseout="this.style.color='var(--text2)'">
+          DMCA
+        </a>
+        <span style="color:var(--border)">·</span>
+        <a href="#"
+          style="color:var(--text2);font-size:13px;font-weight:700;
+            text-decoration:none;padding:6px 12px;
+            border-radius:6px;transition:color 0.15s"
+          onmouseover="this.style.color='var(--accent)'"
+          onmouseout="this.style.color='var(--text2)'">
+          Terms
+        </a>
+        <span style="color:var(--border)">·</span>
+        <a href="#" onclick="openAuthModal()"
+          style="color:var(--text2);font-size:13px;font-weight:700;
+            text-decoration:none;padding:6px 12px;
+            border-radius:6px;transition:color 0.15s"
+          onmouseover="this.style.color='var(--accent)'"
+          onmouseout="this.style.color='var(--text2)'">
+          Login
+        </a>
+      </div>
+      <!-- Copyright -->
+      <div style="font-size:12px;color:var(--text2);font-weight:600;
+        letter-spacing:0.3px">
+        © 2026 <span style="color:var(--text);font-weight:800">ANIME VERSE</span>
+        — All rights reserved
+      </div>
+    </div>
+  </footer>
 
 </div><!-- end appContent -->
 
