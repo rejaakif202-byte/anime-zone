@@ -124,14 +124,11 @@
         </div>`;
     }
 
-    // ===== FIREBASE — force server fetch to avoid stale cache =====
     async function getAnime(id) {
       if (!id) return null;
       try {
-        // { source: 'server' } bypasses Firestore cache so new episodes always show
         const doc = await db.collection('anime').doc(id).get({ source: 'server' });
         if (doc.exists) return { ...doc.data(), firestoreId: doc.id };
-        // Fallback to cache if server fails
         const cached = await db.collection('anime').doc(id).get();
         if (cached.exists) return { ...cached.data(), firestoreId: cached.id };
         return null;
@@ -145,7 +142,6 @@
       }
     }
 
-    // ===== WATCHLIST =====
     async function toggleWatchlist(id) {
       const user = auth.currentUser;
       const btn  = document.getElementById('watchlistBtn');
@@ -178,7 +174,6 @@
       }
     }
 
-    // ===== SEASON PACKS =====
     function getSeasonPacks(season) {
       const packs = [];
       if (season.telegramPacks && season.telegramPacks.length > 0) {
@@ -215,7 +210,6 @@
       return false;
     }
 
-    // ===== BUILD TELEGRAM PACKS HTML =====
     function buildSeasonPacksHTML(season) {
       const packs = getSeasonPacks(season);
       if (!packs.length) return '';
@@ -250,7 +244,7 @@
       }).join('');
     }
 
-    // ===== RENDER SEASON CONTENT (episodes + packs) =====
+    // ===== RENDER SEASON CONTENT =====
     function renderSeasonContent(animeId, season) {
       const container = document.getElementById('subSeasonContent');
       if (!container) return;
@@ -283,7 +277,9 @@
       episodes.forEach(ep => {
         const hasVid    = hasVideoContent(ep);
         const hasEpTg   = hasEpisodeTelegram(ep);
-        const clickable = hasVid || hasEpTg;
+        // ✅ FIX: episode is clickable if it has video, OR its own telegram link,
+        // OR a season pack exists (so user can go to watch.html and see TG pack)
+        const clickable = hasVid || hasEpTg || hasPacks;
 
         let statusBadge = '';
         if (hasVid) {
@@ -309,8 +305,8 @@
 
         const item = document.createElement('div');
         item.className = 'episode-item';
-        if (clickable) item.style.cursor = 'pointer';
-        else if (!hasPacks) item.style.opacity = '0.6';
+        item.style.cursor = clickable ? 'pointer' : 'default';
+        if (!clickable) item.style.opacity = '0.6';
 
         item.innerHTML = `
           <div class="ep-thumb" style="position:relative;overflow:hidden">
@@ -337,22 +333,15 @@
       });
     }
 
-    // ===== GROUP SEASONS =====
-    // parentId == null/undefined → top-level parent season (Season 1, Season 2...)
-    // parentId = X → sub-season of X (East Blue Saga, etc.)
     function groupSeasons(seasons) {
-      // ✅ FIX: use == (loose) for parentId comparison to handle string/number mismatch
       const hasParentSystem = seasons.some(s => s.parentId != null && s.parentId !== undefined);
-
       if (hasParentSystem) {
         const parents = seasons.filter(s => s.parentId == null || s.parentId === undefined);
         return parents.map(p => ({
           ...p,
-          // ✅ FIX: use == for comparison so "1" == 1 works (type coercion)
           subSeasons: seasons.filter(s => s.parentId != null && String(s.parentId) === String(p.id))
         }));
       } else {
-        // Legacy: no parentId system — all seasons shown as sub-season tabs
         return [{ id: '__all__', title: 'All Seasons', subSeasons: seasons, _isLegacy: true }];
       }
     }
@@ -385,9 +374,12 @@
 
       const subSeasons = parent.subSeasons || [];
 
+      // ✅ KEY FIX: agar koi sub-seasons nahi hain, toh parent ka apna content
+      // directly render karo (episodes + packs). Pehle yahan "No content added yet."
+      // show ho raha tha jo galat tha.
       if (subSeasons.length === 0) {
         subTabsWrap.innerHTML = '';
-        subContent.innerHTML  = `<div style="text-align:center;padding:30px 0;color:var(--text2);font-size:13px;font-weight:600">No content added yet.</div>`;
+        renderSeasonContent(animeId, parent);
         return;
       }
 
@@ -409,7 +401,6 @@
       renderSeasonContent(animeId, window._currentSubSeasons[idx]);
     };
 
-    // ===== RENDER DETAIL =====
     async function renderDetail(anime) {
       const animeId = anime.firestoreId;
       window._animeId = animeId;
@@ -430,10 +421,8 @@
       const seasons = anime.seasons || [];
       groupedSeasons = groupSeasons(seasons);
 
-      // ✅ FIX: Count only TOP-LEVEL seasons (no parentId) for the season chip
       const topLevelCount = seasons.filter(s => s.parentId == null || s.parentId === undefined).length;
 
-      // Find first watchable episode URL
       let watchUrl = '#';
       outer: for (const season of seasons) {
         const eps = season.episodes || [];
@@ -448,11 +437,14 @@
           watchUrl = `watch.html?id=${animeId}&season=${season.id}&ep=${eps[0].id}`;
           break;
         }
+        // ✅ FIX: agar episode hai but koi content nahi (na video na TG) — tab bhi Watch Now kaam kare
+        if (eps.length > 0 && watchUrl === '#') {
+          watchUrl = `watch.html?id=${animeId}&season=${season.id}&ep=${eps[0].id}`;
+        }
       }
 
       const genres = (anime.genre || []).map(g => `<span class="genre-tag">${g}</span>`).join('');
 
-      // Only show parent tabs if more than one parent, or NOT legacy
       const showParentTabs = !(groupedSeasons.length === 1 && groupedSeasons[0]._isLegacy);
       const parentTabsHTML = showParentTabs
         ? groupedSeasons.map((p, i) =>
@@ -530,7 +522,6 @@
       }
     }
 
-    // ===== INIT =====
     loadTheme();
     const params  = new URLSearchParams(window.location.search);
     const animeId = params.get('id');
