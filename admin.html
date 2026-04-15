@@ -387,6 +387,26 @@
             <div class="form-group"><label>SEASON YEAR</label>
               <input type="number" id="new_season_year"
                 placeholder="2024"/></div>
+            <div class="form-group">
+              <label>SEASON POSTER URL
+                <span style="font-size:10px;font-weight:600;color:var(--text2);margin-left:4px">(optional — shown on anime page)</span>
+              </label>
+              <input type="url" id="new_season_poster" placeholder="https://...image.jpg"/>
+            </div>
+            <div class="form-group">
+              <label>PARENT SEASON ID
+                <span style="font-size:10px;font-weight:600;color:var(--text2);margin-left:4px">(optional — for sub-seasons like sagas)</span>
+              </label>
+              <div id="parentSeasonWrap">
+                <select id="new_season_parent"
+                  style="width:100%;padding:10px 14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;outline:none">
+                  <option value="">— No parent (top-level season) —</option>
+                </select>
+                <div style="font-size:11px;color:var(--text2);margin-top:5px;font-weight:600">
+                  Set a parent to create sub-seasons (e.g. East Blue Saga under Season 1)
+                </div>
+              </div>
+            </div>
             <div class="tg-admin-box">
               <div class="tg-admin-header">
                 <i class="fab fa-telegram"
@@ -1006,6 +1026,17 @@
         ...existing,
         { value:'new', text:'+ Add New Season' }
       ];
+      // Populate parent season select for new season form
+      const parentSel = document.getElementById('new_season_parent');
+      if (parentSel) {
+        parentSel.innerHTML = '<option value="">— No parent (top-level season) —</option>';
+        // Only show seasons that have no parentId themselves (top-level only)
+        seasons.filter(s => !s.parentId).forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id; opt.textContent = s.title;
+          parentSel.appendChild(opt);
+        });
+      }
     }
 
     function onSeasonChange() {
@@ -1525,21 +1556,27 @@
           if(stg4k)   lnks['4k']  =stg4k;
           pack.links=lnks;
         }
+        const seasonPoster  = document.getElementById('new_season_poster')?.value.trim()||'';
+        const seasonParentRaw= document.getElementById('new_season_parent')?.value||'';
+        const seasonParentId = seasonParentRaw ? parseInt(seasonParentRaw) : null;
         const newSeason={
           id:newId,
           title:document.getElementById('new_season_title')
             .value.trim()||`Season ${newId}`,
           year:parseInt(document.getElementById('new_season_year').value)||
             new Date().getFullYear(),
+          ...(seasonPoster ? {poster: seasonPoster} : {}),
+          ...(seasonParentId !== null ? {parentId: seasonParentId} : {}),
           episodes:[],
           telegramPacks:[pack]
         };
         seasons.push(newSeason);
         await ref.update({seasons});
         showEpSuccess(`${newSeason.title} saved!`);
-        ['new_season_title','new_season_year',
+        ['new_season_title','new_season_year','new_season_poster',
          'stg_480','stg_720','stg_1080','stg_4k','stg_single','stg_range']
           .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+        const pp=document.getElementById('new_season_parent');if(pp)pp.value='';
         document.getElementById('newSeasonFields').style.display='none';
         await loadAnimeSeasons();
       } catch(e) {
