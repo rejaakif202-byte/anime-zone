@@ -846,6 +846,7 @@ function renderTop10(items) {
   if (!items.length) { sec.classList.add('hidden'); return; }
   sec.classList.remove('hidden');
   grid.innerHTML = '';
+  // ✅ Use normal renderCard — same as other sections
   items.forEach(a => grid.appendChild(renderCard(a)));
 }
 
