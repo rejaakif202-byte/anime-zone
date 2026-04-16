@@ -981,12 +981,14 @@ a { text-decoration: none; color: inherit; }
 
 /* ===== SCROLL ROW CARDS — fixed width for horizontal scroll ===== */
 .scroll-row .card {
-  min-width: 155px;
-  width: 155px;
-  flex-shrink: 0;
+  min-width: 155px !important;
+  max-width: 155px !important;
+  width: 155px !important;
+  flex: 0 0 155px !important;
 }
 .scroll-row .card .card-thumb {
   aspect-ratio: 2/3;
+  width: 100%;
 }
 
 /* ===== NEWS CARDS ===== */
