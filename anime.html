@@ -237,10 +237,18 @@
         if (pack.single) {
           btnHTML = `<a href="${pack.single}" target="_blank" rel="noopener" class="season-tg-btn-main"><i class="fab fa-telegram"></i> Watch ${range} on Telegram</a>`;
         } else if (pack.links) {
-          const keys = qualityOrder.filter(q => pack.links[q] && pack.links[q].trim());
-          if (!keys.length) return '';
-          btnHTML = `<div class="season-tg-quality-row">${keys.map(q => {
-            const cfg = qualityConfig[q] || { label: q, color: '#2ca5e0' };
+          const allKeys = Object.keys(pack.links).filter(q => pack.links[q] && pack.links[q].trim());
+          const sortedKeys = allKeys.sort((a, b) => {
+            const idxA = qualityOrder.indexOf(a);
+            const idxB = qualityOrder.indexOf(b);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return a.localeCompare(b);
+          });
+          if (!sortedKeys.length) return '';
+          btnHTML = `<div class="season-tg-quality-row">${sortedKeys.map(q => {
+            const cfg = qualityConfig[q] || { label: q.toUpperCase(), color: '#2ca5e0' };
             return `<a href="${pack.links[q]}" target="_blank" rel="noopener" class="season-tg-quality-btn" style="--tgcolor:${cfg.color}"><i class="fab fa-telegram"></i> ${cfg.label}</a>`;
           }).join('')}</div>`;
         }
