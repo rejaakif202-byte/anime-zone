@@ -257,6 +257,7 @@ a { text-decoration: none; color: inherit; }
 .scroll-row {
   display: flex; gap: 12px; overflow-x: auto;
   padding-bottom: 8px; scrollbar-width: none;
+  align-items: flex-start;
 }
 .scroll-row::-webkit-scrollbar { display: none; }
 
@@ -980,13 +981,15 @@ a { text-decoration: none; color: inherit; }
 .selector-season-item.active { background: var(--accent); color: #fff; }
 
 /* ===== SCROLL ROW CARDS — fixed width for horizontal scroll ===== */
-.scroll-row .card {
+.scroll-row > .card {
+  width: 155px !important;
   min-width: 155px !important;
   max-width: 155px !important;
-  width: 155px !important;
-  flex: 0 0 155px !important;
+  flex-grow: 0 !important;
+  flex-shrink: 0 !important;
+  flex-basis: 155px !important;
 }
-.scroll-row .card .card-thumb {
+.scroll-row > .card .card-thumb {
   aspect-ratio: 2/3;
   width: 100%;
 }
