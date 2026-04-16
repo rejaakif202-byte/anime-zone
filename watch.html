@@ -504,7 +504,11 @@
     if(ep.languages&&Object.keys(ep.languages).length>0){const f={};Object.entries(ep.languages).forEach(([l,qm])=>{if(qm&&Object.values(qm).some(u=>u&&u.trim()))f[l]=qm;});if(Object.keys(f).length)return f;}
     if(ep.videoUrls)return{'Japanese':ep.videoUrls};if(ep.videoUrl)return{'Japanese':{'720p':ep.videoUrl}};return{};
   }
-  function getBest(ld){for(const q of qualityOrder)if(ld[q]&&ld[q].trim())return q;return Object.keys(ld||{})[0]||'';}
+  function getBest(ld){
+    const available = Object.keys(ld || {}).filter(q => ld[q] && ld[q].trim());
+    for(const q of qualityOrder) if(available.includes(q)) return q;
+    return available[0] || '';
+  }
 
   function getUrlType(url){
     if(!url||!url.trim())return null; url=url.trim();
@@ -657,8 +661,16 @@
     const ld=JSON.parse(safeData.replace(/&quot;/g,'"'));
     document.querySelectorAll('.lang-btn,.vp-s-btn[data-lang]').forEach(b=>b.classList.toggle('active',b.dataset.lang===lang));
     const available=Object.keys(ld).filter(q=>ld[q]&&ld[q].trim());
-    const qHtml=available.map(q=>{const cfg=qualityConfig[q]||{label:q,color:'#888'};return`<button class="quality-btn" data-quality="${q}" onclick="loadVideoUrl('${ld[q].replace(/'/g,"\\'")}','${q}')" style="--qcolor:${cfg.color}">${cfg.label||q}</button>`;}).join('');
-    const xHtml=available.map(q=>{const cfg=qualityConfig[q]||{label:q,color:'#888'};return`<button class="vp-s-btn" data-quality="${q}" onclick="loadVideoUrl('${ld[q].replace(/'/g,"\\'")}','${q}')">${cfg.label||q}</button>`;}).join('');
+    const sorted = available.sort((a, b) => {
+      const idxA = qualityOrder.indexOf(a);
+      const idxB = qualityOrder.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
+    });
+    const qHtml=sorted.map(q=>{const cfg=qualityConfig[q]||{label:q.toUpperCase(),color:'#888'};return`<button class="quality-btn" data-quality="${q}" onclick="loadVideoUrl('${ld[q].replace(/'/g,"\\'")}','${q}')" style="--qcolor:${cfg.color}">${cfg.label||q.toUpperCase()}</button>`;}).join('');
+    const xHtml=sorted.map(q=>{const cfg=qualityConfig[q]||{label:q.toUpperCase(),color:'#888'};return`<button class="vp-s-btn" data-quality="${q}" onclick="loadVideoUrl('${ld[q].replace(/'/g,"\\'")}','${q}')">${cfg.label||q.toUpperCase()}</button>`;}).join('');
     const qc=document.getElementById('qualityBtnsContainer');if(qc)qc.innerHTML=qHtml;
     const xqc=document.getElementById('vpQualBtns');if(xqc)xqc.innerHTML=xHtml;
     const best=getBest(ld);if(best&&ld[best])setTimeout(()=>loadVideoUrl(ld[best],best),50);
@@ -788,11 +800,19 @@
   function buildEpTgBtns(ep){
     if(ep.telegramUrl)return`<a href="${ep.telegramUrl}" target="_blank" rel="noopener" class="tg-btn-main"><i class="fab fa-telegram"></i> Watch on Telegram</a>`;
     if(ep.telegramLinks){
-      const keys=Object.keys(ep.telegramLinks).filter(q=>ep.telegramLinks[q]);
-      if(!keys.length)return'';
-      return`<div class="tg-quality-row">${keys.map(q=>{
-        const cfg=qualityConfig[q]||{label:q,color:'#2ca5e0'};
-        return`<a href="${ep.telegramLinks[q]}" target="_blank" rel="noopener" class="tg-quality-btn" style="--tgcolor:${cfg.color}"><i class="fab fa-telegram"></i>${cfg.label||q}</a>`;
+      const allKeys=Object.keys(ep.telegramLinks).filter(q=>ep.telegramLinks[q]&&ep.telegramLinks[q].trim());
+      const sortedKeys = allKeys.sort((a, b) => {
+        const idxA = qualityOrder.indexOf(a);
+        const idxB = qualityOrder.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.localeCompare(b);
+      });
+      if(!sortedKeys.length)return'';
+      return`<div class="tg-quality-row">${sortedKeys.map(q=>{
+        const cfg=qualityConfig[q]||{label:q.toUpperCase(),color:'#2ca5e0'};
+        return`<a href="${ep.telegramLinks[q]}" target="_blank" rel="noopener" class="tg-quality-btn" style="--tgcolor:${cfg.color}"><i class="fab fa-telegram"></i>${cfg.label||q.toUpperCase()}</a>`;
       }).join('')}</div>`;
     }
     return'';
@@ -812,8 +832,16 @@
 
     const langBtns=langKeys.map(l=>{const f=langFlags[l]||'🌐',s=JSON.stringify(langs[l]).replace(/"/g,'&quot;');return`<button class="lang-btn${l===defLang?' active':''}" data-lang="${l}" onclick="switchLanguage('${l}','${s}')">${f} ${l}</button>`;}).join('');
     const langBtnsXp=langKeys.map(l=>{const f=langFlags[l]||'🌐',s=JSON.stringify(langs[l]).replace(/"/g,'&quot;');return`<button class="vp-s-btn${l===defLang?' active':''}" data-lang="${l}" onclick="switchLanguage('${l}','${s}')">${f} ${l}</button>`;}).join('');
-    const qualBtns=initQs.map(q=>{const cfg=qualityConfig[q]||{label:q,color:'#888'};return`<button class="quality-btn${q===initBest?' active':''}" data-quality="${q}" onclick="loadVideoUrl('${(initLD[q]||'').replace(/'/g,"\\'")}','${q}')" style="--qcolor:${cfg.color}">${cfg.label||q}</button>`;}).join('');
-    const qualBtnsXp=initQs.map(q=>{const cfg=qualityConfig[q]||{label:q,color:'#888'};return`<button class="vp-s-btn${q===initBest?' active':''}" data-quality="${q}" onclick="loadVideoUrl('${(initLD[q]||'').replace(/'/g,"\\'")}','${q}')">${cfg.label||q}</button>`;}).join('');
+    const sortedQs = initQs.sort((a, b) => {
+      const idxA = qualityOrder.indexOf(a);
+      const idxB = qualityOrder.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
+    });
+    const qualBtns=sortedQs.map(q=>{const cfg=qualityConfig[q]||{label:q.toUpperCase(),color:'#888'};return`<button class="quality-btn${q===initBest?' active':''}" data-quality="${q}" onclick="loadVideoUrl('${(initLD[q]||'').replace(/'/g,"\\'")}','${q}')" style="--qcolor:${cfg.color}">${cfg.label||q.toUpperCase()}</button>`;}).join('');
+    const qualBtnsXp=sortedQs.map(q=>{const cfg=qualityConfig[q]||{label:q.toUpperCase(),color:'#888'};return`<button class="vp-s-btn${q===initBest?' active':''}" data-quality="${q}" onclick="loadVideoUrl('${(initLD[q]||'').replace(/'/g,"\\'")}','${q}')">${cfg.label||q.toUpperCase()}</button>`;}).join('');
 
     const idx=allEps.findIndex(e=>e.id===episode.id);
     const prevEp=idx>0?allEps[idx-1]:null,nextEp=idx<allEps.length-1?allEps[idx+1]:null;
