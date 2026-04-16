@@ -526,11 +526,17 @@ function renderCard(anime) {
   const genres = (anime.genre||[]).slice(0,2).map(g =>
     `<span class="genre-tag" style="font-size:10px;padding:3px 8px">${g}</span>`
   ).join('');
+  // ✅ Use banner image; fallback to thumbnail
+  const imgSrc = anime.banner || anime.thumbnail || '';
   div.innerHTML = `
     <div style="position:relative">
       <img class="card-thumb"
-        src="${anime.thumbnail||''}" alt="${anime.title}"
+        src="${imgSrc}" alt="${anime.title}"
         onerror="this.style.background='var(--bg3)'"/>
+      <button class="wishlist-btn" id="wl-${anime.firestoreId}"
+        onclick="event.stopPropagation();handleWishlistToggle('${anime.firestoreId}',this)">
+        <i class="fas fa-heart"></i>
+      </button>
     </div>
     <div class="card-info">
       <span class="card-badge">${(anime.type||'ANIME').toUpperCase()}</span>
