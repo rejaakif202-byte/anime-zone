@@ -45,9 +45,10 @@
     }
 
     .sub-season-tabs {
-      display: flex; gap: 7px; overflow-x: auto;
+      display: none; gap: 7px; overflow-x: auto;
       padding: 4px 0 12px; scrollbar-width: none;
     }
+    .sub-season-tabs.visible { display: flex; }
     .sub-season-tabs::-webkit-scrollbar { display: none; }
     .sub-season-tab {
       flex-shrink: 0; background: var(--bg3); color: var(--text2);
@@ -245,7 +246,7 @@
         }
         if (!btnHTML) return '';
         return `
-          <div class="season-tg-pack" style="${idx > 0 ? 'margin-top:10px' : ''}">
+          <div class="season-tg-pack" style="margin-top:10px">
             <div class="season-tg-pack-header">
               <div class="season-tg-pack-icon"><i class="fab fa-telegram"></i></div>
               <div>
@@ -358,7 +359,8 @@
           subSeasons: seasons.filter(s => s.parentId != null && String(s.parentId) === String(p.id))
         }));
       } else {
-        return [{ id: '__all__', title: 'All Seasons', subSeasons: seasons, _isLegacy: true }];
+        // Treat each legacy season as a standalone parent for UI consistency
+        return seasons.map(s => ({ ...s, subSeasons: [], _isStandalone: true }));
       }
     }
 
@@ -379,8 +381,8 @@
 
       if (!subTabsWrap || !subContent) return;
 
-      // Season poster banner
-      if (!parent._isLegacy && parent.poster && parent.poster.trim()) {
+      // Season poster banner (now works for legacy seasons too)
+      if (parent.poster && parent.poster.trim()) {
         if (bannerImg) bannerImg.src = parent.poster;
         if (bannerLbl) bannerLbl.textContent = parent.title;
         if (bannerWrap) bannerWrap.classList.add('visible');
@@ -390,16 +392,15 @@
 
       const subSeasons = parent.subSeasons || [];
 
-      // ✅ KEY FIX: agar koi sub-seasons nahi hain, toh parent ka apna content
-      // directly render karo (episodes + packs). Pehle yahan "No content added yet."
-      // show ho raha tha jo galat tha.
       if (subSeasons.length === 0) {
+        subTabsWrap.classList.remove('visible');
         subTabsWrap.innerHTML = '';
         renderSeasonContent(animeId, parent);
         return;
       }
 
       // Sub-season tabs
+      subTabsWrap.classList.add('visible');
       subTabsWrap.innerHTML = subSeasons.map((s, i) =>
         `<button class="sub-season-tab ${i === 0 ? 'active' : ''}"
           onclick="switchSubSeason('${animeId}', ${i})">
@@ -437,7 +438,7 @@
       const seasons = anime.seasons || [];
       groupedSeasons = groupSeasons(seasons);
 
-      const topLevelCount = seasons.filter(s => s.parentId == null || s.parentId === undefined).length;
+      const topLevelCount = groupedSeasons.length;
 
       let watchUrl = '#';
       outer: for (const season of seasons) {
@@ -453,7 +454,6 @@
           watchUrl = `watch.html?id=${animeId}&season=${season.id}&ep=${eps[0].id}`;
           break;
         }
-        // ✅ FIX: agar episode hai but koi content nahi (na video na TG) — tab bhi Watch Now kaam kare
         if (eps.length > 0 && watchUrl === '#') {
           watchUrl = `watch.html?id=${animeId}&season=${season.id}&ep=${eps[0].id}`;
         }
@@ -461,7 +461,7 @@
 
       const genres = (anime.genre || []).map(g => `<span class="genre-tag">${g}</span>`).join('');
 
-      const showParentTabs = !(groupedSeasons.length === 1 && groupedSeasons[0]._isLegacy);
+      const showParentTabs = seasons.length > 0;
       const parentTabsHTML = showParentTabs
         ? groupedSeasons.map((p, i) =>
           `<button class="parent-season-tab ${i === 0 ? 'active' : ''}"
