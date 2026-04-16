@@ -551,7 +551,27 @@ function renderCard(anime) {
   return div;
 }
 
-// ===== INIT APP =====
+// ===== RENDER NEWS CARD =====
+function renderNewsCard(anime) {
+  const div = document.createElement('div');
+  div.className    = 'news-card';
+  div.style.cursor = 'pointer';
+  const desc = anime.description || anime.desc || '';
+  div.innerHTML = `
+    <img class="news-thumb"
+      src="${anime.thumbnail||''}" alt="${anime.title}"
+      onerror="this.style.background='var(--bg3)'"/>
+    <div class="news-info">
+      <div class="news-title">${anime.title}</div>
+      ${desc ? `<div class="news-desc">${desc.slice(0,150)}${desc.length>150?'…':''}</div>` : ''}
+    </div>`;
+  div.addEventListener('click', () => {
+    window.location.href = `anime.html?id=${anime.firestoreId}`;
+  });
+  return div;
+}
+
+
 async function initApp() {
   const loadingState = document.getElementById('loadingState');
   const emptyState   = document.getElementById('emptyState');
@@ -725,18 +745,20 @@ function getFilteredItems(cat) {
 function renderHome(data) {
   currentPage = 1;
 
-  const latest   = data.filter(a => a.latest).sort((a,b) => {
+  const latest   = data.filter(a => a.latest && a.type !== 'news').sort((a,b) => {
     const ta = a.createdAt?.toDate?.()?.getTime() || 0;
     const tb = b.createdAt?.toDate?.()?.getTime() || 0;
     return tb - ta;
   });
-  const trending = data.filter(a => a.trending);
-  const top10    = data.filter(a => a.top10)
+  const trending = data.filter(a => a.trending && a.type !== 'news');
+  const top10    = data.filter(a => a.top10 && a.type !== 'news')
     .sort((a,b) => (a.top10rank||0) - (b.top10rank||0));
+  const news     = data.filter(a => a.type === 'news');
 
   const latestSec   = document.getElementById('latestSection');
   const trendingSec = document.getElementById('trendingSection');
   const top10Sec    = document.getElementById('top10Section');
+  const newsSec     = document.getElementById('newsSection');
   const emptyState  = document.getElementById('emptyState');
   const homeSecs    = document.getElementById('homeSections');
   const myListSec   = document.getElementById('myListSection');
@@ -764,7 +786,8 @@ function renderHome(data) {
     if (latestSec)   latestSec.classList.add('hidden');
     if (top10Sec)    top10Sec.classList.add('hidden');
     if (trendingSec) trendingSec.classList.remove('hidden');
-    renderGrid('trendingGrid', data, 'No anime yet.');
+    renderGrid('trendingGrid', data.filter(a => a.type !== 'news'), 'No anime yet.');
+    renderNewsSection(news);
     return;
   }
 
@@ -775,6 +798,7 @@ function renderHome(data) {
   renderGrid('latestGrid',   latest.slice(0, SECTION_SIZE),   'No latest releases yet.');
   renderGrid('trendingGrid', trending.slice(0, SECTION_SIZE), 'No trending anime yet.');
   renderTop10(top10.slice(0, SECTION_SIZE));
+  renderNewsSection(news);
 
   // ── "SEE MORE" pagination: if any section overflows, show page buttons ──
   // We paginate ALL anime (entire library) across pages 2+
@@ -799,6 +823,16 @@ function renderGrid(gridId, items, emptyMsg) {
   items.forEach(a => grid.appendChild(renderCard(a)));
 }
 
+function renderNewsSection(items) {
+  const sec  = document.getElementById('newsSection');
+  const grid = document.getElementById('newsGrid');
+  if (!sec || !grid) return;
+  if (!items.length) { sec.classList.add('hidden'); return; }
+  sec.classList.remove('hidden');
+  grid.innerHTML = '';
+  items.slice(0, SECTION_SIZE).forEach(a => grid.appendChild(renderNewsCard(a)));
+}
+
 function renderTop10(items) {
   const grid = document.getElementById('top10Grid');
   const sec  = document.getElementById('top10Section');
@@ -806,32 +840,7 @@ function renderTop10(items) {
   if (!items.length) { sec.classList.add('hidden'); return; }
   sec.classList.remove('hidden');
   grid.innerHTML = '';
-  items.forEach((anime, i) => {
-    const div = document.createElement('div');
-    div.className    = 'top10-item';
-    div.style.cursor = 'pointer';
-    div.innerHTML = `
-      <span class="top10-rank">${i+1}</span>
-      <img src="${anime.thumbnail||''}"
-        style="width:60px;height:80px;object-fit:cover;border-radius:8px;flex-shrink:0"
-        onerror="this.style.background='var(--bg3)'"/>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:14px;font-weight:700;color:var(--text);
-          white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-          ${anime.title}
-        </div>
-        <div style="font-size:12px;color:var(--text2)">
-          ${(anime.genre||[]).slice(0,2).join(' · ')}
-        </div>
-        <div style="font-size:12px;color:var(--accent);font-weight:600;margin-top:3px">
-          ★ ${anime.rating||'N/A'}
-        </div>
-      </div>`;
-    div.addEventListener('click', () => {
-      window.location.href = `anime.html?id=${anime.firestoreId}`;
-    });
-    grid.appendChild(div);
-  });
+  items.forEach(a => grid.appendChild(renderCard(a)));
 }
 
 // ===== FILTER CATEGORY (pills) =====
