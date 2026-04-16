@@ -465,13 +465,15 @@
               <div class="form-group"><label>EPISODE RANGE</label>
                 <input type="text" id="stg_range" placeholder="e.g. 1-26"/></div>
               <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Quality Links</div>
-              <div style="display:flex;gap:8px;margin-bottom:8px">
-                <input type="text" id="stg_ql" placeholder="e.g. 480p" maxlength="12"
-                  style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
-                <input type="url" id="stg_qu" placeholder="Telegram link"
-                  style="flex:1;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+              <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+                <div style="display:flex;gap:8px;flex:1;min-width:200px">
+                  <input type="text" id="stg_ql" placeholder="e.g. 480p" maxlength="12"
+                    style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
+                  <input type="url" id="stg_qu" placeholder="Telegram link"
+                    style="flex:1;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+                </div>
                 <button onclick="addStgQ()"
-                  style="background:var(--accent);border:none;border-radius:8px;padding:9px 13px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:16px;line-height:1">
+                  style="background:var(--accent);border:none;border-radius:8px;padding:9px 13px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:16px;line-height:1;margin-left:auto">
                   <i class="fas fa-plus"></i>
                 </button>
               </div>
@@ -675,13 +677,15 @@
               </div>
             </div>
             <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Add Quality</div>
-            <div style="display:flex;gap:8px;margin-bottom:8px">
-              <input type="text" id="lq_ql" placeholder="e.g. 1080p" maxlength="12"
-                style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
-              <input type="url" id="lq_qu" placeholder="URL or Drive link"
-                style="flex:1;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+              <div style="display:flex;gap:8px;flex:1;min-width:200px">
+                <input type="text" id="lq_ql" placeholder="e.g. 1080p" maxlength="12"
+                  style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
+                <input type="url" id="lq_qu" placeholder="URL or Drive link"
+                  style="flex:1;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+              </div>
               <button onclick="addLqQ()"
-                style="background:var(--accent);border:none;border-radius:8px;padding:9px 13px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:16px;line-height:1">
+                style="background:var(--accent);border:none;border-radius:8px;padding:9px 13px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:16px;line-height:1;margin-left:auto">
                 <i class="fas fa-plus"></i>
               </button>
             </div>
@@ -756,13 +760,15 @@
               </div>
             </div>
             <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Quality Links</div>
-            <div style="display:flex;gap:8px;margin-bottom:8px">
-              <input type="text" id="etg_ql" placeholder="e.g. 720p" maxlength="12"
-                style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
-              <input type="url" id="etg_qu" placeholder="Telegram link"
-                style="flex:1;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+              <div style="display:flex;gap:8px;flex:1;min-width:200px">
+                <input type="text" id="etg_ql" placeholder="e.g. 720p" maxlength="12"
+                  style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
+                <input type="url" id="etg_qu" placeholder="Telegram link"
+                  style="flex:1;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+              </div>
               <button onclick="addEtgQ()"
-                style="background:var(--accent);border:none;border-radius:8px;padding:9px 13px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:16px;line-height:1">
+                style="background:var(--accent);border:none;border-radius:8px;padding:9px 13px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:16px;line-height:1;margin-left:auto">
                 <i class="fas fa-plus"></i>
               </button>
             </div>
