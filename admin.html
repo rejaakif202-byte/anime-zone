@@ -464,25 +464,21 @@
               </div>
               <div class="form-group"><label>EPISODE RANGE</label>
                 <input type="text" id="stg_range" placeholder="e.g. 1-26"/></div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                <div class="form-group">
-                  <label style="display:flex;align-items:center;gap:5px">
-                    <span class="q-badge q-480">480p</span></label>
-                  <input type="url" id="stg_480"/></div>
-                <div class="form-group">
-                  <label style="display:flex;align-items:center;gap:5px">
-                    <span class="q-badge q-720">720p</span></label>
-                  <input type="url" id="stg_720"/></div>
-                <div class="form-group">
-                  <label style="display:flex;align-items:center;gap:5px">
-                    <span class="q-badge q-1080">1080p</span></label>
-                  <input type="url" id="stg_1080"/></div>
-                <div class="form-group">
-                  <label style="display:flex;align-items:center;gap:5px">
-                    <span class="q-badge q-4k">4K</span></label>
-                  <input type="url" id="stg_4k"/></div>
+              <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Quality Links</div>
+              <div style="display:flex;gap:8px;margin-bottom:8px">
+                <input type="text" id="stg_ql" placeholder="e.g. 480p" maxlength="12"
+                  style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
+                <input type="url" id="stg_qu" placeholder="Telegram link"
+                  style="flex:1;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+                <button onclick="addStgQ()"
+                  style="background:var(--accent);border:none;border-radius:8px;padding:9px 13px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:16px;line-height:1">
+                  <i class="fas fa-plus"></i>
+                </button>
               </div>
-              <div class="form-group"><label>SINGLE LINK</label>
+              <div id="stg_qd" style="display:flex;flex-wrap:wrap;gap:6px;min-height:24px;margin-bottom:12px">
+                <span style="font-size:11px;color:var(--text2);font-style:italic">No qualities added yet</span>
+              </div>
+              <div class="form-group"><label>OR SINGLE LINK (all qualities)</label>
                 <input type="url" id="stg_single" placeholder="One link for all"/></div>
               <button class="btn-primary" id="saveSeasonOnlyBtn"
                 onclick="saveSeasonOnly()"
@@ -522,26 +518,21 @@
                 <div class="form-group"><label>RANGE *</label>
                   <input type="text" id="new_pack_range"
                     placeholder="e.g. 26-50"/></div>
-                <div style="display:grid;
-                  grid-template-columns:1fr 1fr;gap:8px">
-                  <div class="form-group">
-                    <label style="display:flex;align-items:center;gap:4px">
-                      <span class="q-badge q-480">480p</span></label>
-                    <input type="url" id="new_pack_480"/></div>
-                  <div class="form-group">
-                    <label style="display:flex;align-items:center;gap:4px">
-                      <span class="q-badge q-720">720p</span></label>
-                    <input type="url" id="new_pack_720"/></div>
-                  <div class="form-group">
-                    <label style="display:flex;align-items:center;gap:4px">
-                      <span class="q-badge q-1080">1080p</span></label>
-                    <input type="url" id="new_pack_1080"/></div>
-                  <div class="form-group">
-                    <label style="display:flex;align-items:center;gap:4px">
-                      <span class="q-badge q-4k">4K</span></label>
-                    <input type="url" id="new_pack_4k"/></div>
+                <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Quality Links</div>
+                <div style="display:flex;gap:8px;margin-bottom:8px">
+                  <input type="text" id="npk_ql" placeholder="e.g. 720p" maxlength="12"
+                    style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
+                  <input type="url" id="npk_qu" placeholder="Telegram link"
+                    style="flex:1;padding:9px 10px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+                  <button onclick="addNpkQ()"
+                    style="background:var(--accent);border:none;border-radius:8px;padding:9px 13px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:16px;line-height:1">
+                    <i class="fas fa-plus"></i>
+                  </button>
                 </div>
-                <div class="form-group"><label>SINGLE LINK</label>
+                <div id="npk_qd" style="display:flex;flex-wrap:wrap;gap:6px;min-height:24px;margin-bottom:10px">
+                  <span style="font-size:11px;color:var(--text2);font-style:italic">No qualities added yet</span>
+                </div>
+                <div class="form-group"><label>OR SINGLE LINK</label>
                   <input type="url" id="new_pack_single"/></div>
                 <button class="btn-outline"
                   onclick="addNewPack()" style="width:100%">
@@ -681,27 +672,19 @@
                   placeholder="e.g. Korean..."/>
               </div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-              <div class="form-group">
-                <label style="display:flex;align-items:center;gap:5px">
-                  <span class="q-badge q-480">480p</span></label>
-                <input type="url" id="lq_480"
-                  placeholder="URL or Drive link"/></div>
-              <div class="form-group">
-                <label style="display:flex;align-items:center;gap:5px">
-                  <span class="q-badge q-720">720p</span></label>
-                <input type="url" id="lq_720"
-                  placeholder="URL or Drive link"/></div>
-              <div class="form-group">
-                <label style="display:flex;align-items:center;gap:5px">
-                  <span class="q-badge q-1080">1080p</span></label>
-                <input type="url" id="lq_1080"
-                  placeholder="URL or Drive link"/></div>
-              <div class="form-group">
-                <label style="display:flex;align-items:center;gap:5px">
-                  <span class="q-badge q-4k">4K</span></label>
-                <input type="url" id="lq_4k"
-                  placeholder="URL or Drive link"/></div>
+            <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Add Quality</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+              <input type="text" id="lq_ql" placeholder="e.g. 1080p" maxlength="12"
+                style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
+              <input type="url" id="lq_qu" placeholder="URL or Drive link"
+                style="flex:1;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+              <button onclick="addLqQ()"
+                style="background:var(--accent);border:none;border-radius:8px;padding:9px 13px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:16px;line-height:1">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+            <div id="lq_qd" style="display:flex;flex-wrap:wrap;gap:6px;min-height:24px;margin-bottom:12px">
+              <span style="font-size:11px;color:var(--text2);font-style:italic">No qualities added yet</span>
             </div>
             <button class="btn-outline" onclick="saveLangUrls()"
               style="width:100%;margin-bottom:12px">
@@ -770,25 +753,21 @@
                 </div>
               </div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-              <div class="form-group">
-                <label style="display:flex;align-items:center;gap:5px">
-                  <span class="q-badge q-480">480p</span></label>
-                <input type="url" id="etg_480"/></div>
-              <div class="form-group">
-                <label style="display:flex;align-items:center;gap:5px">
-                  <span class="q-badge q-720">720p</span></label>
-                <input type="url" id="etg_720"/></div>
-              <div class="form-group">
-                <label style="display:flex;align-items:center;gap:5px">
-                  <span class="q-badge q-1080">1080p</span></label>
-                <input type="url" id="etg_1080"/></div>
-              <div class="form-group">
-                <label style="display:flex;align-items:center;gap:5px">
-                  <span class="q-badge q-4k">4K</span></label>
-                <input type="url" id="etg_4k"/></div>
+            <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Quality Links</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+              <input type="text" id="etg_ql" placeholder="e.g. 720p" maxlength="12"
+                style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
+              <input type="url" id="etg_qu" placeholder="Telegram link"
+                style="flex:1;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+              <button onclick="addEtgQ()"
+                style="background:var(--accent);border:none;border-radius:8px;padding:9px 13px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:16px;line-height:1">
+                <i class="fas fa-plus"></i>
+              </button>
             </div>
-            <div class="form-group"><label>SINGLE LINK</label>
+            <div id="etg_qd" style="display:flex;flex-wrap:wrap;gap:6px;min-height:24px;margin-bottom:12px">
+              <span style="font-size:11px;color:var(--text2);font-style:italic">No qualities added yet</span>
+            </div>
+            <div class="form-group" style="margin-bottom:0"><label>OR SINGLE LINK</label>
               <input type="url" id="etg_single"/></div>
           </div>
 
@@ -860,8 +839,76 @@
     let editingSeasonPacks = [];
     let editingSeasonId    = null;
     let editingAnimeId     = null;
-    let seasonEpsRef       = []; // for delete/edit by index
-    let allAnimeCache      = []; // for manage list filter
+    let seasonEpsRef       = [];
+    let allAnimeCache      = [];
+
+    // ===== DYNAMIC QUALITY STATE =====
+    let stgQualities = {};
+    let newPackQs    = {};
+    let etgQualities = {};
+    let lqQualities  = {};
+
+    // ===== QUALITY COLOUR =====
+    function qClr(lbl) {
+      const l = String(lbl||'').toLowerCase();
+      if(l.includes('8k'))                     return{bg:'#c0392b',sh:'#7b241c'};
+      if(l.includes('4k')||l.includes('2160')) return{bg:'#C87740',sh:'#8a5229'};
+      if(l.includes('2k')||l.includes('1440')) return{bg:'#8e44ad',sh:'#6c3483'};
+      if(l.includes('1080'))                   return{bg:'#27ae60',sh:'#1a7a43'};
+      if(l.includes('720'))                    return{bg:'#2a6dd9',sh:'#1a4da0'};
+      if(l.includes('480'))                    return{bg:'#607d8b',sh:'#37474f'};
+      if(l.includes('360'))                    return{bg:'#78909c',sh:'#546e7a'};
+      if(l.includes('240'))                    return{bg:'#90a4ae',sh:'#607d8b'};
+      return{bg:'#9787F3',sh:'#5a4cb8'};
+    }
+
+    function renderQTags(obj, cid, rfn) {
+      const c = document.getElementById(cid); if(!c) return;
+      const ks = Object.keys(obj);
+      if(!ks.length){c.innerHTML='<span style="font-size:11px;color:var(--text2);font-style:italic">No qualities added yet</span>';return;}
+      c.innerHTML = ks.map(k=>{
+        const{bg,sh}=qClr(k);
+        return `<div style="display:inline-flex;align-items:stretch;border-radius:7px;overflow:hidden;box-shadow:0 3px 0 ${sh}">
+          <span style="background:${bg};color:#fff;font-size:11px;font-weight:800;padding:6px 9px;font-family:'Poppins',sans-serif">${k}</span>
+          <button onclick="${rfn}('${k.replace(/'/g,"\\'")}')" style="background:${bg};filter:brightness(0.7);border:none;color:#fff;padding:6px 8px;cursor:pointer;font-size:13px;line-height:1;font-weight:700">×</button>
+        </div>`;
+      }).join(' ');
+    }
+
+    function addStgQ(){const l=document.getElementById('stg_ql').value.trim(),u=document.getElementById('stg_qu').value.trim();if(!l||!u){alert('Enter quality name and link!');return;}stgQualities[l]=u;renderQTags(stgQualities,'stg_qd','removeStgQ');document.getElementById('stg_ql').value='';document.getElementById('stg_qu').value='';}
+    window.removeStgQ=function(q){delete stgQualities[q];renderQTags(stgQualities,'stg_qd','removeStgQ');};
+
+    function addNpkQ(){const l=document.getElementById('npk_ql').value.trim(),u=document.getElementById('npk_qu').value.trim();if(!l||!u){alert('Enter quality name and link!');return;}newPackQs[l]=u;renderQTags(newPackQs,'npk_qd','removeNpkQ');document.getElementById('npk_ql').value='';document.getElementById('npk_qu').value='';}
+    window.removeNpkQ=function(q){delete newPackQs[q];renderQTags(newPackQs,'npk_qd','removeNpkQ');};
+
+    function addEtgQ(){const l=document.getElementById('etg_ql').value.trim(),u=document.getElementById('etg_qu').value.trim();if(!l||!u){alert('Enter quality name and link!');return;}etgQualities[l]=u;renderQTags(etgQualities,'etg_qd','removeEtgQ');document.getElementById('etg_ql').value='';document.getElementById('etg_qu').value='';}
+    window.removeEtgQ=function(q){delete etgQualities[q];renderQTags(etgQualities,'etg_qd','removeEtgQ');};
+
+    function addLqQ(){const l=document.getElementById('lq_ql').value.trim(),u=document.getElementById('lq_qu').value.trim();if(!l||!u){alert('Enter quality name and URL!');return;}lqQualities[l]=u;renderQTags(lqQualities,'lq_qd','removeLqQ');document.getElementById('lq_ql').value='';document.getElementById('lq_qu').value='';}
+    window.removeLqQ=function(q){delete lqQualities[q];renderQTags(lqQualities,'lq_qd','removeLqQ');};
+
+    window.addPackQ=function(idx){
+      const l=document.getElementById(`pk_${idx}_ql`)?.value.trim(),u=document.getElementById(`pk_${idx}_qu`)?.value.trim();
+      if(!l||!u){alert('Enter quality and link!');return;}
+      if(!editingSeasonPacks[idx].links)editingSeasonPacks[idx].links={};
+      editingSeasonPacks[idx].links[l]=u;
+      delete editingSeasonPacks[idx].single;
+      renderExistingPacks();
+    };
+    window.removePackQ=function(idx,q){
+      if(!editingSeasonPacks[idx]?.links)return;
+      delete editingSeasonPacks[idx].links[q];
+      renderExistingPacks();
+    };
+
+    function resetQuality(){
+      stgQualities={};renderQTags(stgQualities,'stg_qd','removeStgQ');
+      newPackQs={};renderQTags(newPackQs,'npk_qd','removeNpkQ');
+      etgQualities={};renderQTags(etgQualities,'etg_qd','removeEtgQ');
+      lqQualities={};renderQTags(lqQualities,'lq_qd','removeLqQ');
+      ['stg_ql','stg_qu','stg_single','stg_range','etg_ql','etg_qu','etg_single','lq_ql','lq_qu','npk_ql','npk_qu','new_pack_range','new_pack_single']
+        .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    }
 
     // ===== THEME =====
     function toggleTheme() {
@@ -1313,55 +1360,42 @@
     function renderExistingPacks() {
       const c = document.getElementById('existingPacksList');
       if (!editingSeasonPacks.length) {
-        c.innerHTML='<p style="font-size:12px;color:var(--text2);padding:4px 0">No packs yet.</p>';
-        return;
+        c.innerHTML='<p style="font-size:12px;color:var(--text2);padding:4px 0">No packs yet.</p>';return;
       }
       c.innerHTML = editingSeasonPacks.map((pack,idx)=>{
         const rt = pack.range||'No range';
-        const ql = pack.single ? 'Single link'
-          : (pack.links ? Object.entries(pack.links)
-              .filter(([,v])=>v).map(([q])=>q).join(', ') : '');
+        const ql = pack.single?'Single link':(pack.links?Object.entries(pack.links).filter(([,v])=>v).map(([q])=>q).join(', '):'');
+        const pkQs = pack.links?Object.keys(pack.links):[];
+        const pkTagsHtml = pkQs.map(k=>{
+          const{bg,sh}=qClr(k);
+          return `<div style="display:inline-flex;align-items:stretch;border-radius:7px;overflow:hidden;box-shadow:0 3px 0 ${sh}"><span style="background:${bg};color:#fff;font-size:11px;font-weight:800;padding:6px 9px;font-family:'Poppins',sans-serif">${k}</span><button onclick="removePackQ(${idx},'${k}')" style="background:${bg};filter:brightness(0.7);border:none;color:#fff;padding:6px 8px;cursor:pointer;font-size:13px;line-height:1;font-weight:700">×</button></div>`;
+        }).join(' ')||'<span style="font-size:11px;color:var(--text2);font-style:italic">No quality links</span>';
         return `
-          <div style="background:var(--bg3);border-radius:10px;
-            padding:12px;margin-bottom:10px;border:1px solid var(--border)">
-            <div style="display:flex;justify-content:space-between;
-              align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div style="background:var(--bg3);border-radius:10px;padding:12px;margin-bottom:10px;border:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
               <div>
-                <div style="font-weight:700;font-size:13px;
-                  color:var(--text)">Pack ${idx+1}: ${rt}</div>
+                <div style="font-weight:700;font-size:13px;color:var(--text)">Pack ${idx+1}: ${rt}</div>
                 <div style="font-size:11px;color:var(--text2)">${ql}</div>
               </div>
-              <button onclick="removePack(${idx})"
-                style="background:rgba(229,9,20,0.1);border:1px solid #e50914;
-                  color:#e50914;border-radius:6px;padding:4px 10px;
-                  font-size:12px;cursor:pointer">
-                <i class="fas fa-trash"></i>
-              </button>
+              <button onclick="removePack(${idx})" style="background:rgba(229,9,20,0.1);border:1px solid #e50914;color:#e50914;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer"><i class="fas fa-trash"></i></button>
             </div>
             <div class="form-group" style="margin-bottom:8px">
               <label>RANGE</label>
-              <input type="text" value="${pack.range||''}"
-                placeholder="e.g. 1-25"
-                onchange="editingSeasonPacks[${idx}].range=this.value"/>
+              <input type="text" value="${pack.range||''}" placeholder="e.g. 1-25" onchange="editingSeasonPacks[${idx}].range=this.value"/>
             </div>
-            ${pack.single!==undefined ? `
+            ${pack.single!==undefined?`
             <div class="form-group" style="margin-bottom:0">
               <label>SINGLE LINK</label>
-              <input type="url" value="${pack.single||''}"
-                onchange="editingSeasonPacks[${idx}].single=this.value"/>
-            </div>` : `
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              ${['480p','720p','1080p','4k'].map(q=>`
-              <div class="form-group" style="margin-bottom:0">
-                <label style="display:flex;align-items:center;gap:4px">
-                  <span class="q-badge q-${q.replace('p','')}"
-                  >${q}</span></label>
-                <input type="url"
-                  value="${(pack.links&&pack.links[q])||''}"
-                  onchange="if(!editingSeasonPacks[${idx}].links)
-                    editingSeasonPacks[${idx}].links={};
-                    editingSeasonPacks[${idx}].links['${q}']=this.value"/>
-              </div>`).join('')}
+              <input type="url" value="${pack.single||''}" onchange="editingSeasonPacks[${idx}].single=this.value"/>
+            </div>`:`
+            <div style="margin-bottom:8px">
+              <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px">Quality Links</label>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${pkTagsHtml}</div>
+              <div style="display:flex;gap:8px">
+                <input type="text" id="pk_${idx}_ql" placeholder="e.g. 720p" maxlength="12" style="width:80px;flex-shrink:0;padding:8px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
+                <input type="url" id="pk_${idx}_qu" placeholder="Telegram link" style="flex:1;padding:8px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+                <button onclick="addPackQ(${idx})" style="background:var(--accent);border:none;border-radius:8px;padding:8px 12px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:15px"><i class="fas fa-plus"></i></button>
+              </div>
             </div>`}
           </div>`;
       }).join('');
@@ -1462,83 +1496,50 @@
       const ep = seasonEpsRef[idx];
       if (!ep) return;
 
-      // Basic fields
       document.getElementById('ep_num').value      = ep.id;
       document.getElementById('ep_title').value    = ep.title||'';
       document.getElementById('ep_desc').value     = ep.description||'';
       document.getElementById('ep_duration').value = ep.duration||'';
 
-      // Thumbnail
       if (ep.thumbnail) {
         document.getElementById('ep_thumb').value = ep.thumbnail;
         setPreview(ep.thumbnail, 'epThumbPreview');
       }
 
-      // ✅ FIXED: Pre-fill ALL language URLs
-      // Copy languages data to episodeLangData
-      episodeLangData = ep.languages
-        ? JSON.parse(JSON.stringify(ep.languages))
-        : {};
+      episodeLangData = ep.languages ? JSON.parse(JSON.stringify(ep.languages)) : {};
       updateSavedLangsPreview();
 
-      // Also fill the CURRENTLY SELECTED language tab's URL inputs
-      // so user can see and edit immediately
-      const currentTabLangData = episodeLangData[currentLangTab] || {};
-      document.getElementById('lq_480').value  = currentTabLangData['480p']  || '';
-      document.getElementById('lq_720').value  = currentTabLangData['720p']  || '';
-      document.getElementById('lq_1080').value = currentTabLangData['1080p'] || '';
-      document.getElementById('lq_4k').value   = currentTabLangData['4k']    || '';
+      // Load current lang tab qualities into dynamic UI
+      lqQualities = {...(episodeLangData[currentLangTab]||{})};
+      renderQTags(lqQualities,'lq_qd','removeLqQ');
+      document.getElementById('lq_ql').value='';
+      document.getElementById('lq_qu').value='';
 
-      // Episode TG links
-      document.getElementById('etg_480').value  = '';
-      document.getElementById('etg_720').value  = '';
-      document.getElementById('etg_1080').value = '';
-      document.getElementById('etg_4k').value   = '';
-      document.getElementById('etg_single').value = '';
+      // Episode TG
+      etgQualities = ep.telegramLinks ? {...ep.telegramLinks} : {};
+      renderQTags(etgQualities,'etg_qd','removeEtgQ');
+      document.getElementById('etg_ql').value='';
+      document.getElementById('etg_qu').value='';
+      document.getElementById('etg_single').value = ep.telegramUrl||'';
 
-      if (ep.telegramLinks) {
-        document.getElementById('etg_480').value  = ep.telegramLinks['480p']  || '';
-        document.getElementById('etg_720').value  = ep.telegramLinks['720p']  || '';
-        document.getElementById('etg_1080').value = ep.telegramLinks['1080p'] || '';
-        document.getElementById('etg_4k').value   = ep.telegramLinks['4k']    || '';
-      }
-      if (ep.telegramUrl) {
-        document.getElementById('etg_single').value = ep.telegramUrl;
-      }
-
-      document.getElementById('ep_num').scrollIntoView({
-        behavior: 'smooth', block: 'center'
-      });
+      document.getElementById('ep_num').scrollIntoView({behavior:'smooth',block:'center'});
       showEpSuccess(`Editing Ep ${ep.id} — make changes then click Add Episode`);
     }
 
     // ===== ADD NEW PACK =====
     function addNewPack() {
       const range  = document.getElementById('new_pack_range').value.trim();
-      const p480   = document.getElementById('new_pack_480').value.trim();
-      const p720   = document.getElementById('new_pack_720').value.trim();
-      const p1080  = document.getElementById('new_pack_1080').value.trim();
-      const p4k    = document.getElementById('new_pack_4k').value.trim();
       const single = document.getElementById('new_pack_single').value.trim();
       if (!range) { alert('Episode range required!'); return; }
-      if (!p480&&!p720&&!p1080&&!p4k&&!single) {
-        alert('Add at least one link!'); return;
-      }
+      if (!Object.keys(newPackQs).length && !single) { alert('Add at least one link!'); return; }
       const pack = { range };
       if (single) pack.single = single;
-      else {
-        const lnks={};
-        if(p480)  lnks['480p'] =p480;
-        if(p720)  lnks['720p'] =p720;
-        if(p1080) lnks['1080p']=p1080;
-        if(p4k)   lnks['4k']  =p4k;
-        pack.links=lnks;
-      }
+      else pack.links = {...newPackQs};
       editingSeasonPacks.push(pack);
       renderExistingPacks();
-      ['new_pack_range','new_pack_480','new_pack_720',
-       'new_pack_1080','new_pack_4k','new_pack_single']
-        .forEach(id=>{document.getElementById(id).value='';});
+      ['new_pack_range','new_pack_single','npk_ql','npk_qu']
+        .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+      newPackQs={};renderQTags(newPackQs,'npk_qd','removeNpkQ');
       alert('Pack added! Click "Save Season Changes".');
     }
 
@@ -1631,16 +1632,10 @@
     async function saveSeasonOnly() {
       const animeId  = document.getElementById('ep_anime').value;
       const seasonVal= document.getElementById('ep_season').value;
-      if (!animeId || seasonVal !== 'new') {
-        alert('Select "New Season" first!'); return;
-      }
-      const stg480  = document.getElementById('stg_480').value.trim();
-      const stg720  = document.getElementById('stg_720').value.trim();
-      const stg1080 = document.getElementById('stg_1080').value.trim();
-      const stg4k   = document.getElementById('stg_4k').value.trim();
+      if (!animeId || seasonVal !== 'new') { alert('Select "New Season" first!'); return; }
       const single  = document.getElementById('stg_single').value.trim();
       const range   = document.getElementById('stg_range').value.trim();
-      const hasStg  = stg480 || stg720 || stg1080 || stg4k || single;
+      const hasStg  = Object.keys(stgQualities).length > 0 || single;
       if (!hasStg) { alert('Add at least one TG link!'); return; }
 
       const btn = document.getElementById('saveSeasonOnlyBtn');
@@ -1656,73 +1651,34 @@
         const seasonTitle  = document.getElementById('new_season_title').value.trim() || `Season ${nextId}`;
         const subTitle     = document.getElementById('new_subseason_title')?.value.trim() || '';
         const yearVal      = parseInt(document.getElementById('new_season_year').value) || new Date().getFullYear();
-        // Legacy parent select (fallback)
         const parentRaw    = document.getElementById('new_season_parent')?.value || '';
         const legacyParent = parentRaw ? parseInt(parentRaw) : null;
 
         const pack = { range: range || '' };
-        if (single) {
-          pack.single = single;
-        } else {
-          const lnks = {};
-          if (stg480)  lnks['480p']  = stg480;
-          if (stg720)  lnks['720p']  = stg720;
-          if (stg1080) lnks['1080p'] = stg1080;
-          if (stg4k)   lnks['4k']   = stg4k;
-          pack.links = lnks;
-        }
+        if (single) pack.single = single;
+        else pack.links = {...stgQualities};
 
         if (subTitle) {
-          // ── TWO-LEVEL: create parent season then sub-season ──
-          // Check if a season with the same title already exists as top-level
           let parent = seasons.find(s => s.title === seasonTitle && !s.parentId);
           if (!parent) {
-            // Create the parent season first
             const parentId = nextId;
-            parent = {
-              id: parentId,
-              title: seasonTitle,
-              year: yearVal,
-              ...(poster ? { poster } : {}),
-              episodes: [],
-              telegramPacks: []
-            };
+            parent = { id:parentId, title:seasonTitle, year:yearVal, ...(poster?{poster}:{}), episodes:[], telegramPacks:[] };
             seasons.push(parent);
           }
-          // Now create the sub-season
           const subId = Math.max(...seasons.map(s=>s.id)) + 1;
-          const subSeason = {
-            id: subId,
-            title: subTitle,
-            year: yearVal,
-            parentId: parent.id,
-            episodes: [],
-            telegramPacks: [pack]
-          };
-          seasons.push(subSeason);
+          seasons.push({ id:subId, title:subTitle, year:yearVal, parentId:parent.id, episodes:[], telegramPacks:[pack] });
           await ref.update({ seasons });
           showEpSuccess(`"${seasonTitle}" → "${subTitle}" saved!`);
         } else {
-          // ── SINGLE-LEVEL: simple season with TG pack ──
-          const newSeason = {
-            id: nextId,
-            title: seasonTitle,
-            year: yearVal,
-            ...(poster ? { poster } : {}),
-            ...(legacyParent !== null ? { parentId: legacyParent } : {}),
-            episodes: [],
-            telegramPacks: [pack]
-          };
+          const newSeason = { id:nextId, title:seasonTitle, year:yearVal, ...(poster?{poster}:{}), ...(legacyParent!==null?{parentId:legacyParent}:{}), episodes:[], telegramPacks:[pack] };
           seasons.push(newSeason);
           await ref.update({ seasons });
           showEpSuccess(`"${seasonTitle}" saved!`);
         }
 
-        // Reset form
-        ['new_season_title','new_season_year','new_season_poster','new_season_poster_url',
-         'new_subseason_title',
-         'stg_480','stg_720','stg_1080','stg_4k','stg_single','stg_range']
+        ['new_season_title','new_season_year','new_season_poster','new_season_poster_url','new_subseason_title','stg_single','stg_range','stg_ql','stg_qu']
           .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        stgQualities={};renderQTags(stgQualities,'stg_qd','removeStgQ');
         const pp = document.getElementById('new_season_parent'); if (pp) pp.value = '';
         const prev = document.getElementById('seasonPosterPreview');
         if (prev) prev.innerHTML = '<i class="fas fa-image" style="color:var(--text2);font-size:16px"></i>';
@@ -1747,18 +1703,13 @@
     // ===== LANG TABS =====
     function switchLangTab(lang, btn) {
       currentLangTab = lang;
-      document.querySelectorAll('#langTabsBar .season-tab')
-        .forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('#langTabsBar .season-tab').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      document.getElementById('customLangField').style.display =
-        lang==='Custom' ? 'block' : 'none';
-
-      // ✅ Always load saved URLs for this language
-      const saved = episodeLangData[lang] || {};
-      document.getElementById('lq_480').value  = saved['480p']  || '';
-      document.getElementById('lq_720').value  = saved['720p']  || '';
-      document.getElementById('lq_1080').value = saved['1080p'] || '';
-      document.getElementById('lq_4k').value   = saved['4k']    || '';
+      document.getElementById('customLangField').style.display = lang==='Custom'?'block':'none';
+      lqQualities = {...(episodeLangData[lang]||{})};
+      renderQTags(lqQualities,'lq_qd','removeLqQ');
+      document.getElementById('lq_ql').value='';
+      document.getElementById('lq_qu').value='';
     }
     function saveLangUrls() {
       let lang=currentLangTab;
@@ -1767,17 +1718,13 @@
         if(!c){alert('Enter language name!');return;}
         lang=c;
       }
-      const urls={
-        '480p':  document.getElementById('lq_480').value.trim(),
-        '720p':  document.getElementById('lq_720').value.trim(),
-        '1080p': document.getElementById('lq_1080').value.trim(),
-        '4k':    document.getElementById('lq_4k').value.trim()
-      };
-      if(!Object.values(urls).some(v=>v)){alert('Add at least one URL!');return;}
-      episodeLangData[lang]=urls;
+      // Also add current input row if filled
+      const l=document.getElementById('lq_ql').value.trim();
+      const u=document.getElementById('lq_qu').value.trim();
+      if(l&&u){lqQualities[l]=u;renderQTags(lqQualities,'lq_qd','removeLqQ');document.getElementById('lq_ql').value='';document.getElementById('lq_qu').value='';}
+      if(!Object.keys(lqQualities).length){alert('Add at least one quality!');return;}
+      episodeLangData[lang]={...lqQualities};
       updateSavedLangsPreview();
-      ['lq_480','lq_720','lq_1080','lq_4k']
-        .forEach(id=>{document.getElementById(id).value='';});
       alert(`✓ ${lang} saved!`);
     }
     function updateSavedLangsPreview() {
@@ -1821,12 +1768,8 @@
       if (!seasonVal) { alert('Select season!'); return; }
       const epNumRaw  = document.getElementById('ep_num').value;
       const epNum     = epNumRaw ? parseInt(epNumRaw) : null;
-      const etg480    = document.getElementById('etg_480').value.trim();
-      const etg720    = document.getElementById('etg_720').value.trim();
-      const etg1080   = document.getElementById('etg_1080').value.trim();
-      const etg4k     = document.getElementById('etg_4k').value.trim();
       const etgSingle = document.getElementById('etg_single').value.trim();
-      const hasEtg    = etg480||etg720||etg1080||etg4k||etgSingle;
+      const hasEtg    = Object.keys(etgQualities).length>0 || etgSingle;
       const hasVideo  = Object.keys(episodeLangData).length>0;
       if (!epNum&&!hasVideo&&!hasEtg) {
         alert('Add episode number, video URL, or TG link!'); return;
@@ -1861,24 +1804,13 @@
         };
         if(hasEtg){
           if(etgSingle) episode.telegramUrl=etgSingle;
-          else{
-            const lnks={};
-            if(etg480)  lnks['480p'] =etg480;
-            if(etg720)  lnks['720p'] =etg720;
-            if(etg1080) lnks['1080p']=etg1080;
-            if(etg4k)   lnks['4k']  =etg4k;
-            episode.telegramLinks=lnks;
-          }
+          else episode.telegramLinks={...etgQualities};
         }
         if(seasonVal==='new'){
           const newId=seasons.length>0?Math.max(...seasons.map(s=>s.id))+1:1;
-          const stg480  =document.getElementById('stg_480').value.trim();
-          const stg720  =document.getElementById('stg_720').value.trim();
-          const stg1080 =document.getElementById('stg_1080').value.trim();
-          const stg4k   =document.getElementById('stg_4k').value.trim();
           const single  =document.getElementById('stg_single').value.trim();
           const range   =document.getElementById('stg_range').value.trim();
-          const hasStg  =stg480||stg720||stg1080||stg4k||single;
+          const hasStg  =Object.keys(stgQualities).length>0||single;
           const newSeason={
             id:newId,
             title:document.getElementById('new_season_title')
@@ -1890,14 +1822,7 @@
           if(hasStg){
             const pack={range:range||''};
             if(single) pack.single=single;
-            else{
-              const lnks={};
-              if(stg480)  lnks['480p'] =stg480;
-              if(stg720)  lnks['720p'] =stg720;
-              if(stg1080) lnks['1080p']=stg1080;
-              if(stg4k)   lnks['4k']  =stg4k;
-              pack.links=lnks;
-            }
+            else pack.links={...stgQualities};
             newSeason.telegramPacks=[pack];
           }
           seasons.push(newSeason);
@@ -1911,13 +1836,12 @@
         }
         await ref.update({seasons});
         ['ep_num','ep_title','ep_desc','ep_duration','ep_thumb','ep_thumb_url',
-         'lq_480','lq_720','lq_1080','lq_4k','customLangName',
-         'new_season_title','new_season_year',
-         'stg_480','stg_720','stg_1080','stg_4k','stg_single','stg_range',
-         'etg_480','etg_720','etg_1080','etg_4k','etg_single']
+         'customLangName','new_season_title','new_season_year',
+         'etg_single','stg_single','stg_range']
           .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
         episodeLangData={};
         updateSavedLangsPreview();
+        resetQuality();
         document.getElementById('epThumbPreview').innerHTML=
           '<i class="fas fa-image" style="color:var(--text2);font-size:14px"></i>';
         showEpSuccess('Episode saved!');
@@ -1993,10 +1917,9 @@
         icon.style.color='#27ae60';
         fileNameEl.textContent=`✅ ${filename}`;
         subTextEl.textContent=`URL filled in ${autoQ}`;
-        const qMap={'480p':'lq_480','720p':'lq_720','1080p':'lq_1080','4k':'lq_4k'};
-        const el=document.getElementById(qMap[autoQ]||'lq_720');
-        if(el){el.value=url;el.style.borderColor='#27ae60';
-          setTimeout(()=>{el.style.borderColor='';},3000);}
+        lqQualities[autoQ]=url;
+        renderQTags(lqQualities,'lq_qd','removeLqQ');
+        subTextEl.textContent=`URL added as ${autoQ}`;
         setTimeout(()=>{statusEl.style.display='none';selBtn.disabled=false;},2000);
       } catch(e) {
         icon.className='fas fa-circle-exclamation';
