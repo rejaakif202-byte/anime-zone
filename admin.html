@@ -519,13 +519,15 @@
                   <input type="text" id="new_pack_range"
                     placeholder="e.g. 26-50"/></div>
                 <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Quality Links</div>
-                <div style="display:flex;gap:8px;margin-bottom:8px">
-                  <input type="text" id="npk_ql" placeholder="e.g. 720p" maxlength="12"
-                    style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
-                  <input type="url" id="npk_qu" placeholder="Telegram link"
-                    style="flex:1;padding:9px 10px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+                <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+                  <div style="display:flex;gap:8px;flex:1;min-width:200px">
+                    <input type="text" id="npk_ql" placeholder="e.g. 720p" maxlength="12"
+                      style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
+                    <input type="url" id="npk_qu" placeholder="Telegram link"
+                      style="flex:1;padding:9px 10px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+                  </div>
                   <button onclick="addNpkQ()"
-                    style="background:var(--accent);border:none;border-radius:8px;padding:9px 13px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:16px;line-height:1">
+                    style="background:var(--accent);border:none;border-radius:8px;padding:9px 13px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:16px;line-height:1;margin-left:auto">
                     <i class="fas fa-plus"></i>
                   </button>
                 </div>
@@ -1391,10 +1393,12 @@
             <div style="margin-bottom:8px">
               <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px">Quality Links</label>
               <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${pkTagsHtml}</div>
-              <div style="display:flex;gap:8px">
-                <input type="text" id="pk_${idx}_ql" placeholder="e.g. 720p" maxlength="12" style="width:80px;flex-shrink:0;padding:8px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
-                <input type="url" id="pk_${idx}_qu" placeholder="Telegram link" style="flex:1;padding:8px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
-                <button onclick="addPackQ(${idx})" style="background:var(--accent);border:none;border-radius:8px;padding:8px 12px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:15px"><i class="fas fa-plus"></i></button>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <div style="display:flex;gap:8px;flex:1;min-width:200px">
+                  <input type="text" id="pk_${idx}_ql" placeholder="e.g. 720p" maxlength="12" style="width:80px;flex-shrink:0;padding:8px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
+                  <input type="url" id="pk_${idx}_qu" placeholder="Telegram link" style="flex:1;padding:8px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+                </div>
+                <button onclick="addPackQ(${idx})" style="background:var(--accent);border:none;border-radius:8px;padding:8px 12px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:15px;margin-left:auto"><i class="fas fa-plus"></i></button>
               </div>
             </div>`}
           </div>`;
