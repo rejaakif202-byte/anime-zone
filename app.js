@@ -7,7 +7,7 @@ let allAnimeData    = [];
 let currentCategory = 'all';
 let currentPage     = 1;
 const PAGE_SIZE     = 20;   // items per page on category/paginated views
-const SECTION_SIZE  = 10;   // items shown per home section
+const SECTION_SIZE  = 15;   // items shown per home section
 
 // ===== THEME =====
 function toggleTheme() {
@@ -519,20 +519,20 @@ async function fetchAllAnime() {
 }
 
 // ===== RENDER CARD =====
-function renderCard(anime) {
+function renderCard(anime, isScroll = false) {
   const div = document.createElement('div');
   div.className    = 'card';
   div.style.cursor = 'pointer';
   const genres = (anime.genre||[]).slice(0,2).map(g =>
     `<span class="genre-tag" style="font-size:10px;padding:3px 8px">${g}</span>`
   ).join('');
-  // ✅ Use banner image; fallback to thumbnail
-  const imgSrc = anime.banner || anime.thumbnail || '';
+  // ✅ Use thumbnail for portrait cards (scroll-row), banner for others
+  const imgSrc = isScroll ? (anime.thumbnail || anime.banner) : (anime.banner || anime.thumbnail);
   div.innerHTML = `
     <div style="position:relative">
       <img class="card-thumb"
-        src="${imgSrc}" alt="${anime.title}"
-        onerror="this.style.background='var(--bg3)'"/>
+        src="${imgSrc || ''}" alt="${anime.title}"
+        onerror="this.src='https://via.placeholder.com/300x450?text=No+Image'"/>
       <button class="wishlist-btn" id="wl-${anime.firestoreId}"
         onclick="event.stopPropagation();handleWishlistToggle('${anime.firestoreId}',this)">
         <i class="fas fa-heart"></i>
@@ -627,7 +627,8 @@ function renderPaginatedView(items, page, gridId, label) {
     grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;
       padding:40px;color:var(--text2);font-size:13px">No content here yet.</div>`;
   } else {
-    slice.forEach(a => grid.appendChild(renderCard(a)));
+    const isScroll = grid.classList.contains('scroll-row');
+    slice.forEach(a => grid.appendChild(renderCard(a, isScroll)));
   }
 
   // Section title
@@ -826,7 +827,8 @@ function renderGrid(gridId, items, emptyMsg) {
       padding:30px;color:var(--text2);font-size:13px">${emptyMsg}</div>`;
     return;
   }
-  items.forEach(a => grid.appendChild(renderCard(a)));
+  const isScroll = grid.classList.contains('scroll-row');
+  items.forEach(a => grid.appendChild(renderCard(a, isScroll)));
 }
 
 function renderNewsSection(items) {
@@ -847,7 +849,8 @@ function renderTop10(items) {
   sec.classList.remove('hidden');
   grid.innerHTML = '';
   // ✅ Use normal renderCard — same as other sections
-  items.forEach(a => grid.appendChild(renderCard(a)));
+  const isScroll = grid.classList.contains('scroll-row');
+  items.forEach(a => grid.appendChild(renderCard(a, isScroll)));
 }
 
 // ===== FILTER CATEGORY (pills) =====
