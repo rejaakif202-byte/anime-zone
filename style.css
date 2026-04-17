@@ -271,7 +271,7 @@ a { text-decoration: none; color: inherit; }
   margin: 0 -14px; padding: 0 14px 12px; /* Negative margin to allow edge-to-edge scroll */
 }
 .scroll-row::-webkit-scrollbar { display: none; }
-.scroll-row .card { flex: 0 0 30%; min-width: 110px; } /* Match 3-column width roughly */
+.scroll-row .card { flex: 0 0 31.5%; min-width: 110px; } /* Match 3-column width precisely */
 .scroll-row .card-thumb { aspect-ratio: 16/10; } /* Use banner aspect ratio */
 
 /* ===== ANIME CARD ===== */
@@ -347,6 +347,10 @@ a { text-decoration: none; color: inherit; }
   box-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
 .wishlist-btn:hover, .wishlist-btn.saved { color: var(--accent); background: rgba(0,0,0,0.85); }
+.wishlist-btn.saved i { color: var(--accent); }
+@media (max-width: 768px) {
+  .wishlist-btn { width: 26px; height: 26px; font-size: 11px; top: 6px; right: 6px; }
+}
 
 /* Top10 */
 .card-top10 { flex-shrink: 0; width: 150px; }
@@ -354,9 +358,13 @@ a { text-decoration: none; color: inherit; }
 .rank-badge {
   position: absolute; top: 8px; left: 8px;
   background: var(--accent); color: #fff;
-  font-family: 'Bebas Neue', cursive; font-size: 20px;
-  width: 30px; height: 30px; border-radius: 5px;
+  font-family: 'Bebas Neue', cursive; font-size: 18px;
+  width: 28px; height: 28px; border-radius: 5px;
   display: flex; align-items: center; justify-content: center;
+  z-index: 2; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+@media (max-width: 768px) {
+  .rank-badge { width: 22px; height: 22px; font-size: 14px; top: 6px; left: 6px; }
 }
 
 /* ===== GENRE TAGS ===== */
@@ -993,19 +1001,7 @@ a { text-decoration: none; color: inherit; }
 .selector-season-item:hover { background: var(--bg3); color: var(--text); }
 .selector-season-item.active { background: var(--accent); color: #fff; }
 
-/* ===== SCROLL ROW CARDS — fixed width for horizontal scroll ===== */
-.scroll-row > .card {
-  width: 155px !important;
-  min-width: 155px !important;
-  max-width: 155px !important;
-  flex-grow: 0 !important;
-  flex-shrink: 0 !important;
-  flex-basis: 155px !important;
-}
-.scroll-row > .card .card-thumb {
-  aspect-ratio: 2/3;
-  width: 100%;
-}
+/* ===== SCROLL ROW CARDS — Handled by base .scroll-row rules ===== */
 
 /* ===== NEWS CARDS ===== */
 .news-card {
