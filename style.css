@@ -256,23 +256,23 @@ a { text-decoration: none; color: inherit; }
 /* Latest Releases Grid - 3 columns on mobile */
 @media (max-width: 768px) {
   .latest-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .latest-grid .card-info { padding: 6px 6px 8px; }
-  .latest-grid .card-title { font-size: 11px; margin-bottom: 4px; }
-  .latest-grid .card-badge { font-size: 8px; padding: 2px 6px; }
-  .latest-grid .card-meta { font-size: 10px; }
-  .latest-grid .genre-tag { display: none; } /* Hide genres on 3-col mobile to save space */
+  .latest-grid .card-info, .scroll-row .card-info { padding: 6px 6px 8px; }
+  .latest-grid .card-title, .scroll-row .card-title { font-size: 11px; margin-bottom: 4px; }
+  .latest-grid .card-badge, .scroll-row .card-badge { font-size: 8px; padding: 2px 6px; }
+  .latest-grid .card-meta, .scroll-row .card-meta { font-size: 10px; }
+  .latest-grid .genre-tag, .scroll-row .genre-tag { display: none; } /* Hide genres on small cards to save space */
 }
 
 /* ===== SCROLL ROW ===== */
 .scroll-row {
-  display: flex; gap: 12px; overflow-x: auto;
+  display: flex; gap: 10px; overflow-x: auto;
   padding-bottom: 12px; scrollbar-width: none;
   align-items: flex-start;
   margin: 0 -14px; padding: 0 14px 12px; /* Negative margin to allow edge-to-edge scroll */
 }
 .scroll-row::-webkit-scrollbar { display: none; }
-.scroll-row .card { flex: 0 0 140px; } /* Fixed width for horizontal cards */
-.scroll-row .card-thumb { aspect-ratio: 2/3; } /* Portrait aspect for horizontal rows */
+.scroll-row .card { flex: 0 0 30%; min-width: 110px; } /* Match 3-column width roughly */
+.scroll-row .card-thumb { aspect-ratio: 16/10; } /* Use banner aspect ratio */
 
 /* ===== ANIME CARD ===== */
 .card {
