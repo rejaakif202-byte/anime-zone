@@ -18,6 +18,10 @@
       position: fixed !important; inset: 0 !important;
       width: 100vw !important; height: 100vh !important;
       aspect-ratio: unset !important; z-index: 9999 !important;
+      border-radius: 0 !important;
+    }
+    .vp-wrap.vp-fs iframe {
+      width: 100% !important; height: 100% !important;
     }
     .vp-video { width:100%; height:100%; display:block; object-fit:contain; background:#000; }
     .vp-iframe { width:100%; height:100%; border:none; display:block; }
@@ -531,9 +535,42 @@
   function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function showToast(msg){const t=document.getElementById('vp-toast');if(!t)return;t.textContent=msg;t.style.opacity='1';clearTimeout(t._tmr);t._tmr=setTimeout(()=>{t.style.opacity='0';},2500);}
 
-  function enterFs(el){if(el.requestFullscreen)el.requestFullscreen();else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();else{el.classList.add('vp-fs');document.body.style.overflow='hidden';}}
-  function exitFs(){if(document.exitFullscreen)document.exitFullscreen().catch(()=>{});else if(document.webkitExitFullscreen)document.webkitExitFullscreen();const el=document.querySelector('.vp-fs');if(el){el.classList.remove('vp-fs');document.body.style.overflow='';}}
-  document.addEventListener('fullscreenchange',()=>{const isFs=!!(document.fullscreenElement||document.webkitFullscreenElement);const btn=document.getElementById('vpFsBtn');if(btn)btn.innerHTML=isFs?'<i class="fas fa-compress"></i>':'<i class="fas fa-expand"></i>';});
+  function enterFs(el){
+    const hasIframe = el.querySelector('iframe');
+    if(hasIframe){
+      // CSS fullscreen — works on all mobile browsers for iframes
+      el.classList.add('vp-fs');
+      document.body.style.overflow='hidden';
+      // Try to lock orientation to landscape on mobile
+      try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{});}catch(e){}
+      const btn=document.getElementById('vpFsBtn');
+      if(btn)btn.innerHTML='<i class="fas fa-compress"></i>';
+    } else {
+      // Native fullscreen for <video> element
+      if(el.requestFullscreen) el.requestFullscreen().catch(()=>{el.classList.add('vp-fs');document.body.style.overflow='hidden';});
+      else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else{el.classList.add('vp-fs');document.body.style.overflow='hidden';}
+    }
+  }
+  function exitFs(){
+    const cssEl=document.querySelector('.vp-fs');
+    if(cssEl){
+      cssEl.classList.remove('vp-fs');
+      document.body.style.overflow='';
+      try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock();}catch(e){}
+      const btn=document.getElementById('vpFsBtn');
+      if(btn)btn.innerHTML='<i class="fas fa-expand"></i>';
+    }
+    if(document.fullscreenElement||document.webkitFullscreenElement){
+      if(document.exitFullscreen)document.exitFullscreen().catch(()=>{});
+      else if(document.webkitExitFullscreen)document.webkitExitFullscreen();
+    }
+  }
+  document.addEventListener('fullscreenchange',()=>{
+    const isFs=!!(document.fullscreenElement||document.webkitFullscreenElement);
+    const btn=document.getElementById('vpFsBtn');
+    if(btn)btn.innerHTML=isFs?'<i class="fas fa-compress"></i>':'<i class="fas fa-expand"></i>';
+  });
 
   let vpState={playing:false,volume:1,muted:false,speed:1,ctrlTimer:null};
   let subTracks={},subLang=null,subOn=true,vpVideoTitle='';
