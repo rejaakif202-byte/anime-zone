@@ -848,9 +848,16 @@ function renderTop10(items) {
   if (!items.length) { sec.classList.add('hidden'); return; }
   sec.classList.remove('hidden');
   grid.innerHTML = '';
-  // ✅ Use normal renderCard — same as other sections
   const isScroll = grid.classList.contains('scroll-row');
-  items.forEach(a => grid.appendChild(renderCard(a, isScroll)));
+  items.forEach((a, i) => {
+    const card = renderCard(a, isScroll);
+    // Add rank badge for Top 10
+    const rank = document.createElement('div');
+    rank.className = 'rank-badge';
+    rank.innerHTML = i + 1;
+    card.querySelector('div').appendChild(rank);
+    grid.appendChild(card);
+  });
 }
 
 // ===== FILTER CATEGORY (pills) =====
