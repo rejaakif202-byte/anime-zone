@@ -526,13 +526,13 @@ function renderCard(anime, isScroll = false) {
   const genres = (anime.genre||[]).slice(0,2).map(g =>
     `<span class="genre-tag" style="font-size:10px;padding:3px 8px">${g}</span>`
   ).join('');
-  // ✅ Use thumbnail for portrait cards (scroll-row), banner for others
-  const imgSrc = isScroll ? (anime.thumbnail || anime.banner) : (anime.banner || anime.thumbnail);
+  // ✅ Use banner image everywhere as requested
+  const imgSrc = anime.banner || anime.thumbnail || '';
   div.innerHTML = `
     <div style="position:relative">
       <img class="card-thumb"
-        src="${imgSrc || ''}" alt="${anime.title}"
-        onerror="this.src='https://via.placeholder.com/300x450?text=No+Image'"/>
+        src="${imgSrc}" alt="${anime.title}"
+        onerror="this.src='https://via.placeholder.com/400x250?text=No+Image'"/>
       <button class="wishlist-btn" id="wl-${anime.firestoreId}"
         onclick="event.stopPropagation();handleWishlistToggle('${anime.firestoreId}',this)">
         <i class="fas fa-heart"></i>
