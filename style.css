@@ -253,13 +253,26 @@ a { text-decoration: none; color: inherit; }
 /* ===== GRID ===== */
 .grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
 
+/* Latest Releases Grid - 3 columns on mobile */
+@media (max-width: 768px) {
+  .latest-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .latest-grid .card-info { padding: 6px 6px 8px; }
+  .latest-grid .card-title { font-size: 11px; margin-bottom: 4px; }
+  .latest-grid .card-badge { font-size: 8px; padding: 2px 6px; }
+  .latest-grid .card-meta { font-size: 10px; }
+  .latest-grid .genre-tag { display: none; } /* Hide genres on 3-col mobile to save space */
+}
+
 /* ===== SCROLL ROW ===== */
 .scroll-row {
   display: flex; gap: 12px; overflow-x: auto;
-  padding-bottom: 8px; scrollbar-width: none;
+  padding-bottom: 12px; scrollbar-width: none;
   align-items: flex-start;
+  margin: 0 -14px; padding: 0 14px 12px; /* Negative margin to allow edge-to-edge scroll */
 }
 .scroll-row::-webkit-scrollbar { display: none; }
+.scroll-row .card { flex: 0 0 140px; } /* Fixed width for horizontal cards */
+.scroll-row .card-thumb { aspect-ratio: 2/3; } /* Portrait aspect for horizontal rows */
 
 /* ===== ANIME CARD ===== */
 .card {
