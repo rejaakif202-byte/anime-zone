@@ -278,7 +278,7 @@ a { text-decoration: none; color: inherit; }
 /* Force 3 cards per screen width in scroll rows */
 .scroll-row .card {
   flex: 0 0 31.5% !important;
-  min-width: 110px !important;
+  min-width: 100px !important;
   width: 31.5% !important;
   max-width: 31.5% !important;
 }
@@ -358,8 +358,7 @@ a { text-decoration: none; color: inherit; }
 .wishlist-btn:hover, .wishlist-btn.saved { color: var(--accent); background: rgba(0,0,0,0.85); }
 
 /* Top10 */
-.card-top10 { flex-shrink: 0; width: 150px; }
-.card-top10 .card-thumb { aspect-ratio: 2/3; }
+/* card-top10 uses same scroll-row sizing */
 .rank-badge {
   position: absolute; top: 8px; left: 8px;
   background: var(--accent); color: #fff;
@@ -1001,20 +1000,6 @@ a { text-decoration: none; color: inherit; }
 .selector-season-item { padding: 12px 10px; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 12px; font-weight: 700; color: var(--text2); transition: all 0.15s; line-height: 1.3; }
 .selector-season-item:hover { background: var(--bg3); color: var(--text); }
 .selector-season-item.active { background: var(--accent); color: #fff; }
-
-/* ===== SCROLL ROW CARDS — fixed width for horizontal scroll ===== */
-.scroll-row > .card {
-  width: 155px !important;
-  min-width: 155px !important;
-  max-width: 155px !important;
-  flex-grow: 0 !important;
-  flex-shrink: 0 !important;
-  flex-basis: 155px !important;
-}
-.scroll-row > .card .card-thumb {
-  aspect-ratio: 2/3;
-  width: 100%;
-}
 
 /* ===== NEWS CARDS ===== */
 .news-card {
