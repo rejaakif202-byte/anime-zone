@@ -63,7 +63,7 @@ body {
   background: var(--bg);
   color: var(--text);
   transition: background 0.3s, color 0.3s;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 a { text-decoration: none; color: inherit; }
 
@@ -260,7 +260,7 @@ a { text-decoration: none; color: inherit; }
     gap: 8px !important;
   }
   .card-info { padding: 6px 6px 8px !important; }
-  .card-title { font-size: 11px !important; margin-bottom: 4px !important; line-height: 1.2 !important; }
+  .card-title { font-size: 11px !important; margin-bottom: 4px !important; line-height: 1.3 !important; height: 2.6em !important; }
   .card-badge { font-size: 8px !important; padding: 2px 6px !important; }
   .card-meta { font-size: 10px !important; }
   .genre-tag { display: none !important; }
@@ -268,19 +268,20 @@ a { text-decoration: none; color: inherit; }
 
 /* ===== SCROLL ROW ===== */
 .scroll-row {
-  display: flex; gap: 10px; overflow-x: auto;
-  padding-bottom: 12px; scrollbar-width: none;
+  display: flex; gap: 8px; overflow-x: auto;
+  padding: 4px 14px 12px;
+  scrollbar-width: none;
   align-items: flex-start;
-  margin: 0 -14px; padding: 0 14px 12px;
+  margin: 0 -14px;
 }
 .scroll-row::-webkit-scrollbar { display: none; }
 
-/* Force 3 cards per screen width in scroll rows */
+/* 3 cards visible + peek of 4th */
 .scroll-row .card {
-  flex: 0 0 31.5% !important;
-  min-width: 100px !important;
-  width: 31.5% !important;
-  max-width: 31.5% !important;
+  flex: 0 0 30% !important;
+  min-width: 95px !important;
+  width: 30% !important;
+  max-width: 30% !important;
 }
 
 /* ===== ANIME CARD ===== */
@@ -307,31 +308,44 @@ a { text-decoration: none; color: inherit; }
   width: 100%; aspect-ratio: 16/10; object-fit: cover;
   display: block; background: var(--bg3);
 }
-.card-info { padding: 10px 10px 12px; }
+.card-info { padding: 8px 8px 10px; }
 .card-badge {
   display: inline-block; background: var(--badge-bg); color: #fff;
   font-size: 9px; font-weight: 800; padding: 3px 8px;
-  border-radius: 4px; margin-bottom: 6px; letter-spacing: 1px;
+  border-radius: 4px; margin-bottom: 5px; letter-spacing: 1px;
   text-transform: uppercase;
 }
 .card-title {
-  font-size: 13px; font-weight: 700; color: var(--text);
+  font-size: 12px; font-weight: 700; color: var(--text);
   line-height: 1.3; margin-bottom: 6px;
   display: -webkit-box; -webkit-line-clamp: 2;
   -webkit-box-orient: vertical; overflow: hidden;
+  height: 2.6em; /* fixed 2 lines height always */
 }
 .card-meta {
   display: flex; align-items: center; justify-content: space-between;
   gap: 6px; flex-wrap: wrap;
 }
-.card-rating { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #ffd700; }
+.card-rating { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #ffd700; }
 .card-rating i { font-size: 10px; }
-.card-year { font-size: 11px; color: var(--text2); font-weight: 600; }
+.card-year { font-size: 10px; color: var(--text2); font-weight: 600; }
 .card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
 .card-tag {
   font-size: 10px; color: var(--text2); background: var(--bg3);
   padding: 2px 7px; border-radius: 4px; border: 1px solid var(--border);
   font-weight: 600;
+}
+
+/* Scroll-row cards — all same height no matter title length */
+.scroll-row .card {
+  display: flex !important;
+  flex-direction: column !important;
+}
+.scroll-row .card-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .card-heart {
