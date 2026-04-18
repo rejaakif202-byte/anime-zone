@@ -255,7 +255,7 @@ a { text-decoration: none; color: inherit; }
 
 /* GLOBAL 3-COLUMN MOBILE LAYOUT — Applies to ALL grids on the site */
 @media (max-width: 768px) {
-  .grid, .latest-grid, #pageCategoryGrid, #myListGrid, #searchGrid, #categoryGrid {
+  .grid, .latest-grid, #pageCategoryGrid, #myListGrid, #searchGrid, #categoryGrid, #latestGrid {
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 8px !important;
   }
