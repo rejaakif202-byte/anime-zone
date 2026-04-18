@@ -761,6 +761,8 @@ function renderHome(data) {
   if (myListSec) myListSec.classList.add('hidden');
   if (catSec)    catSec.style.display    = 'none';
   if (homeSecs)  homeSecs.style.display  = 'block';
+  const searchSec = document.getElementById('searchSection');
+  if (searchSec) searchSec.classList.add('hidden');
 
   const pw = document.getElementById('paginationWrap');
   if (pw) pw.innerHTML = '';
@@ -874,14 +876,16 @@ function searchAnime(q) {
   const sec1 = document.getElementById('trendingSection');
   const sec2 = document.getElementById('top10Section');
   const sec3 = document.getElementById('latestSection');
+  const searchSec = document.getElementById('searchSection');
   const catSec = document.getElementById('pageCategorySection');
   const homeSecs = document.getElementById('homeSections');
   if (catSec)   catSec.style.display = 'none';
   if (homeSecs) homeSecs.style.display = 'block';
   if (sec1) sec1.classList.add('hidden');
   if (sec2) sec2.classList.add('hidden');
-  if (sec3) sec3.classList.remove('hidden');
-  renderGrid('latestGrid', r, 'No results found.');
+  if (sec3) sec3.classList.add('hidden');
+  if (searchSec) searchSec.classList.remove('hidden');
+  renderGrid('searchGrid', r, 'No results found.');
 }
 
 // ===== SIDEBAR =====
