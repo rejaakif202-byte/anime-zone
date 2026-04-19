@@ -305,11 +305,7 @@
               gap:6px;font-size:13px;cursor:pointer">
               <input type="checkbox" id="a_top10"/> Top 10</label>
           </div>
-          <div class="form-group" id="top10RankField" style="display:none">
-            <label>TOP 10 RANK</label>
-            <input type="number" id="a_top10rank"
-              placeholder="1" min="1" max="10"/>
-          </div>
+
           <button class="btn-primary" id="addAnimeBtn"
             onclick="addAnime()" style="width:100%;background:#555">
             <i class="fas fa-floppy-disk"></i> Save as Draft
@@ -1214,8 +1210,7 @@
         trending: document.getElementById('a_trending').checked,
         latest:   document.getElementById('a_latest').checked,
         top10: isTop10,
-        top10rank: isTop10
-          ?(parseInt(document.getElementById('a_top10rank').value)||0):0,
+        top10AddedAt: isTop10 ? Date.now() : 0,
         seasons:[],
         published: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1225,11 +1220,10 @@
         document.getElementById('addSuccess').style.display='block';
         setTimeout(()=>document.getElementById('addSuccess').style.display='none',3000);
         ['a_title','a_genre','a_rating','a_year','a_studio',
-         'a_thumb','a_thumb_url','a_banner','a_banner_url','a_desc','a_top10rank']
+         'a_thumb','a_thumb_url','a_banner','a_banner_url','a_desc']
           .forEach(id=>{const el=document.getElementById(id);if(el) el.value='';});
         ['a_trending','a_latest','a_top10']
           .forEach(id=>{document.getElementById(id).checked=false;});
-        document.getElementById('top10RankField').style.display='none';
         ['coverPreview','bannerPreview'].forEach(id=>{
           const el=document.getElementById(id);
           if(el) el.innerHTML='<i class="fas fa-image" style="color:var(--text2);font-size:18px"></i>';
@@ -1389,22 +1383,9 @@
           top10:       nowTop10,
           published:   document.getElementById('edit_published').checked,
         };
-        // If newly added to Top 10 → push it to position 1, shift others down
+        // Newly added to Top 10 → stamp current time so it sorts first (newest = first)
         if (nowTop10 && !wasTop10) {
-          const batch = db.batch();
-          allAnimeCache
-            .filter(a => a.top10 && a.firestoreId !== id)
-            .forEach(a => {
-              batch.update(
-                db.collection('anime').doc(a.firestoreId),
-                { top10rank: (a.top10rank || 0) + 1 }
-              );
-              // Update local cache rank too
-              const ci = allAnimeCache.findIndex(c=>c.firestoreId===a.firestoreId);
-              if (ci!==-1) allAnimeCache[ci].top10rank = (a.top10rank||0)+1;
-            });
-          await batch.commit();
-          update.top10rank = 1; // first place
+          update.top10AddedAt = Date.now();
         }
         await db.collection('anime').doc(id).update(update);
         // Update cache
@@ -2080,10 +2061,6 @@
       try { initDashboard(); } catch(e) { console.error('Dashboard init error:', e); }
     }
     document.addEventListener('DOMContentLoaded',()=>{
-      document.getElementById('a_top10').addEventListener('change',function(){
-        document.getElementById('top10RankField').style.display=
-          this.checked?'block':'none';
-      });
       document.getElementById('adminPass').addEventListener('keydown',e=>{
         if(e.key==='Enter') checkLogin();
       });
