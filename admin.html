@@ -1317,6 +1317,7 @@
     }
 
     // ===== DELETE ANIME =====
+    async function deleteAnime(id, title) {
       if (!confirm(`Delete "${title}"? Cannot be undone.`)) return;
       await db.collection('anime').doc(id).delete();
       allAnimeCache = allAnimeCache.filter(a=>a.firestoreId!==id);
