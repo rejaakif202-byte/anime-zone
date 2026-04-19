@@ -87,6 +87,17 @@
           font-size:13px;cursor:pointer">
           <input type="checkbox" id="edit_top10"/> Top 10</label>
       </div>
+      <!-- Published toggle -->
+      <div style="background:rgba(39,174,96,0.1);border:1.5px solid rgba(39,174,96,0.4);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div>
+          <div style="font-size:13px;font-weight:800;color:var(--text)"><i class="fas fa-rocket" style="color:#27ae60"></i> Published to Website</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">When OFF, only you (admin) can see this anime.</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0">
+          <input type="checkbox" id="edit_published" style="width:18px;height:18px;accent-color:#27ae60;cursor:pointer"/>
+          <span id="edit_published_label" style="font-size:12px;font-weight:700;color:#27ae60">Live</span>
+        </label>
+      </div>
       <div style="display:flex;gap:10px">
         <button class="btn-outline"
           onclick="closeEditAnime()" style="flex:1">Cancel</button>
@@ -300,8 +311,8 @@
               placeholder="1" min="1" max="10"/>
           </div>
           <button class="btn-primary" id="addAnimeBtn"
-            onclick="addAnime()" style="width:100%">
-            <i class="fas fa-plus"></i> Add to Website
+            onclick="addAnime()" style="width:100%;background:#555">
+            <i class="fas fa-floppy-disk"></i> Save as Draft
           </button>
         </div>
       </div>
@@ -1199,6 +1210,7 @@
         top10rank: isTop10
           ?(parseInt(document.getElementById('a_top10rank').value)||0):0,
         seasons:[],
+        published: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
       try {
@@ -1247,14 +1259,25 @@
             src="${anime.thumbnail||''}"
             onerror="this.style.background='var(--bg3)'"/>
           <div class="anime-manage-info">
-            <strong>${anime.title}</strong>
+            <strong>${anime.title}${anime.published===false?'&nbsp;<span style="background:#e67e22;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;vertical-align:middle">DRAFT</span>':''}</strong>
             <span>${(anime.type||'').toUpperCase()} · ${anime.year||''} ·
               ${(anime.seasons||[]).length} season(s) · ${totalEps} ep(s)</span>
           </div>
-          <div class="anime-manage-actions" style="display:flex;gap:6px">
+          <div class="anime-manage-actions" style="display:flex;gap:6px;flex-wrap:wrap">
+            ${anime.published===false?`
+            <button class="btn-sm"
+              style="background:#27ae60;color:#fff;border:none;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap"
+              onclick="publishAnime('${anime.firestoreId}')">
+              <i class="fas fa-rocket"></i> Publish
+            </button>`:`
+            <button class="btn-sm"
+              style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px"
+              onclick="unpublishAnime('${anime.firestoreId}')">
+              <i class="fas fa-eye-slash"></i>
+            </button>`}
             <button class="btn-sm"
               style="background:var(--bg3);border:1px solid var(--border);
-                color:var(--text2);border-radius:6px;padding:4px 10px;
+                color:var(--text2);border-radius:6px;padding:6px 10px;
                 cursor:pointer;font-size:13px"
               onclick="openEditAnime('${anime.firestoreId}')">
               <i class="fas fa-pen"></i>
@@ -1273,7 +1296,22 @@
       renderManageList(query);
     }
 
-    async function deleteAnime(id, title) {
+    async function publishAnime(id) {
+      await db.collection('anime').doc(id).update({ published: true });
+      const idx = allAnimeCache.findIndex(a=>a.firestoreId===id);
+      if (idx!==-1) allAnimeCache[idx].published = true;
+      renderManageList(); updateStats();
+    }
+
+    async function unpublishAnime(id) {
+      if (!confirm('Hide this anime from the website? You can re-publish anytime.')) return;
+      await db.collection('anime').doc(id).update({ published: false });
+      const idx = allAnimeCache.findIndex(a=>a.firestoreId===id);
+      if (idx!==-1) allAnimeCache[idx].published = false;
+      renderManageList(); updateStats();
+    }
+
+    // ===== DELETE ANIME =====
       if (!confirm(`Delete "${title}"? Cannot be undone.`)) return;
       await db.collection('anime').doc(id).delete();
       allAnimeCache = allAnimeCache.filter(a=>a.firestoreId!==id);
@@ -1299,6 +1337,14 @@
       document.getElementById('edit_trending').checked = !!d.trending;
       document.getElementById('edit_latest').checked   = !!d.latest;
       document.getElementById('edit_top10').checked    = !!d.top10;
+      const isPublished = d.published !== false;
+      document.getElementById('edit_published').checked = isPublished;
+      document.getElementById('edit_published_label').textContent = isPublished ? 'Live' : 'Draft';
+      document.getElementById('edit_published_label').style.color = isPublished ? '#27ae60' : '#e67e22';
+      document.getElementById('edit_published').onchange = function() {
+        document.getElementById('edit_published_label').textContent = this.checked ? 'Live' : 'Draft';
+        document.getElementById('edit_published_label').style.color = this.checked ? '#27ae60' : '#e67e22';
+      };
       document.getElementById('editAnimeModal').style.display = 'block';
       document.getElementById('editAnimeSuccess').style.display = 'none';
       document.getElementById('editAnimeError').style.display   = 'none';
@@ -1333,6 +1379,7 @@
           trending:    document.getElementById('edit_trending').checked,
           latest:      document.getElementById('edit_latest').checked,
           top10:       nowTop10,
+          published:   document.getElementById('edit_published').checked,
         };
         // If newly added to Top 10 → push it to position 1, shift others down
         if (nowTop10 && !wasTop10) {
