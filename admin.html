@@ -1316,6 +1316,8 @@
       btn.disabled=true;
       try {
         const thumb = document.getElementById('edit_thumb').value.trim();
+        const nowTop10  = document.getElementById('edit_top10').checked;
+        const wasTop10  = !!allAnimeCache.find(a=>a.firestoreId===id)?.top10;
         const update = {
           title:       document.getElementById('edit_title').value.trim(),
           type:        document.getElementById('edit_type').value,
@@ -1330,8 +1332,25 @@
           description: document.getElementById('edit_desc').value.trim(),
           trending:    document.getElementById('edit_trending').checked,
           latest:      document.getElementById('edit_latest').checked,
-          top10:       document.getElementById('edit_top10').checked,
+          top10:       nowTop10,
         };
+        // If newly added to Top 10 → push it to position 1, shift others down
+        if (nowTop10 && !wasTop10) {
+          const batch = db.batch();
+          allAnimeCache
+            .filter(a => a.top10 && a.firestoreId !== id)
+            .forEach(a => {
+              batch.update(
+                db.collection('anime').doc(a.firestoreId),
+                { top10rank: (a.top10rank || 0) + 1 }
+              );
+              // Update local cache rank too
+              const ci = allAnimeCache.findIndex(c=>c.firestoreId===a.firestoreId);
+              if (ci!==-1) allAnimeCache[ci].top10rank = (a.top10rank||0)+1;
+            });
+          await batch.commit();
+          update.top10rank = 1; // first place
+        }
         await db.collection('anime').doc(id).update(update);
         // Update cache
         const idx = allAnimeCache.findIndex(a=>a.firestoreId===id);
