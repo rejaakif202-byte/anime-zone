@@ -731,7 +731,7 @@ function renderHome(data) {
 
   // 1. Top 10 (Max 10)
   const top10 = data.filter(a => a.top10 && a.type !== 'news')
-    .sort((a,b) => (a.top10rank||0) - (b.top10rank||0))
+    .sort((a,b) => (b.top10AddedAt||0) - (a.top10AddedAt||0))
     .slice(0, 10);
   top10.forEach(a => usedIds.add(a.firestoreId));
 
