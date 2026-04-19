@@ -501,7 +501,10 @@ async function fetchAllAnime() {
       snap = await db.collection('anime').get();
     }
     const data = [];
-    snap.forEach(doc => data.push({ ...doc.data(), firestoreId: doc.id }));
+    snap.forEach(doc => {
+      const d = { ...doc.data(), firestoreId: doc.id };
+      if (d.published !== false) data.push(d); // hide drafts from public
+    });
     allAnimeData = data;
     return data;
   } catch(e) {
