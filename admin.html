@@ -868,6 +868,32 @@
   <script src="data.js"></script>
   <script>
     const ADMIN_PASSWORD   = 'AnimeVerse@123';
+
+    // ===== LOGIN — defined first so a crash below never breaks login =====
+    window.checkLogin = function() {
+      try {
+        const val = document.getElementById('adminPass').value;
+        if (val === ADMIN_PASSWORD) {
+          document.getElementById('loginScreen').style.display    = 'none';
+          document.getElementById('adminDashboard').style.display = 'block';
+          document.getElementById('loginError').style.display     = 'none';
+          sessionStorage.setItem('av_admin','1');
+          initDashboard();
+        } else {
+          document.getElementById('loginError').style.display = 'block';
+          document.getElementById('adminPass').value = '';
+        }
+      } catch(e) { console.error('Login error:', e); }
+    };
+    window.togglePassView = function() {
+      const inp  = document.getElementById('adminPass');
+      const icon = document.getElementById('eyeIcon');
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+      icon.className = inp.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+    };
+    window.logout = function() {
+      sessionStorage.removeItem('av_admin'); location.reload();
+    };
     let currentLangTab     = 'Japanese';
     let episodeLangData    = {};
     let editingSeasonPacks = [];
@@ -961,28 +987,7 @@
       if (btn) btn.innerHTML = saved === 'dark'
         ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
     }
-    function togglePassView() {
-      const inp  = document.getElementById('adminPass');
-      const icon = document.getElementById('eyeIcon');
-      inp.type = inp.type === 'password' ? 'text' : 'password';
-      icon.className = inp.type === 'password'
-        ? 'fas fa-eye' : 'fas fa-eye-slash';
-    }
-    function checkLogin() {
-      if (document.getElementById('adminPass').value === ADMIN_PASSWORD) {
-        document.getElementById('loginScreen').style.display    = 'none';
-        document.getElementById('adminDashboard').style.display = 'block';
-        document.getElementById('loginError').style.display     = 'none';
-        sessionStorage.setItem('av_admin','1');
-        initDashboard();
-      } else {
-        document.getElementById('loginError').style.display = 'block';
-        document.getElementById('adminPass').value = '';
-      }
-    }
-    function logout() {
-      sessionStorage.removeItem('av_admin'); location.reload();
-    }
+    // togglePassView, checkLogin, logout defined at top of script
     function switchTab(tab, btn) {
       document.querySelectorAll('.admin-tab')
         .forEach(t=>t.classList.remove('active'));
@@ -2069,7 +2074,7 @@
     if(sessionStorage.getItem('av_admin')==='1'){
       document.getElementById('loginScreen').style.display='none';
       document.getElementById('adminDashboard').style.display='block';
-      initDashboard();
+      try { initDashboard(); } catch(e) { console.error('Dashboard init error:', e); }
     }
     document.addEventListener('DOMContentLoaded',()=>{
       document.getElementById('a_top10').addEventListener('change',function(){
