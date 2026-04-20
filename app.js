@@ -782,15 +782,16 @@ function renderSectionPage(section, allItems) {
 
 function renderHome(data) {
   currentPage = 1;
-  sectionPages.top10   = 1;
-  sectionPages.latest  = 1;
+  sectionPages.top10    = 1;
+  sectionPages.latest   = 1;
   sectionPages.trending = 1;
+
   const pw = document.getElementById('paginationWrap');
   if (pw) pw.innerHTML = '';
 
   const usedIds = new Set();
 
-  // 1. All top10 items (no slice — pagination handles it)
+  // 1. All top10 items
   const top10All = data.filter(a => a.top10 && a.type !== 'news')
     .sort((a,b) => (b.top10AddedAt||0) - (a.top10AddedAt||0));
   top10All.forEach(a => usedIds.add(a.firestoreId));
@@ -823,8 +824,6 @@ function renderHome(data) {
   if (homeSecs)  homeSecs.style.display  = 'block';
   if (searchSec) searchSec.classList.add('hidden');
 
-  const pw = document.getElementById('paginationWrap');
-  if (pw) pw.innerHTML = '';
 
   if (data.length === 0) {
     if (emptyState)   emptyState.classList.remove('hidden');
