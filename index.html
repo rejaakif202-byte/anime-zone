@@ -12,7 +12,7 @@
 
 <!-- Auth wall will be injected here by app.js -->
 
-<div id="appContent" style="display:block">
+<div id="appContent" style="display:flex;flex-direction:column;flex:1;min-height:100vh">
 
   <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
@@ -289,9 +289,9 @@
   <div id="paginationWrap" style="padding:8px 14px 4px;flex-shrink:0"></div>
 
   <!-- FOOTER -->
-  <footer style="margin-top:24px;padding:24px 16px 32px;
+  <footer style="margin-top:auto;padding:24px 16px 32px;
     border-top:1.5px solid var(--border);
-    background:var(--bg2)">
+    background:var(--bg2);flex-shrink:0">
     <div style="max-width:600px;margin:0 auto;text-align:center">
       <!-- Logo -->
       <div style="font-family:'Bebas Neue',cursive;font-size:28px;
