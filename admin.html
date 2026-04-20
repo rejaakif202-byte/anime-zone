@@ -7,6 +7,41 @@
   <link rel="stylesheet" href="style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    /* ===== SEARCHABLE SELECT ===== */
+    .ss-wrap { position: relative; width: 100%; }
+    .ss-display {
+      width: 100%; background: var(--input-bg); border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 10px 14px; color: var(--text);
+      font-size: 14px; font-family: 'Poppins', sans-serif; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+      transition: border-color 0.2s; box-sizing: border-box;
+    }
+    .ss-display:hover { border-color: var(--accent); }
+    .ss-display i { font-size: 12px; color: var(--text2); transition: transform 0.2s; }
+
+    .ss-dropdown {
+      position: absolute; top: calc(100% + 5px); left: 0; right: 0;
+      background: var(--card-bg); border: 1.5px solid var(--border);
+      border-radius: 10px; z-index: 500; box-shadow: 0 8px 24px var(--shadow);
+      overflow: hidden; animation: ssFade 0.2s ease;
+    }
+    @keyframes ssFade { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+
+    .ss-dropdown.hidden { display: none; }
+    .ss-search {
+      width: 100%; padding: 12px; background: var(--bg3); border: none;
+      border-bottom: 1.5px solid var(--border); color: var(--text);
+      font-family: 'Poppins', sans-serif; font-size: 13px; outline: none; box-sizing: border-box;
+    }
+    .ss-options { max-height: 250px; overflow-y: auto; }
+    .ss-option {
+      padding: 10px 14px; font-size: 13px; color: var(--text);
+      cursor: pointer; transition: background 0.2s;
+    }
+    .ss-option:hover { background: var(--accent); color: #fff; }
+    .ss-option.selected { background: var(--accent); color: #fff; font-weight: 700; }
+  </style>
 </head>
 <body class="admin-body">
 
@@ -899,6 +934,7 @@
     let editingAnimeId     = null;
     let seasonEpsRef       = [];
     let allAnimeCache      = [];
+    let currentTab         = 'add';
 
     // ===== DYNAMIC QUALITY STATE =====
     let stgQualities = {};
@@ -987,6 +1023,7 @@
     }
     // togglePassView, checkLogin, logout defined at top of script
     function switchTab(tab, btn) {
+      currentTab = tab;
       document.querySelectorAll('.admin-tab')
         .forEach(t=>t.classList.remove('active'));
       document.querySelectorAll('.admin-panel')
@@ -1257,12 +1294,15 @@
     }
 
     // ===== MANAGE LIST =====
-    async function renderManageList(filter='') {
-      const list  = filter
-        ? allAnimeCache.filter(a =>
-            a.title.toLowerCase().includes(filter.toLowerCase()))
-        : allAnimeCache.length ? allAnimeCache : await getAllAnime();
-      allAnimeCache = allAnimeCache.length ? allAnimeCache : list;
+     async function renderManageList(filter) {
+      let list = allAnimeCache;
+      if (!list.length) {
+        list = await getAllAnime();
+        allAnimeCache = list;
+      }
+      if (filter) {
+        list = list.filter(a => a.title.toLowerCase().includes(filter.toLowerCase()));
+      }
       const c = document.getElementById('manageList');
       const e = document.getElementById('manageEmpty');
       c.innerHTML='';
@@ -2070,8 +2110,11 @@
     async function initDashboard() {
       loadTheme();
       // Show loading state in manage list initially
-      document.getElementById('manageList').innerHTML = 
-        '<div style="text-align:center;padding:40px;color:var(--text2)"><i class="fas fa-circle-notch fa-spin"></i> Loading data...</div>';
+      const manageList = document.getElementById('manageList');
+      if (manageList) {
+        manageList.innerHTML = 
+          '<div style="text-align:center;padding:40px;color:var(--text2)"><i class="fas fa-circle-notch fa-spin"></i> Loading data...</div>';
+      }
       
       await updateStats();
       await populateAnimeDropdown();
