@@ -911,7 +911,18 @@
           document.getElementById('adminDashboard').style.display = 'block';
           document.getElementById('loginError').style.display     = 'none';
           sessionStorage.setItem('av_admin','1');
-          initDashboard();
+          setTimeout(async () => {
+            try {
+              await initDashboard();
+              if (parseInt(document.getElementById('statTotal').textContent) === 0) {
+                setTimeout(async () => {
+                  await updateStats();
+                  await populateAnimeDropdown();
+                  renderManageList();
+                }, 1500);
+              }
+            } catch(e) { console.error('Init error:', e); }
+          }, 400);
         } else {
           document.getElementById('loginError').style.display = 'block';
           document.getElementById('adminPass').value = '';
@@ -1075,13 +1086,9 @@
     // ===== FIREBASE =====
     async function getAllAnime() {
       try {
-        // Get ALL docs without ordering first to ensure we get everything
-        // Ordering can fail if indexes are missing or fields are absent
         const snap = await db.collection('anime').get();
         const data = [];
         snap.forEach(doc => data.push({...doc.data(), firestoreId: doc.id}));
-        
-        // Sort manually: newest first based on createdAt or a fallback
         data.sort((a, b) => {
           const ta = a.createdAt?.toDate?.()?.getTime?.() || a.top10AddedAt || 0;
           const tb = b.createdAt?.toDate?.()?.getTime?.() || b.top10AddedAt || 0;
@@ -1093,18 +1100,20 @@
         return [];
       }
     }
+    // Always force a fresh Firestore fetch — never use stale cache for stats
+    async function forceReloadAllAnime() {
+      allAnimeCache = [];
+      const fresh = await getAllAnime();
+      allAnimeCache = fresh;
+      return fresh;
+    }
     async function updateStats() {
-      const all = await getAllAnime();
-      allAnimeCache = all;
-      
-      // Update counters with case-insensitive type matching
+      const all = await forceReloadAllAnime();
       document.getElementById('statTotal').textContent  = all.length;
       document.getElementById('statAnime').textContent  =
         all.filter(a => (a.type||'').toLowerCase() === 'anime').length;
       document.getElementById('statMovies').textContent =
         all.filter(a => (a.type||'').toLowerCase() === 'movie').length;
-        
-      // Also refresh the manage list if we are on that tab
       if (currentTab === 'manage') renderManageList();
     }
 
@@ -2123,14 +2132,38 @@
       renderManageList();
     }
     loadTheme();
-    if(sessionStorage.getItem('av_admin')==='1'){
-      document.getElementById('loginScreen').style.display='none';
-      document.getElementById('adminDashboard').style.display='block';
-      try { initDashboard(); } catch(e) { console.error('Dashboard init error:', e); }
+
+    // Wait for DOM + Firebase to be fully ready before loading data
+    function startAdmin() {
+      if (sessionStorage.getItem('av_admin') === '1') {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminDashboard').style.display = 'block';
+        // Small delay ensures Firebase SDK connection is established
+        setTimeout(async () => {
+          try {
+            await initDashboard();
+            // Retry once if stats show 0 (Firebase cold start)
+            if (parseInt(document.getElementById('statTotal').textContent) === 0) {
+              setTimeout(async () => {
+                await updateStats();
+                await populateAnimeDropdown();
+                renderManageList();
+              }, 1500);
+            }
+          } catch(e) { console.error('Dashboard init error:', e); }
+        }, 400);
+      }
     }
-    document.addEventListener('DOMContentLoaded',()=>{
-      document.getElementById('adminPass').addEventListener('keydown',e=>{
-        if(e.key==='Enter') checkLogin();
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', startAdmin);
+    } else {
+      startAdmin();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('adminPass').addEventListener('keydown', e => {
+        if (e.key === 'Enter') checkLogin();
       });
     });
   </script>
