@@ -6,7 +6,7 @@ let currentUser     = null;
 let allAnimeData    = [];
 let currentCategory = 'all';
 let currentPage     = 1;
-const PAGE_SIZE     = 40;   // Max 40 cards per page on category views
+const PAGE_SIZE     = 15;   // 15 cards per page on category/paginated views
 const SECTION_SIZE  = 15;   // items shown per home section
 
 // ===== THEME =====
@@ -725,46 +725,98 @@ function getFilteredItems(cat) {
 }
 
 // ===== RENDER HOME =====
+// Per-section page state
+const sectionPages = { top10: 1, latest: 1, trending: 1 };
+const SECTION_LIMITS = { top10: 10, latest: 15, trending: 15 };
+
+function renderSectionPage(section, allItems) {
+  const limit    = SECTION_LIMITS[section];
+  const gridId   = section + 'Grid';
+  const wrapId   = section + 'Pagination';
+  const page     = sectionPages[section];
+  const total    = allItems.length;
+  const totalPgs = Math.ceil(total / limit);
+  const start    = (page - 1) * limit;
+  const slice    = allItems.slice(start, start + limit);
+
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.innerHTML = '';
+  slice.forEach(a => grid.appendChild(renderCard(a, false)));
+
+  // Build compact page buttons for this section
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  if (totalPgs <= 1) return;
+
+  const container = document.createElement('div');
+  container.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;padding:12px 0 4px';
+
+  for (let p = 1; p <= totalPgs; p++) {
+    const btn = document.createElement('button');
+    const isActive = p === page;
+    btn.textContent = String(p);
+    btn.style.cssText = `
+      min-width:36px;height:36px;padding:0 6px;border-radius:8px;
+      background:${isActive ? 'var(--accent)' : 'var(--card-bg)'};
+      color:${isActive ? '#fff' : 'var(--text2)'};
+      border:1.5px solid ${isActive ? 'var(--accent)' : 'var(--border)'};
+      font-family:'Poppins',sans-serif;font-size:12px;font-weight:800;
+      cursor:${isActive ? 'default' : 'pointer'};transition:all 0.15s;outline:none;
+      box-shadow:${isActive ? '0 3px 0 rgba(100,80,200,0.4)' : '0 2px 0 var(--btn-3d)'};`;
+    if (!isActive) {
+      btn.onclick = () => {
+        sectionPages[section] = p;
+        renderSectionPage(section, allItems);
+        document.getElementById(section + 'Section')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+    }
+    container.appendChild(btn);
+  }
+  wrap.appendChild(container);
+}
+
 function renderHome(data) {
   currentPage = 1;
+  sectionPages.top10   = 1;
+  sectionPages.latest  = 1;
+  sectionPages.trending = 1;
+
   const usedIds = new Set();
 
-  // 1. Top 10 (Max 10)
-  const top10 = data.filter(a => a.top10 && a.type !== 'news')
-    .sort((a,b) => (b.top10AddedAt||0) - (a.top10AddedAt||0))
-    .slice(0, 10);
-  top10.forEach(a => usedIds.add(a.firestoreId));
+  // 1. All top10 items (no slice — pagination handles it)
+  const top10All = data.filter(a => a.top10 && a.type !== 'news')
+    .sort((a,b) => (b.top10AddedAt||0) - (a.top10AddedAt||0));
+  top10All.forEach(a => usedIds.add(a.firestoreId));
 
-  // 2. Latest (Max 15, Exclude Top 10)
-  const latest = data.filter(a => a.latest && a.type !== 'news' && !usedIds.has(a.firestoreId))
+  // 2. All latest items
+  const latestAll = data.filter(a => a.latest && a.type !== 'news' && !usedIds.has(a.firestoreId))
     .sort((a,b) => {
       const ta = a.createdAt?.toDate?.()?.getTime() || 0;
       const tb = b.createdAt?.toDate?.()?.getTime() || 0;
       return tb - ta;
-    })
-    .slice(0, 15);
-  latest.forEach(a => usedIds.add(a.firestoreId));
+    });
+  latestAll.forEach(a => usedIds.add(a.firestoreId));
 
-  // 3. Trending (Max 15, Exclude Top 10 and Latest)
-  const trending = data.filter(a => a.trending && a.type !== 'news' && !usedIds.has(a.firestoreId))
-    .slice(0, 15);
-  trending.forEach(a => usedIds.add(a.firestoreId));
+  // 3. All trending items
+  const trendingAll = data.filter(a => a.trending && a.type !== 'news' && !usedIds.has(a.firestoreId));
 
   const news = data.filter(a => a.type === 'news');
 
   const latestSec   = document.getElementById('latestSection');
   const trendingSec = document.getElementById('trendingSection');
   const top10Sec    = document.getElementById('top10Section');
-  const newsSec     = document.getElementById('newsSection');
   const emptyState  = document.getElementById('emptyState');
   const homeSecs    = document.getElementById('homeSections');
   const myListSec   = document.getElementById('myListSection');
   const catSec      = document.getElementById('pageCategorySection');
+  const searchSec   = document.getElementById('searchSection');
 
   if (myListSec) myListSec.classList.add('hidden');
   if (catSec)    catSec.style.display    = 'none';
   if (homeSecs)  homeSecs.style.display  = 'block';
-  const searchSec = document.getElementById('searchSection');
   if (searchSec) searchSec.classList.add('hidden');
 
   const pw = document.getElementById('paginationWrap');
@@ -779,20 +831,14 @@ function renderHome(data) {
   }
   if (emptyState) emptyState.classList.add('hidden');
 
-  if (latestSec)   latestSec.classList.toggle('hidden',   !latest.length);
-  if (trendingSec) trendingSec.classList.toggle('hidden', !trending.length);
-  if (top10Sec)    top10Sec.classList.toggle('hidden',    !top10.length);
+  if (top10Sec)    top10Sec.classList.toggle('hidden',    !top10All.length);
+  if (latestSec)   latestSec.classList.toggle('hidden',   !latestAll.length);
+  if (trendingSec) trendingSec.classList.toggle('hidden', !trendingAll.length);
 
-  renderGrid('latestGrid',   latest,   'No latest releases yet.');
-  renderGrid('trendingGrid', trending, 'No trending anime yet.');
-  renderGrid('top10Grid',    top10,    'No top 10 yet.');
+  renderSectionPage('top10',    top10All);
+  renderSectionPage('latest',   latestAll);
+  renderSectionPage('trending', trendingAll);
   renderNewsSection(news);
-
-  const totalItems = data.length;
-  if (totalItems > SECTION_SIZE) {
-    const totalPages = Math.ceil(totalItems / PAGE_SIZE);
-    renderPageButtons(1, totalPages);
-  }
 }
 
 function renderGrid(gridId, items, emptyMsg) {
@@ -819,6 +865,24 @@ function renderNewsSection(items) {
 }
 
 // ===== FILTER CATEGORY (pills) =====
+function goHome(btnEl) {
+  currentCategory = 'home';
+  currentPage     = 1;
+  document.querySelectorAll('.cat-pill,.pill').forEach(b => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+  const pw = document.getElementById('paginationWrap');
+  if (pw) pw.innerHTML = '';
+  const homeSecs  = document.getElementById('homeSections');
+  const catSec    = document.getElementById('pageCategorySection');
+  const searchSec = document.getElementById('searchSection');
+  const myListSec = document.getElementById('myListSection');
+  if (homeSecs)   homeSecs.style.display = 'block';
+  if (catSec)     catSec.style.display   = 'none';
+  if (searchSec)  searchSec.classList.add('hidden');
+  if (myListSec)  myListSec.classList.add('hidden');
+  renderHome(allAnimeData);
+}
+
 function filterCategory(cat, btnEl) {
   currentCategory = cat;
   currentPage     = 1;
@@ -831,9 +895,12 @@ function filterCategory(cat, btnEl) {
   if (cat === 'all') {
     const homeSecs = document.getElementById('homeSections');
     const catSec   = document.getElementById('pageCategorySection');
-    if (homeSecs) homeSecs.style.display = 'block';
-    if (catSec)   catSec.style.display   = 'none';
-    renderHome(allAnimeData);
+    const searchSec = document.getElementById('searchSection');
+    if (homeSecs)   homeSecs.style.display = 'none';
+    if (catSec)     catSec.style.display   = 'block';
+    if (searchSec)  searchSec.classList.add('hidden');
+    const items = allAnimeData.filter(a => a.type !== 'news');
+    renderPaginatedView(items, 1, 'pageCategoryGrid', 'All Anime');
   } else {
     const homeSecs = document.getElementById('homeSections');
     const catSec   = document.getElementById('pageCategorySection');
@@ -959,6 +1026,7 @@ function scrollTrending() {
 // ===== GLOBAL EXPORTS =====
 window.toggleTheme          = toggleTheme;
 window.filterCategory       = filterCategory;
+window.goHome               = goHome;
 window.scrollTrending       = scrollTrending;
 window.showMyList           = showMyList;
 window.logoutUser           = logoutUser;
