@@ -160,7 +160,8 @@
 
     <!-- CATEGORY PILLS -->
     <div class="category-pills">
-      <button class="pill active" onclick="filterCategory('all', this)">ALL</button>
+      <button class="pill active" onclick="goHome(this)">HOME</button>
+      <button class="pill" onclick="filterCategory('all', this)">ALL</button>
       <button class="pill" onclick="filterCategory('anime', this)">ANIME</button>
       <button class="pill" onclick="filterCategory('movie', this)">MOVIE</button>
       <button class="pill" onclick="filterCategory('news', this)">NEWS</button>
@@ -221,7 +222,8 @@
           </div>
           <h2 class="section-title" style="margin-bottom:0">Top 10 Today</h2>
         </div>
-        <div class="scroll-row" id="top10Grid"></div>
+        <div class="grid" id="top10Grid"></div>
+        <div id="top10Pagination"></div>
       </section>
 
       <!-- LATEST RELEASES -->
@@ -239,6 +241,7 @@
           </a>
         </div>
         <div class="grid" id="latestGrid"></div>
+        <div id="latestPagination"></div>
       </section>
 
       <!-- TRENDING -->
@@ -251,7 +254,8 @@
           </div>
           <h2 class="section-title" style="margin-bottom:0">Trending</h2>
         </div>
-        <div class="scroll-row" id="trendingGrid"></div>
+        <div class="grid" id="trendingGrid"></div>
+        <div id="trendingPagination"></div>
       </section>
 
       <!-- NEWS -->
