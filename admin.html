@@ -1037,11 +1037,31 @@
 
     // ===== FIREBASE =====
     async function getAllAnime() {
-      const snap = await db.collection('anime')
-        .orderBy('createdAt','desc').get();
       const data = [];
-      snap.forEach(doc=>data.push({...doc.data(),firestoreId:doc.id}));
-      return data;
+      try {
+        // Try ordered query first (works when all docs have createdAt)
+        const snap = await db.collection('anime').orderBy('createdAt','desc').get();
+        snap.forEach(doc => data.push({...doc.data(), firestoreId: doc.id}));
+        if (data.length > 0) return data;
+      } catch(e) { /* orderBy failed — index missing or field absent */ }
+
+      // Fallback: get ALL docs without ordering
+      // This catches docs that are missing the createdAt field
+      try {
+        const snap2 = await db.collection('anime').get();
+        const all2 = [];
+        snap2.forEach(doc => all2.push({...doc.data(), firestoreId: doc.id}));
+        // Sort manually: docs with createdAt first (newest), then the rest
+        all2.sort((a, b) => {
+          const ta = a.createdAt?.toDate?.()?.getTime?.() ?? 0;
+          const tb = b.createdAt?.toDate?.()?.getTime?.() ?? 0;
+          return tb - ta;
+        });
+        return all2;
+      } catch(e2) {
+        console.error('getAllAnime failed:', e2);
+        return [];
+      }
     }
     async function updateStats() {
       const all = await getAllAnime();
