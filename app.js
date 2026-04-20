@@ -685,16 +685,16 @@ function renderPageButtons(current, total) {
 
 function buildPageList(current, total) {
   if (total <= 7) return Array.from({length: total}, (_,i) => i+1);
-  const pages = [];
-  const delta = 1;
-  const rangeStart = Math.max(2,      current - delta);
-  const rangeEnd   = Math.min(total-1, current + delta);
-  pages.push(1);
-  if (rangeStart > 2) pages.push('...');
-  for (let p = rangeStart; p <= rangeEnd; p++) pages.push(p);
-  if (rangeEnd < total - 1) pages.push('...');
-  pages.push(total);
-  return pages;
+  // Show first 7 pages, ellipsis, then last page (like screenshot)
+  if (current <= 6) {
+    return [1,2,3,4,5,6,7,'...',total];
+  }
+  // Near the end
+  if (current >= total - 4) {
+    return [1,'...',total-6,total-5,total-4,total-3,total-2,total-1,total];
+  }
+  // Middle
+  return [1,'...',current-1,current,current+1,'...',total];
 }
 
 function goToPage(page) {
@@ -835,9 +835,9 @@ function renderHome(data) {
   if (latestSec)   latestSec.classList.toggle('hidden',   !latestAll.length);
   if (trendingSec) trendingSec.classList.toggle('hidden', !trendingAll.length);
 
-  renderSectionPage('top10',    top10All);
-  renderSectionPage('latest',   latestAll);
-  renderSectionPage('trending', trendingAll);
+  renderGrid('top10Grid',    top10All.slice(0, 10), 'No top 10 yet.');
+  renderSectionPage('latest', latestAll);
+  renderGrid('trendingGrid', trendingAll.slice(0, 15), 'No trending anime yet.');
   renderNewsSection(news);
 }
 
@@ -896,11 +896,10 @@ function filterCategory(cat, btnEl) {
     const homeSecs = document.getElementById('homeSections');
     const catSec   = document.getElementById('pageCategorySection');
     const searchSec = document.getElementById('searchSection');
-    if (homeSecs)   homeSecs.style.display = 'none';
-    if (catSec)     catSec.style.display   = 'block';
-    if (searchSec)  searchSec.classList.add('hidden');
-    const items = allAnimeData.filter(a => a.type !== 'news');
-    renderPaginatedView(items, 1, 'pageCategoryGrid', 'All Anime');
+    if (homeSecs)  homeSecs.style.display = 'block';
+    if (catSec)    catSec.style.display   = 'none';
+    if (searchSec) searchSec.classList.add('hidden');
+    renderHome(allAnimeData);
   } else {
     const homeSecs = document.getElementById('homeSections');
     const catSec   = document.getElementById('pageCategorySection');
