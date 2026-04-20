@@ -203,8 +203,22 @@
 
     <div class="admin-main">
       <!-- STATS -->
+      <div style="display:flex;align-items:center;justify-content:space-between;
+        margin:16px 0 10px">
+        <span style="font-size:11px;font-weight:700;color:var(--text2);
+          letter-spacing:1px;text-transform:uppercase">Overview</span>
+        <button id="refreshStatsBtn" onclick="refreshDashboard()"
+          style="display:flex;align-items:center;gap:6px;
+            background:var(--bg3);border:1.5px solid var(--border);
+            color:var(--text2);border-radius:8px;padding:6px 14px;
+            font-family:'Poppins',sans-serif;font-size:12px;font-weight:800;
+            cursor:pointer;transition:all 0.15s;
+            box-shadow:0 2px 0 var(--btn-3d)">
+          <i class="fas fa-rotate-right"></i> Refresh
+        </button>
+      </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);
-        gap:10px;margin:16px 0 20px">
+        gap:10px;margin-bottom:20px">
         <div class="admin-card" style="text-align:center;padding:14px 8px">
           <div style="font-size:26px;font-weight:700;color:var(--accent)"
             id="statTotal">0</div>
@@ -1085,19 +1099,34 @@
 
     // ===== FIREBASE =====
     async function getAllAnime() {
+      // Always fetch from server — never trust cache in admin panel
+      // This ensures stats and manage list are always accurate after refresh/back
       try {
-        const snap = await db.collection('anime').get();
+        const snap = await db.collection('anime').get({ source: 'server' });
         const data = [];
         snap.forEach(doc => data.push({...doc.data(), firestoreId: doc.id}));
         data.sort((a, b) => {
-          const ta = a.createdAt?.toDate?.()?.getTime?.() || a.top10AddedAt || 0;
-          const tb = b.createdAt?.toDate?.()?.getTime?.() || b.top10AddedAt || 0;
+          const ta = a.createdAt?.toDate?.()?.getTime?.() || 0;
+          const tb = b.createdAt?.toDate?.()?.getTime?.() || 0;
           return tb - ta;
         });
         return data;
-      } catch(e) {
-        console.error('getAllAnime failed:', e);
-        return [];
+      } catch(serverErr) {
+        // Server fetch failed (offline?) — fall back to cache
+        try {
+          const snap2 = await db.collection('anime').get({ source: 'cache' });
+          const data2 = [];
+          snap2.forEach(doc => data2.push({...doc.data(), firestoreId: doc.id}));
+          data2.sort((a, b) => {
+            const ta = a.createdAt?.toDate?.()?.getTime?.() || 0;
+            const tb = b.createdAt?.toDate?.()?.getTime?.() || 0;
+            return tb - ta;
+          });
+          return data2;
+        } catch(cacheErr) {
+          console.error('getAllAnime failed (server + cache):', cacheErr);
+          return [];
+        }
       }
     }
     // Always force a fresh Firestore fetch — never use stale cache for stats
@@ -2118,18 +2147,27 @@
     // ===== INIT =====
     async function initDashboard() {
       loadTheme();
-      // Show loading state in manage list initially
       const manageList = document.getElementById('manageList');
       if (manageList) {
-        manageList.innerHTML = 
+        manageList.innerHTML =
           '<div style="text-align:center;padding:40px;color:var(--text2)"><i class="fas fa-circle-notch fa-spin"></i> Loading data...</div>';
       }
-      
       await updateStats();
       await populateAnimeDropdown();
-      
-      // Ensure manage list is rendered on first load
       renderManageList();
+    }
+
+    // Manual refresh — called by the Refresh button
+    async function refreshDashboard() {
+      const btn = document.getElementById('refreshStatsBtn');
+      if (btn) { btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Loading...'; btn.disabled = true; }
+      allAnimeCache = [];
+      try {
+        await updateStats();
+        await populateAnimeDropdown();
+        renderManageList();
+      } catch(e) { console.error('Refresh failed:', e); }
+      if (btn) { btn.innerHTML = '<i class="fas fa-rotate-right"></i> Refresh'; btn.disabled = false; }
     }
     loadTheme();
 
@@ -2138,20 +2176,25 @@
       if (sessionStorage.getItem('av_admin') === '1') {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('adminDashboard').style.display = 'block';
-        // Small delay ensures Firebase SDK connection is established
-        setTimeout(async () => {
+
+        // Load dashboard with retry — waits for Firebase server connection
+        async function tryLoad(attempt) {
           try {
             await initDashboard();
-            // Retry once if stats show 0 (Firebase cold start)
-            if (parseInt(document.getElementById('statTotal').textContent) === 0) {
-              setTimeout(async () => {
-                await updateStats();
-                await populateAnimeDropdown();
-                renderManageList();
-              }, 1500);
+            const total = parseInt(document.getElementById('statTotal').textContent) || 0;
+            if (total === 0 && attempt < 4) {
+              // Still 0 — Firebase hasn't connected yet, retry with increasing delay
+              const delays = [1000, 2000, 3500, 5000];
+              setTimeout(() => tryLoad(attempt + 1), delays[attempt] || 3000);
             }
-          } catch(e) { console.error('Dashboard init error:', e); }
-        }, 400);
+          } catch(e) {
+            console.error('Dashboard init error:', e);
+            if (attempt < 3) setTimeout(() => tryLoad(attempt + 1), 2000);
+          }
+        }
+
+        // Small initial delay to let Firebase SDK establish connection
+        setTimeout(() => tryLoad(0), 300);
       }
     }
 
