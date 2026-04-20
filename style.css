@@ -210,7 +210,7 @@ a { text-decoration: none; color: inherit; }
 .search-bar button:hover { color: var(--accent); }
 
 /* ===== MAIN ===== */
-.main { margin-top: 58px; padding: 14px; min-height: 100vh; }
+.main { margin-top: 58px; padding: 14px; flex: 1; }
 
 /* ===== CATEGORY PILLS ===== */
 .category-pills {
