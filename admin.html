@@ -1037,40 +1037,38 @@
 
     // ===== FIREBASE =====
     async function getAllAnime() {
-      const data = [];
       try {
-        // Try ordered query first (works when all docs have createdAt)
-        const snap = await db.collection('anime').orderBy('createdAt','desc').get();
+        // Get ALL docs without ordering first to ensure we get everything
+        // Ordering can fail if indexes are missing or fields are absent
+        const snap = await db.collection('anime').get();
+        const data = [];
         snap.forEach(doc => data.push({...doc.data(), firestoreId: doc.id}));
-        if (data.length > 0) return data;
-      } catch(e) { /* orderBy failed — index missing or field absent */ }
-
-      // Fallback: get ALL docs without ordering
-      // This catches docs that are missing the createdAt field
-      try {
-        const snap2 = await db.collection('anime').get();
-        const all2 = [];
-        snap2.forEach(doc => all2.push({...doc.data(), firestoreId: doc.id}));
-        // Sort manually: docs with createdAt first (newest), then the rest
-        all2.sort((a, b) => {
-          const ta = a.createdAt?.toDate?.()?.getTime?.() ?? 0;
-          const tb = b.createdAt?.toDate?.()?.getTime?.() ?? 0;
+        
+        // Sort manually: newest first based on createdAt or a fallback
+        data.sort((a, b) => {
+          const ta = a.createdAt?.toDate?.()?.getTime?.() || a.top10AddedAt || 0;
+          const tb = b.createdAt?.toDate?.()?.getTime?.() || b.top10AddedAt || 0;
           return tb - ta;
         });
-        return all2;
-      } catch(e2) {
-        console.error('getAllAnime failed:', e2);
+        return data;
+      } catch(e) {
+        console.error('getAllAnime failed:', e);
         return [];
       }
     }
     async function updateStats() {
       const all = await getAllAnime();
       allAnimeCache = all;
+      
+      // Update counters with case-insensitive type matching
       document.getElementById('statTotal').textContent  = all.length;
       document.getElementById('statAnime').textContent  =
-        all.filter(a=>a.type==='anime').length;
+        all.filter(a => (a.type||'').toLowerCase() === 'anime').length;
       document.getElementById('statMovies').textContent =
-        all.filter(a=>a.type==='movie').length;
+        all.filter(a => (a.type||'').toLowerCase() === 'movie').length;
+        
+      // Also refresh the manage list if we are on that tab
+      if (currentTab === 'manage') renderManageList();
     }
 
     // ===== SEARCHABLE SELECT =====
@@ -2071,8 +2069,15 @@
     // ===== INIT =====
     async function initDashboard() {
       loadTheme();
+      // Show loading state in manage list initially
+      document.getElementById('manageList').innerHTML = 
+        '<div style="text-align:center;padding:40px;color:var(--text2)"><i class="fas fa-circle-notch fa-spin"></i> Loading data...</div>';
+      
       await updateStats();
       await populateAnimeDropdown();
+      
+      // Ensure manage list is rendered on first load
+      renderManageList();
     }
     loadTheme();
     if(sessionStorage.getItem('av_admin')==='1'){
