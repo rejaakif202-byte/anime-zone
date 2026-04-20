@@ -732,7 +732,6 @@ const SECTION_LIMITS = { top10: 10, latest: 15, trending: 15 };
 function renderSectionPage(section, allItems) {
   const limit    = SECTION_LIMITS[section];
   const gridId   = section + 'Grid';
-  const wrapId   = section + 'Pagination';
   const page     = sectionPages[section];
   const total    = allItems.length;
   const totalPgs = Math.ceil(total / limit);
@@ -744,8 +743,12 @@ function renderSectionPage(section, allItems) {
   grid.innerHTML = '';
   slice.forEach(a => grid.appendChild(renderCard(a, false)));
 
-  // Build compact page buttons for this section
-  const wrap = document.getElementById(wrapId);
+  // Always clear inline pagination div (keep it empty)
+  const inlineWrap = document.getElementById(section + 'Pagination');
+  if (inlineWrap) inlineWrap.innerHTML = '';
+
+  // Render page buttons into global paginationWrap (above footer)
+  const wrap = document.getElementById('paginationWrap');
   if (!wrap) return;
   wrap.innerHTML = '';
   if (totalPgs <= 1) return;
@@ -769,8 +772,7 @@ function renderSectionPage(section, allItems) {
       btn.onclick = () => {
         sectionPages[section] = p;
         renderSectionPage(section, allItems);
-        document.getElementById(section + 'Section')
-          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       };
     }
     container.appendChild(btn);
@@ -783,6 +785,8 @@ function renderHome(data) {
   sectionPages.top10   = 1;
   sectionPages.latest  = 1;
   sectionPages.trending = 1;
+  const pw = document.getElementById('paginationWrap');
+  if (pw) pw.innerHTML = '';
 
   const usedIds = new Set();
 
