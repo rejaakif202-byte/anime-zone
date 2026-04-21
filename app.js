@@ -593,6 +593,7 @@ async function initApp() {
     } catch(e) {}
   }
   renderHome(data);
+  checkCategoryNotifications(data);
   initSidebar();
 }
 
@@ -886,11 +887,49 @@ function goHome(btnEl) {
   renderHome(allAnimeData);
 }
 
+// ===== CATEGORY NOTIFICATION DOTS =====
+const NOTIF_CATS = ['anime', 'movie', 'news', 'series'];
+
+function checkCategoryNotifications(data) {
+  NOTIF_CATS.forEach(cat => {
+    const storageKey = `av_seen_${cat}`;
+    const lastSeen   = parseInt(localStorage.getItem(storageKey) || '0');
+    // Find newest item in this category
+    const items = data.filter(a => (a.type || '').toLowerCase() === cat);
+    const newestTs = items.reduce((max, a) => {
+      const t = a.createdAt?.toDate?.()?.getTime?.() || a.top10AddedAt || 0;
+      return t > max ? t : max;
+    }, 0);
+    const dot = document.getElementById('dot-' + cat);
+    if (dot) {
+      if (newestTs > lastSeen) {
+        dot.classList.add('show');
+      } else {
+        dot.classList.remove('show');
+      }
+    }
+  });
+}
+
+function clearCategoryDot(cat) {
+  const dot = document.getElementById('dot-' + cat);
+  if (dot) dot.classList.remove('show');
+  // Save current time as "last seen" for this category
+  const items = allAnimeData.filter(a => (a.type || '').toLowerCase() === cat);
+  const newestTs = items.reduce((max, a) => {
+    const t = a.createdAt?.toDate?.()?.getTime?.() || a.top10AddedAt || 0;
+    return t > max ? t : max;
+  }, Date.now());
+  localStorage.setItem('av_seen_' + cat, String(newestTs));
+}
+
 function filterCategory(cat, btnEl) {
   currentCategory = cat;
   currentPage     = 1;
   document.querySelectorAll('.cat-pill,.pill').forEach(b => b.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
+  // Clear dot when user visits this category
+  if (NOTIF_CATS.includes(cat)) clearCategoryDot(cat);
 
   const myListSec = document.getElementById('myListSection');
   if (myListSec) myListSec.classList.add('hidden');
@@ -1027,7 +1066,9 @@ function scrollTrending() {
 
 // ===== GLOBAL EXPORTS =====
 window.toggleTheme          = toggleTheme;
-window.filterCategory       = filterCategory;
+window.filterCategory           = filterCategory;
+window.checkCategoryNotifications = checkCategoryNotifications;
+window.clearCategoryDot         = clearCategoryDot;
 window.goHome               = goHome;
 window.scrollTrending       = scrollTrending;
 window.showMyList           = showMyList;
