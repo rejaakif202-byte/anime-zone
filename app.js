@@ -6,8 +6,8 @@ let currentUser     = null;
 let allAnimeData    = [];
 let currentCategory = 'all';
 let currentPage     = 1;
-const PAGE_SIZE     = 10;   // 10 cards per page
-const SECTION_SIZE  = 10;   // items shown per home section
+const PAGE_SIZE     = 15;   // 15 cards per page on category/paginated views
+const SECTION_SIZE  = 15;   // items shown per home section
 
 // ===== THEME =====
 function toggleTheme() {
@@ -593,7 +593,6 @@ async function initApp() {
     } catch(e) {}
   }
   renderHome(data);
-  checkCategoryNotifications(data);
   initSidebar();
 }
 
@@ -728,7 +727,7 @@ function getFilteredItems(cat) {
 // ===== RENDER HOME =====
 // Per-section page state
 const sectionPages = { top10: 1, latest: 1, trending: 1 };
-const SECTION_LIMITS = { top10: 10, latest: 10, trending: 10 };
+const SECTION_LIMITS = { top10: 10, latest: 15, trending: 15 };
 
 function renderSectionPage(section, allItems) {
   const limit    = SECTION_LIMITS[section];
@@ -841,7 +840,7 @@ function renderHome(data) {
 
   renderGrid('top10Grid',    top10All.slice(0, 10), 'No top 10 yet.');
   renderSectionPage('latest', latestAll);
-  renderGrid('trendingGrid', trendingAll.slice(0, 10), 'No trending anime yet.');
+  renderGrid('trendingGrid', trendingAll.slice(0, 15), 'No trending anime yet.');
   renderNewsSection(news);
 }
 
@@ -887,49 +886,11 @@ function goHome(btnEl) {
   renderHome(allAnimeData);
 }
 
-// ===== CATEGORY NOTIFICATION DOTS =====
-const NOTIF_CATS = ['anime', 'movie', 'news', 'series'];
-
-function checkCategoryNotifications(data) {
-  NOTIF_CATS.forEach(cat => {
-    const storageKey = `av_seen_${cat}`;
-    const lastSeen   = parseInt(localStorage.getItem(storageKey) || '0');
-    // Find newest item in this category
-    const items = data.filter(a => (a.type || '').toLowerCase() === cat);
-    const newestTs = items.reduce((max, a) => {
-      const t = a.createdAt?.toDate?.()?.getTime?.() || a.top10AddedAt || 0;
-      return t > max ? t : max;
-    }, 0);
-    const dot = document.getElementById('dot-' + cat);
-    if (dot) {
-      if (newestTs > lastSeen) {
-        dot.classList.add('show');
-      } else {
-        dot.classList.remove('show');
-      }
-    }
-  });
-}
-
-function clearCategoryDot(cat) {
-  const dot = document.getElementById('dot-' + cat);
-  if (dot) dot.classList.remove('show');
-  // Save current time as "last seen" for this category
-  const items = allAnimeData.filter(a => (a.type || '').toLowerCase() === cat);
-  const newestTs = items.reduce((max, a) => {
-    const t = a.createdAt?.toDate?.()?.getTime?.() || a.top10AddedAt || 0;
-    return t > max ? t : max;
-  }, Date.now());
-  localStorage.setItem('av_seen_' + cat, String(newestTs));
-}
-
 function filterCategory(cat, btnEl) {
   currentCategory = cat;
   currentPage     = 1;
   document.querySelectorAll('.cat-pill,.pill').forEach(b => b.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
-  // Clear dot when user visits this category
-  if (NOTIF_CATS.includes(cat)) clearCategoryDot(cat);
 
   const myListSec = document.getElementById('myListSection');
   if (myListSec) myListSec.classList.add('hidden');
@@ -1066,9 +1027,7 @@ function scrollTrending() {
 
 // ===== GLOBAL EXPORTS =====
 window.toggleTheme          = toggleTheme;
-window.filterCategory           = filterCategory;
-window.checkCategoryNotifications = checkCategoryNotifications;
-window.clearCategoryDot         = clearCategoryDot;
+window.filterCategory       = filterCategory;
 window.goHome               = goHome;
 window.scrollTrending       = scrollTrending;
 window.showMyList           = showMyList;
