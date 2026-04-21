@@ -925,18 +925,7 @@
           document.getElementById('adminDashboard').style.display = 'block';
           document.getElementById('loginError').style.display     = 'none';
           sessionStorage.setItem('av_admin','1');
-          setTimeout(async () => {
-            try {
-              await initDashboard();
-              if (parseInt(document.getElementById('statTotal').textContent) === 0) {
-                setTimeout(async () => {
-                  await updateStats();
-                  await populateAnimeDropdown();
-                  renderManageList();
-                }, 1500);
-              }
-            } catch(e) { console.error('Init error:', e); }
-          }, 400);
+          initDashboard();
         } else {
           document.getElementById('loginError').style.display = 'block';
           document.getElementById('adminPass').value = '';
@@ -1098,9 +1087,57 @@
     }
 
     // ===== FIREBASE =====
+    // ===== REAL-TIME DATA LISTENER =====
+    // onSnapshot fires automatically when Firebase connects — no cold-start 0 issue
+    let _unsubscribeListener = null;
+
+    function startRealtimeListener() {
+      // Unsubscribe any previous listener
+      if (_unsubscribeListener) { _unsubscribeListener(); _unsubscribeListener = null; }
+
+      const manageList = document.getElementById('manageList');
+      if (manageList) {
+        manageList.innerHTML =
+          '<div style="text-align:center;padding:40px;color:var(--text2)"><i class="fas fa-circle-notch fa-spin"></i> Loading data...</div>';
+      }
+
+      _unsubscribeListener = db.collection('anime').onSnapshot(snap => {
+        const data = [];
+        snap.forEach(doc => data.push({...doc.data(), firestoreId: doc.id}));
+        data.sort((a, b) => {
+          const ta = a.createdAt?.toDate?.()?.getTime?.() || 0;
+          const tb = b.createdAt?.toDate?.()?.getTime?.() || 0;
+          return tb - ta;
+        });
+        allAnimeCache = data;
+
+        // Update stats
+        document.getElementById('statTotal').textContent  = data.length;
+        document.getElementById('statAnime').textContent  =
+          data.filter(a => (a.type||'').toLowerCase() === 'anime').length;
+        document.getElementById('statMovies').textContent =
+          data.filter(a => (a.type||'').toLowerCase() === 'movie').length;
+
+        // Refresh UI
+        if (currentTab === 'manage') renderManageList();
+        populateAnimeDropdown();
+      }, err => {
+        console.error('Snapshot error:', err);
+        // Fall back to single fetch on listener error
+        getAllAnime().then(data => {
+          if (!data.length) return;
+          allAnimeCache = data;
+          document.getElementById('statTotal').textContent  = data.length;
+          document.getElementById('statAnime').textContent  =
+            data.filter(a => (a.type||'').toLowerCase() === 'anime').length;
+          document.getElementById('statMovies').textContent =
+            data.filter(a => (a.type||'').toLowerCase() === 'movie').length;
+          if (currentTab === 'manage') renderManageList();
+        });
+      });
+    }
+
     async function getAllAnime() {
-      // Always fetch from server — never trust cache in admin panel
-      // This ensures stats and manage list are always accurate after refresh/back
       try {
         const snap = await db.collection('anime').get({ source: 'server' });
         const data = [];
@@ -1112,7 +1149,6 @@
         });
         return data;
       } catch(serverErr) {
-        // Server fetch failed (offline?) — fall back to cache
         try {
           const snap2 = await db.collection('anime').get({ source: 'cache' });
           const data2 = [];
@@ -1123,13 +1159,9 @@
             return tb - ta;
           });
           return data2;
-        } catch(cacheErr) {
-          console.error('getAllAnime failed (server + cache):', cacheErr);
-          return [];
-        }
+        } catch(e) { return []; }
       }
     }
-    // Always force a fresh Firestore fetch — never use stale cache for stats
     async function forceReloadAllAnime() {
       allAnimeCache = [];
       const fresh = await getAllAnime();
@@ -2147,54 +2179,23 @@
     // ===== INIT =====
     async function initDashboard() {
       loadTheme();
-      const manageList = document.getElementById('manageList');
-      if (manageList) {
-        manageList.innerHTML =
-          '<div style="text-align:center;padding:40px;color:var(--text2)"><i class="fas fa-circle-notch fa-spin"></i> Loading data...</div>';
-      }
-      await updateStats();
-      await populateAnimeDropdown();
-      renderManageList();
+      startRealtimeListener();
     }
 
-    // Manual refresh — called by the Refresh button
+    // Manual refresh button
     async function refreshDashboard() {
       const btn = document.getElementById('refreshStatsBtn');
       if (btn) { btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Loading...'; btn.disabled = true; }
-      allAnimeCache = [];
-      try {
-        await updateStats();
-        await populateAnimeDropdown();
-        renderManageList();
-      } catch(e) { console.error('Refresh failed:', e); }
-      if (btn) { btn.innerHTML = '<i class="fas fa-rotate-right"></i> Refresh'; btn.disabled = false; }
+      startRealtimeListener();
+      if (btn) { setTimeout(() => { btn.innerHTML = '<i class="fas fa-rotate-right"></i> Refresh'; btn.disabled = false; }, 1500); }
     }
     loadTheme();
 
-    // Wait for DOM + Firebase to be fully ready before loading data
     function startAdmin() {
       if (sessionStorage.getItem('av_admin') === '1') {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('adminDashboard').style.display = 'block';
-
-        // Load dashboard with retry — waits for Firebase server connection
-        async function tryLoad(attempt) {
-          try {
-            await initDashboard();
-            const total = parseInt(document.getElementById('statTotal').textContent) || 0;
-            if (total === 0 && attempt < 4) {
-              // Still 0 — Firebase hasn't connected yet, retry with increasing delay
-              const delays = [1000, 2000, 3500, 5000];
-              setTimeout(() => tryLoad(attempt + 1), delays[attempt] || 3000);
-            }
-          } catch(e) {
-            console.error('Dashboard init error:', e);
-            if (attempt < 3) setTimeout(() => tryLoad(attempt + 1), 2000);
-          }
-        }
-
-        // Small initial delay to let Firebase SDK establish connection
-        setTimeout(() => tryLoad(0), 300);
+        initDashboard();
       }
     }
 
