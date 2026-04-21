@@ -6,7 +6,7 @@ let currentUser     = null;
 let allAnimeData    = [];
 let currentCategory = 'all';
 let currentPage     = 1;
-const PAGE_SIZE     = 15;   // 15 cards per page on category/paginated views
+const PAGE_SIZE     = 10;   // 10 cards per page
 const SECTION_SIZE  = 10;   // items shown per home section
 
 // ===== THEME =====
@@ -521,20 +521,20 @@ function renderCard(anime, isScroll = false) {
   const genres = (anime.genre||[]).slice(0,2).map(g =>
     `<span class="genre-tag" style="font-size:10px;padding:3px 8px">${g}</span>`
   ).join('');
-
+  
   const imgSrc = anime.banner || anime.thumbnail || '';
   div.innerHTML = `
-    <div class="card-thumb-wrap">
+    <div style="position:relative">
       <img class="card-thumb"
         src="${imgSrc}" alt="${anime.title}"
         onerror="this.src='https://via.placeholder.com/400x250?text=No+Image'"/>
-      <span class="card-badge">${(anime.type||'ANIME').toUpperCase()}</span>
       <button class="wishlist-btn" id="wl-${anime.firestoreId}"
         onclick="event.stopPropagation();handleWishlistToggle('${anime.firestoreId}',this)">
         <i class="fas fa-heart"></i>
       </button>
     </div>
     <div class="card-info">
+      <span class="card-badge">${(anime.type||'ANIME').toUpperCase()}</span>
       <div class="card-title">${anime.title}</div>
       <div class="card-meta">
         <span class="card-rating">
@@ -542,7 +542,7 @@ function renderCard(anime, isScroll = false) {
         </span>
         <span class="card-year">${anime.year||''}</span>
       </div>
-      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
         ${genres}
       </div>
     </div>`;
@@ -593,6 +593,7 @@ async function initApp() {
     } catch(e) {}
   }
   renderHome(data);
+  checkCategoryNotifications(data);
   initSidebar();
 }
 
@@ -727,7 +728,7 @@ function getFilteredItems(cat) {
 // ===== RENDER HOME =====
 // Per-section page state
 const sectionPages = { top10: 1, latest: 1, trending: 1 };
-const SECTION_LIMITS = { top10: 10, latest: 15, trending: 15 };
+const SECTION_LIMITS = { top10: 10, latest: 10, trending: 10 };
 
 function renderSectionPage(section, allItems) {
   const limit    = SECTION_LIMITS[section];
@@ -886,11 +887,49 @@ function goHome(btnEl) {
   renderHome(allAnimeData);
 }
 
+// ===== CATEGORY NOTIFICATION DOTS =====
+const NOTIF_CATS = ['anime', 'movie', 'news', 'series'];
+
+function checkCategoryNotifications(data) {
+  NOTIF_CATS.forEach(cat => {
+    const storageKey = `av_seen_${cat}`;
+    const lastSeen   = parseInt(localStorage.getItem(storageKey) || '0');
+    // Find newest item in this category
+    const items = data.filter(a => (a.type || '').toLowerCase() === cat);
+    const newestTs = items.reduce((max, a) => {
+      const t = a.createdAt?.toDate?.()?.getTime?.() || a.top10AddedAt || 0;
+      return t > max ? t : max;
+    }, 0);
+    const dot = document.getElementById('dot-' + cat);
+    if (dot) {
+      if (newestTs > lastSeen) {
+        dot.classList.add('show');
+      } else {
+        dot.classList.remove('show');
+      }
+    }
+  });
+}
+
+function clearCategoryDot(cat) {
+  const dot = document.getElementById('dot-' + cat);
+  if (dot) dot.classList.remove('show');
+  // Save current time as "last seen" for this category
+  const items = allAnimeData.filter(a => (a.type || '').toLowerCase() === cat);
+  const newestTs = items.reduce((max, a) => {
+    const t = a.createdAt?.toDate?.()?.getTime?.() || a.top10AddedAt || 0;
+    return t > max ? t : max;
+  }, Date.now());
+  localStorage.setItem('av_seen_' + cat, String(newestTs));
+}
+
 function filterCategory(cat, btnEl) {
   currentCategory = cat;
   currentPage     = 1;
   document.querySelectorAll('.cat-pill,.pill').forEach(b => b.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
+  // Clear dot when user visits this category
+  if (NOTIF_CATS.includes(cat)) clearCategoryDot(cat);
 
   const myListSec = document.getElementById('myListSection');
   if (myListSec) myListSec.classList.add('hidden');
@@ -1027,7 +1066,9 @@ function scrollTrending() {
 
 // ===== GLOBAL EXPORTS =====
 window.toggleTheme          = toggleTheme;
-window.filterCategory       = filterCategory;
+window.filterCategory           = filterCategory;
+window.checkCategoryNotifications = checkCategoryNotifications;
+window.clearCategoryDot         = clearCategoryDot;
 window.goHome               = goHome;
 window.scrollTrending       = scrollTrending;
 window.showMyList           = showMyList;
