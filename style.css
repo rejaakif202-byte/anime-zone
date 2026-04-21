@@ -1166,3 +1166,164 @@ a { text-decoration: none; color: inherit; }
 :root[data-theme="dark"] .card-rating,
 :root[data-theme="dark"] .info-chip.rating,
 :root[data-theme="dark"] .info-chip.rating i { color: #ffd700; }
+
+
+/* =====================================================
+   ✨ ENTRANCE ANIMATIONS — user pages only
+   Targets: cards, episodes, profile, watch, anime detail
+   Never targets .admin-card (admin panel untouched)
+   ===================================================== */
+
+@keyframes avFadeUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+@keyframes avFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Cards in grids (index.html, profile.html) ── */
+.card {
+  animation: avFadeUp 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.card:nth-child(1)  { animation-delay: 0.03s; }
+.card:nth-child(2)  { animation-delay: 0.08s; }
+.card:nth-child(3)  { animation-delay: 0.13s; }
+.card:nth-child(4)  { animation-delay: 0.18s; }
+.card:nth-child(5)  { animation-delay: 0.22s; }
+.card:nth-child(6)  { animation-delay: 0.26s; }
+.card:nth-child(7)  { animation-delay: 0.30s; }
+.card:nth-child(8)  { animation-delay: 0.33s; }
+.card:nth-child(9)  { animation-delay: 0.36s; }
+.card:nth-child(10) { animation-delay: 0.38s; }
+.card:nth-child(n+11) { animation-delay: 0.40s; }
+
+/* ── Top 10 rows ── */
+.top10-item {
+  animation: avFadeUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.top10-item:nth-child(1)  { animation-delay: 0.04s; }
+.top10-item:nth-child(2)  { animation-delay: 0.09s; }
+.top10-item:nth-child(3)  { animation-delay: 0.14s; }
+.top10-item:nth-child(4)  { animation-delay: 0.19s; }
+.top10-item:nth-child(5)  { animation-delay: 0.23s; }
+.top10-item:nth-child(6)  { animation-delay: 0.27s; }
+.top10-item:nth-child(7)  { animation-delay: 0.30s; }
+.top10-item:nth-child(8)  { animation-delay: 0.33s; }
+.top10-item:nth-child(9)  { animation-delay: 0.36s; }
+.top10-item:nth-child(10) { animation-delay: 0.38s; }
+
+/* ── Category pills ── */
+.pill {
+  animation: avFadeUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.pill:nth-child(1) { animation-delay: 0.02s; }
+.pill:nth-child(2) { animation-delay: 0.06s; }
+.pill:nth-child(3) { animation-delay: 0.10s; }
+.pill:nth-child(4) { animation-delay: 0.14s; }
+.pill:nth-child(5) { animation-delay: 0.18s; }
+.pill:nth-child(n+6) { animation-delay: 0.22s; }
+
+/* ── Anime detail page ── */
+.anime-poster-wrap {
+  animation: avFadeUp 0.40s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
+}
+.anime-desc {
+  animation: avFadeUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+.seasons-tabs {
+  animation: avFadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+.sub-season-tabs {
+  animation: avFadeUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+}
+.season-tg-pack {
+  animation: avFadeUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.season-tg-pack:nth-child(1) { animation-delay: 0.08s; }
+.season-tg-pack:nth-child(2) { animation-delay: 0.14s; }
+.season-tg-pack:nth-child(3) { animation-delay: 0.20s; }
+.season-tg-pack:nth-child(n+4) { animation-delay: 0.25s; }
+
+/* ── Episode list (anime.html) ── */
+.episode-item {
+  animation: avFadeUp 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.episode-item:nth-child(1)  { animation-delay: 0.04s; }
+.episode-item:nth-child(2)  { animation-delay: 0.09s; }
+.episode-item:nth-child(3)  { animation-delay: 0.14s; }
+.episode-item:nth-child(4)  { animation-delay: 0.18s; }
+.episode-item:nth-child(5)  { animation-delay: 0.22s; }
+.episode-item:nth-child(6)  { animation-delay: 0.26s; }
+.episode-item:nth-child(7)  { animation-delay: 0.29s; }
+.episode-item:nth-child(8)  { animation-delay: 0.32s; }
+.episode-item:nth-child(n+9) { animation-delay: 0.35s; }
+
+/* ── Watch page ── */
+#playerSection {
+  animation: avFadeIn 0.45s ease both;
+}
+.ld-wrap {
+  animation: avFadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+.lq-box {
+  animation: avFadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+}
+.tg-box {
+  animation: avFadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+}
+.comment-toggle-btn {
+  animation: avFadeUp 0.34s cubic-bezier(0.22, 1, 0.36, 1) 0.14s both;
+}
+.comment-item {
+  animation: avFadeUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.comment-item:nth-child(1) { animation-delay: 0.04s; }
+.comment-item:nth-child(2) { animation-delay: 0.09s; }
+.comment-item:nth-child(3) { animation-delay: 0.14s; }
+.comment-item:nth-child(n+4) { animation-delay: 0.18s; }
+
+/* ── Profile page ── */
+.pf-stat {
+  animation: avFadeUp 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.pf-stat:nth-child(1) { animation-delay: 0.06s; }
+.pf-stat:nth-child(2) { animation-delay: 0.12s; }
+.pf-stat:nth-child(3) { animation-delay: 0.18s; }
+.pf-info-card {
+  animation: avFadeUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.10s both;
+}
+.pf-edit-card {
+  animation: avFadeUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.16s both;
+}
+.pf-action-btn {
+  animation: avFadeUp 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.pf-action-btn:nth-child(1) { animation-delay: 0.05s; }
+.pf-action-btn:nth-child(2) { animation-delay: 0.10s; }
+.pf-action-btn:nth-child(3) { animation-delay: 0.15s; }
+.pf-action-btn:nth-child(4) { animation-delay: 0.20s; }
+
+/* ── Pagination buttons ── */
+#paginationWrap button {
+  animation: avFadeUp 0.30s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+}
+
+/* ── Section titles ── */
+.section-title {
+  animation: avFadeUp 0.34s cubic-bezier(0.22, 1, 0.36, 1) 0.02s both;
+}
+
+/* ── Respect reduced-motion accessibility preference ── */
+@media (prefers-reduced-motion: reduce) {
+  .card, .top10-item, .pill, .episode-item,
+  .anime-poster-wrap, .anime-desc, .seasons-tabs, .sub-season-tabs,
+  .season-tg-pack, #playerSection, .ld-wrap, .lq-box, .tg-box,
+  .comment-toggle-btn, .comment-item,
+  .pf-stat, .pf-info-card, .pf-edit-card, .pf-action-btn,
+  #paginationWrap button, .section-title {
+    animation: none !important;
+  }
+}
