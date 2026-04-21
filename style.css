@@ -514,6 +514,24 @@ a { text-decoration: none; color: inherit; }
 .info-chip i { color: var(--accent); font-size: 12px; }
 .info-chip.rating { color: #c97d00; }
 .info-chip.rating i { color: #c97d00; }
+
+/* ===== VIEW COUNTER ===== */
+.view-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(151,135,243,0.12);
+  border: 1px solid rgba(151,135,243,0.3);
+  color: var(--text2); font-size: 11px; font-weight: 700;
+  padding: 4px 10px; border-radius: 20px;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.2s;
+}
+.view-badge i { color: var(--accent); font-size: 11px; }
+.view-badge.counting { animation: viewPop 0.4s ease; }
+@keyframes viewPop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
 .genre-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
 .anime-desc { font-size: 13px; color: var(--text2); line-height: 1.75; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); font-weight: 500; }
 .action-btns { display: flex; gap: 10px; margin-top: 14px; }
