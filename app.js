@@ -6,8 +6,8 @@ let currentUser     = null;
 let allAnimeData    = [];
 let currentCategory = 'all';
 let currentPage     = 1;
-const PAGE_SIZE     = 15;   // 15 cards per page on category/paginated views
-const SECTION_SIZE  = 15;   // items shown per home section
+const PAGE_SIZE     = 10;   // 10 cards per page
+const SECTION_SIZE  = 10;   // items shown per home section
 
 // ===== THEME =====
 function toggleTheme() {
@@ -728,7 +728,7 @@ function getFilteredItems(cat) {
 // ===== RENDER HOME =====
 // Per-section page state
 const sectionPages = { top10: 1, latest: 1, trending: 1 };
-const SECTION_LIMITS = { top10: 10, latest: 15, trending: 15 };
+const SECTION_LIMITS = { top10: 10, latest: 10, trending: 10 };
 
 function renderSectionPage(section, allItems) {
   const limit    = SECTION_LIMITS[section];
@@ -841,7 +841,7 @@ function renderHome(data) {
 
   renderGrid('top10Grid',    top10All.slice(0, 10), 'No top 10 yet.');
   renderSectionPage('latest', latestAll);
-  renderGrid('trendingGrid', trendingAll.slice(0, 15), 'No trending anime yet.');
+  renderGrid('trendingGrid', trendingAll.slice(0, 10), 'No trending anime yet.');
   renderNewsSection(news);
 }
 
