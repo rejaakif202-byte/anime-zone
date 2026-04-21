@@ -7,7 +7,7 @@ let allAnimeData    = [];
 let currentCategory = 'all';
 let currentPage     = 1;
 const PAGE_SIZE     = 15;   // 15 cards per page on category/paginated views
-const SECTION_SIZE  = 15;   // items shown per home section
+const SECTION_SIZE  = 10;   // items shown per home section
 
 // ===== THEME =====
 function toggleTheme() {
@@ -521,20 +521,20 @@ function renderCard(anime, isScroll = false) {
   const genres = (anime.genre||[]).slice(0,2).map(g =>
     `<span class="genre-tag" style="font-size:10px;padding:3px 8px">${g}</span>`
   ).join('');
-  
+
   const imgSrc = anime.banner || anime.thumbnail || '';
   div.innerHTML = `
-    <div style="position:relative">
+    <div class="card-thumb-wrap">
       <img class="card-thumb"
         src="${imgSrc}" alt="${anime.title}"
         onerror="this.src='https://via.placeholder.com/400x250?text=No+Image'"/>
+      <span class="card-badge">${(anime.type||'ANIME').toUpperCase()}</span>
       <button class="wishlist-btn" id="wl-${anime.firestoreId}"
         onclick="event.stopPropagation();handleWishlistToggle('${anime.firestoreId}',this)">
         <i class="fas fa-heart"></i>
       </button>
     </div>
     <div class="card-info">
-      <span class="card-badge">${(anime.type||'ANIME').toUpperCase()}</span>
       <div class="card-title">${anime.title}</div>
       <div class="card-meta">
         <span class="card-rating">
@@ -542,7 +542,7 @@ function renderCard(anime, isScroll = false) {
         </span>
         <span class="card-year">${anime.year||''}</span>
       </div>
-      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">
         ${genres}
       </div>
     </div>`;
@@ -840,7 +840,7 @@ function renderHome(data) {
 
   renderGrid('top10Grid',    top10All.slice(0, 10), 'No top 10 yet.');
   renderSectionPage('latest', latestAll);
-  renderGrid('trendingGrid', trendingAll.slice(0, 15), 'No trending anime yet.');
+  renderGrid('trendingGrid', trendingAll.slice(0, 10), 'No trending anime yet.');
   renderNewsSection(news);
 }
 
