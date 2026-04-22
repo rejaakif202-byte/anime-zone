@@ -493,26 +493,28 @@
             <div class="anime-info">
               <h1>${anime.title}</h1>
               <p class="subtitle">${anime.studio || ''} · ${anime.year || ''}</p>
-              <div class="info-row">
-                <span class="info-chip rating">
+              <div class="info-row" style="flex-wrap:nowrap;overflow:hidden">
+                <span class="info-chip rating" style="white-space:nowrap">
                   <i class="fas fa-star"></i> ${anime.rating || 'N/A'}
                 </span>
-                <span class="info-chip">
+                <span class="info-chip" style="white-space:nowrap">
                   <i class="fas fa-circle-dot"></i> ${anime.status || ''}
                 </span>
-                <span class="info-chip">
+                <span class="info-chip" style="white-space:nowrap">
                   <i class="fas fa-layer-group"></i>
                   ${topLevelCount} Season${topLevelCount !== 1 ? 's' : ''}
-                </span>
-                <span class="view-badge" id="viewBadge">
-                  <i class="fas fa-eye"></i>
-                  <span id="viewCount">${anime.views || 0}</span>
                 </span>
               </div>
               <div class="genre-tags">${genres}</div>
             </div>
           </div>
           <p class="anime-desc">${anime.description || ''}</p>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;margin-top:-4px">
+            <span class="view-badge" id="viewBadge">
+              <i class="fas fa-eye"></i>
+              <span id="viewCount">${anime.views || 0}</span> views
+            </span>
+          </div>
           <div class="action-btns">
             <a href="${watchUrl}" class="btn-primary"
               style="text-decoration:none;${watchUrl === '#'
