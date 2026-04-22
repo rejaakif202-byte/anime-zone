@@ -355,7 +355,7 @@ a { text-decoration: none; color: inherit; }
 
 /* ===== ANIME CARD ===== */
 .card {
-  background: transparent;
+  background: var(--card-bg);
   border-radius: 10px; overflow: hidden;
   border: 1.5px solid var(--border);
   cursor: pointer;
@@ -364,40 +364,6 @@ a { text-decoration: none; color: inherit; }
   box-shadow: 0 4px 0 var(--btn-3d), 0 6px 14px var(--shadow);
   display: flex;
   flex-direction: column;
-  isolation: isolate;
-}
-/* Vivid animated gradient behind card */
-.card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: 10px;
-  background: linear-gradient(
-    135deg,
-    #1a1040 0%,
-    #6b3fa0 20%,
-    #9787F3 40%,
-    #3d1f7a 60%,
-    #b06cf5 80%,
-    #1a1040 100%
-  );
-  background-size: 400% 400%;
-  animation: cardShine 4s ease infinite;
-}
-/* Light theme — vivid but different palette */
-:root[data-theme="light"] .card::before {
-  background: linear-gradient(
-    135deg,
-    #2d5a27 0%,
-    #6aaf5e 20%,
-    #a8d89c 40%,
-    #3d7a34 60%,
-    #7cc46e 80%,
-    #2d5a27 100%
-  );
-  background-size: 400% 400%;
-  animation: cardShine 4s ease infinite;
 }
 .card:hover {
   transform: translateY(-5px);
@@ -413,7 +379,23 @@ a { text-decoration: none; color: inherit; }
   width: 100%; aspect-ratio: 16/9; object-fit: cover;
   display: block; background: var(--bg3); flex-shrink: 0;
 }
-.card-info { padding: 8px 8px 10px; flex: 1; display: flex; flex-direction: column; background: var(--card-bg); }
+/* Dark theme card-info animation */
+.card-info {
+  padding: 8px 8px 10px; flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(135deg, #1e1640, #3d2880, #9787F3, #3d2880, #1e1640);
+  background-size: 400% 400%;
+  animation: cardShine 4s ease infinite;
+}
+:root[data-theme="light"] .card-info {
+  background: linear-gradient(135deg, #2a5225, #4e8c45, #8dc882, #4e8c45, #2a5225);
+  background-size: 400% 400%;
+  animation: cardShine 4s ease infinite;
+}
+/* Keep text visible on animated background */
+.card-title  { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+.card-badge  { background: rgba(0,0,0,0.45) !important; }
+.card-rating { color: #ffd700 !important; }
+.card-year   { color: rgba(255,255,255,0.75) !important; }
 .card-badge {
   display: inline-block; background: var(--badge-bg); color: #fff;
   font-size: 9px; font-weight: 800; padding: 3px 8px;
