@@ -55,6 +55,22 @@
 
 /* ===== RESET ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ===== PAGE BACKGROUND BLOBS ===== */
+@keyframes blobFloat1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%     { transform: translate(40px,-30px) scale(1.08); }
+  66%     { transform: translate(-20px,20px) scale(0.95); }
+}
+@keyframes blobFloat2 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%     { transform: translate(-50px,25px) scale(1.05); }
+  66%     { transform: translate(30px,-40px) scale(0.97); }
+}
+@keyframes blobFloat3 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50%     { transform: translate(25px,35px) scale(1.06); }
+}
+
 html { scroll-behavior: smooth; height: 100%; }
 
 body {
@@ -67,49 +83,56 @@ body {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
-
-a { text-decoration: none; color: inherit; }
-
-/* ===== OCEAN FLOAT LAYER ===== */
-#oceanLayer {
+/* Three slow floating blobs as background */
+body::before, body::after {
+  content: '';
   position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-.ocean-orb {
-  position: absolute;
   border-radius: 50%;
-  filter: blur(70px);
-  will-change: transform;
+  filter: blur(80px);
   pointer-events: none;
+  z-index: 0;
+  opacity: 0.35;
 }
-/* Dark theme orb colors */
-.ocean-orb:nth-child(1) { background: #9787F3; opacity: 0.22; }
-.ocean-orb:nth-child(2) { background: #7d6de0; opacity: 0.18; }
-.ocean-orb:nth-child(3) { background: #b8acff; opacity: 0.14; }
-.ocean-orb:nth-child(4) { background: #6c5fc7; opacity: 0.16; }
-.ocean-orb:nth-child(5) { background: #a09be8; opacity: 0.12; }
-
-/* Light theme — softer greens */
-:root[data-theme="light"] .ocean-orb:nth-child(1) { background: #6b9c5e; opacity: 0.14; }
-:root[data-theme="light"] .ocean-orb:nth-child(2) { background: #4a7c40; opacity: 0.11; }
-:root[data-theme="light"] .ocean-orb:nth-child(3) { background: #8ab87e; opacity: 0.09; }
-:root[data-theme="light"] .ocean-orb:nth-child(4) { background: #3d6b35; opacity: 0.10; }
-:root[data-theme="light"] .ocean-orb:nth-child(5) { background: #7aaa6e; opacity: 0.08; }
-
-/* Make sure all content sits above the layer */
-.header, main, footer, #appContent, .admin-header, .admin-main {
+body::before {
+  width: 420px; height: 420px;
+  top: -80px; left: -100px;
+  background: var(--accent);
+  animation: blobFloat1 18s ease-in-out infinite;
+}
+body::after {
+  width: 350px; height: 350px;
+  bottom: 10%; right: -80px;
+  background: var(--accent2);
+  animation: blobFloat2 22s ease-in-out infinite;
+}
+/* Third blob via main element */
+main::before {
+  content: '';
+  position: fixed;
+  width: 280px; height: 280px;
+  top: 45%; left: 30%;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.2;
+  background: var(--accent);
+  animation: blobFloat3 26s ease-in-out infinite;
+}
+/* Make sure content stays above blobs */
+header, .header, main, footer, #appContent {
   position: relative;
   z-index: 1;
 }
 @media (prefers-reduced-motion: reduce) {
-  .ocean-orb { animation: none !important; }
+  body::before, body::after, main::before { animation: none; }
 }
-
-
+:root[data-theme="light"] body::before { opacity: 0.18; }
+:root[data-theme="light"] body::after  { opacity: 0.15; }
+:root[data-theme="light"] main::before { opacity: 0.1; }
+a { text-decoration: none; color: inherit; }
 
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
