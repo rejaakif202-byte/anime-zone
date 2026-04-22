@@ -123,13 +123,26 @@
         ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
     }
 
-    const qualityOrder  = ['4k','1080p','720p','480p'];
+    const qualityOrder  = ['4k','4K','1080p','1080','720p','720','480p','480','360p','hd','HD','sd','SD'];
     const qualityConfig = {
-      '480p':  { label:'480p SD',   color:'#666' },
+      '480p':  { label:'480p SD',   color:'#607d8b' },
+      '480':   { label:'480p SD',   color:'#607d8b' },
+      'sd':    { label:'SD',        color:'#607d8b' },
       '720p':  { label:'720p HD',   color:'#2a6dd9' },
+      '720':   { label:'720p HD',   color:'#2a6dd9' },
+      'hd':    { label:'HD',        color:'#2a6dd9' },
       '1080p': { label:'1080p FHD', color:'#27ae60' },
+      '1080':  { label:'1080p FHD', color:'#27ae60' },
+      'fhd':   { label:'FHD',       color:'#27ae60' },
       '4k':    { label:'4K UHD',    color:'#C87740' },
+      '2160p': { label:'4K UHD',    color:'#C87740' },
+      '8k':    { label:'8K',        color:'#c0392b' },
     };
+    // Normalize key lookup — handles "4K", "HD", "1080P" etc.
+    function getQualityCfg(q) {
+      const key = String(q).toLowerCase().trim();
+      return qualityConfig[key] || qualityConfig[q] || { label: q.toUpperCase(), color: '#9787F3' };
+    }
 
     function showError(msg) {
       document.getElementById('detailMain').innerHTML = `
@@ -248,7 +261,7 @@
           });
           if (!sortedKeys.length) return '';
           btnHTML = `<div class="season-tg-quality-row">${sortedKeys.map(q => {
-            const cfg = qualityConfig[q] || { label: q.toUpperCase(), color: '#2ca5e0' };
+            const cfg = getQualityCfg(q);
             return `<a href="${pack.links[q]}" target="_blank" rel="noopener" class="season-tg-quality-btn" style="--tgcolor:${cfg.color}"><i class="fab fa-telegram"></i> ${cfg.label}</a>`;
           }).join('')}</div>`;
         }
@@ -509,10 +522,9 @@
             </div>
           </div>
           <p class="anime-desc">${anime.description || ''}</p>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;margin-top:-4px">
-            <span class="view-badge" id="viewBadge">
-              <i class="fas fa-eye"></i>
-              <span id="viewCount">${anime.views || 0}</span> views
+          <div style="display:flex;align-items:center;justify-content:flex-end;margin:-6px 0 10px">
+            <span class="view-badge" id="viewBadge" style="font-size:11px">
+              <i class="fas fa-eye"></i>&nbsp;<span id="viewCount">${anime.views || 0}</span> views
             </span>
           </div>
           <div class="action-btns">
