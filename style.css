@@ -1,56 +1,56 @@
 /* =====================================================
    ANIME VERSE — PREMIUM DESIGN SYSTEM
-   Light: Tea Green (#DAE8B3) + Midnight Green (#194342)
-   Dark:  Deep Purple (#2D274B) + Violet (#9787F3)
+   Light: Ghost White (#F7F7FF) + Persian Blue (#27187E)
+   Dark:  Night Black (#000F08) + Imperial Red (#FB3640)
 ===================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;800;900&display=swap');
 
 /* ===== THEME VARIABLES ===== */
 :root[data-theme="dark"] {
-  --bg:           #2D274B;
-  --bg2:          #231d3e;
-  --bg3:          #382f5c;
-  --text:         #EAEFFE;
-  --text2:        #a99ff5;
-  --accent:       #9787F3;
-  --accent2:      #7d6de0;
-  --accent-dark:  #5a4cb8;
-  --border:       #4a3f78;
-  --card-bg:      #332b55;
-  --header-bg:    rgba(45,39,75,0.97);
-  --sidebar-bg:   #231d3e;
-  --pill-bg:      #382f5c;
-  --pill-text:    #EAEFFE;
-  --shadow:       rgba(0,0,0,0.55);
-  --input-bg:     #382f5c;
-  --badge-bg:     #9787F3;
-  --scroll-thumb: #9787F3;
-  --btn-3d:       #5a4cb8;
-  --card-shine:   rgba(151,135,243,0.06);
+  --bg:           #000F08;
+  --bg2:          #071410;
+  --bg3:          #0E1F18;
+  --text:         #F0F0F0;
+  --text2:        #9AADA5;
+  --accent:       #FB3640;
+  --accent2:      #E02A33;
+  --accent-dark:  #B01E25;
+  --border:       #1A3025;
+  --card-bg:      #0A1A10;
+  --header-bg:    rgba(0,15,8,0.97);
+  --sidebar-bg:   #050E09;
+  --pill-bg:      #0E1F18;
+  --pill-text:    #F0F0F0;
+  --shadow:       rgba(0,0,0,0.72);
+  --input-bg:     #0E1F18;
+  --badge-bg:     #FB3640;
+  --scroll-thumb: #FB3640;
+  --btn-3d:       #B01E25;
+  --card-shine:   rgba(251,54,64,0.06);
 }
 
 :root[data-theme="light"] {
-  --bg:           #DAE8B3;
-  --bg2:          #c8d89f;
-  --bg3:          #b5c98a;
-  --text:         #194342;
-  --text2:        #3d6b6a;
-  --accent:       #194342;
-  --accent2:      #0e2b2a;
-  --accent-dark:  #071615;
-  --border:       #9eb870;
-  --card-bg:      #e8f2c6;
-  --header-bg:    rgba(218,232,179,0.97);
-  --sidebar-bg:   #c8d89f;
-  --pill-bg:      #b5c98a;
-  --pill-text:    #194342;
-  --shadow:       rgba(25,67,66,0.18);
-  --input-bg:     #c8d89f;
-  --badge-bg:     #194342;
-  --scroll-thumb: #194342;
-  --btn-3d:       #071615;
-  --card-shine:   rgba(25,67,66,0.04);
+  --bg:           #F7F7FF;
+  --bg2:          #EAEAF7;
+  --bg3:          #DCDCEF;
+  --text:         #27187E;
+  --text2:        #5040A0;
+  --accent:       #27187E;
+  --accent2:      #1D1266;
+  --accent-dark:  #120C4A;
+  --border:       #C5C5E8;
+  --card-bg:      #F0F0FB;
+  --header-bg:    rgba(247,247,255,0.97);
+  --sidebar-bg:   #EAEAF7;
+  --pill-bg:      #DCDCEF;
+  --pill-text:    #27187E;
+  --shadow:       rgba(39,24,126,0.14);
+  --input-bg:     #EAEAF7;
+  --badge-bg:     #27187E;
+  --scroll-thumb: #27187E;
+  --btn-3d:       #1D1266;
+  --card-shine:   rgba(39,24,126,0.04);
 }
 
 /* ===== RESET ===== */
@@ -382,7 +382,7 @@ a { text-decoration: none; color: inherit; }
 /* Dark theme card-info animation */
 .card-info {
   padding: 8px 8px 10px; flex: 1; display: flex; flex-direction: column;
-  background: linear-gradient(135deg, #1e1640, #3d2880, #9787F3, #3d2880, #1e1640);
+  background: linear-gradient(135deg, #030908, #0e1f18, #FB3640, #0e1f18, #030908);
   background-size: 400% 400%;
   animation: cardShine 4s ease infinite;
 }
@@ -550,8 +550,8 @@ a { text-decoration: none; color: inherit; }
 /* ===== VIEW COUNTER ===== */
 .view-badge {
   display: inline-flex; align-items: center; gap: 5px;
-  background: rgba(151,135,243,0.12);
-  border: 1px solid rgba(151,135,243,0.3);
+  background: rgba(251,54,64,0.08);
+  border: 1px solid rgba(251,54,64,0.25);
   color: var(--text2); font-size: 11px; font-weight: 700;
   padding: 4px 10px; border-radius: 20px;
   font-family: 'Poppins', sans-serif;
@@ -718,7 +718,7 @@ a { text-decoration: none; color: inherit; }
   font-family: monospace; white-space: pre-wrap; margin-top: 10px;
 }
 .success-msg {
-  background: rgba(151,135,243,0.15); border: 1.5px solid var(--accent);
+  background: rgba(251,54,64,0.1); border: 1.5px solid var(--accent);
   color: var(--accent); padding: 10px 14px; border-radius: 8px;
   font-size: 13px; margin-bottom: 14px; display: none; font-weight: 700;
 }
@@ -957,7 +957,7 @@ a { text-decoration: none; color: inherit; }
 }
 .ss-option:last-child { border-bottom: none; }
 .ss-option:hover { background: var(--bg3); color: var(--text); }
-.ss-option.selected { color: var(--accent); font-weight: 800; background: rgba(151,135,243,0.08); }
+.ss-option.selected { color: var(--accent); font-weight: 800; background: rgba(251,54,64,0.07); }
 
 /* ===== ADMIN TG BOX ===== */
 .tg-admin-box {
@@ -1005,7 +1005,7 @@ a { text-decoration: none; color: inherit; }
   transition: color 0.2s, background 0.2s;
 }
 .like-btn i { font-size: 18px; display: block; }
-.like-btn.active-like { color: var(--accent); background: rgba(151,135,243,0.1); }
+.like-btn.active-like { color: var(--accent); background: rgba(251,54,64,0.09); }
 .like-btn.active-dislike { color: #2ca5e0; background: rgba(44,165,224,0.1); }
 .like-divider { width: 1px; height: 26px; background: var(--border); flex-shrink: 0; }
 
