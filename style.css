@@ -343,9 +343,20 @@ a { text-decoration: none; color: inherit; }
   height: 2.6em !important;
 }
 
+/* ===== CARD AURORA ANIMATION ===== */
+@keyframes cardAurora {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes cardAuroraDim {
+  0%,100% { opacity: 0.55; }
+  50%     { opacity: 0.75; }
+}
+
 /* ===== ANIME CARD ===== */
 .card {
-  background: var(--card-bg);
+  background: transparent;
   border-radius: 10px; overflow: hidden;
   border: 1.5px solid var(--border);
   cursor: pointer;
@@ -354,6 +365,26 @@ a { text-decoration: none; color: inherit; }
   box-shadow: 0 4px 0 var(--btn-3d), 0 6px 14px var(--shadow);
   display: flex;
   flex-direction: column;
+  isolation: isolate;
+}
+/* Animated aurora layer behind the card content */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    var(--card-bg) 0%,
+    var(--bg3) 30%,
+    var(--accent2) 55%,
+    var(--bg3) 75%,
+    var(--card-bg) 100%
+  );
+  background-size: 300% 300%;
+  animation: cardAurora 5s ease infinite, cardAuroraDim 5s ease infinite;
+  opacity: 0.7;
 }
 .card:hover {
   transform: translateY(-5px);
@@ -369,7 +400,7 @@ a { text-decoration: none; color: inherit; }
   width: 100%; aspect-ratio: 16/9; object-fit: cover;
   display: block; background: var(--bg3); flex-shrink: 0;
 }
-.card-info { padding: 8px 8px 10px; flex: 1; display: flex; flex-direction: column; }
+.card-info { padding: 8px 8px 10px; flex: 1; display: flex; flex-direction: column; background: rgba(0,0,0,0.08); backdrop-filter: blur(0px); }
 .card-badge {
   display: inline-block; background: var(--badge-bg); color: #fff;
   font-size: 9px; font-weight: 800; padding: 3px 8px;
@@ -1372,4 +1403,9 @@ a { text-decoration: none; color: inherit; }
   #paginationWrap button, .section-title {
     animation: none !important;
   }
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .card::before { animation: none; }
 }
