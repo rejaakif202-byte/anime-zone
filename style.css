@@ -55,6 +55,22 @@
 
 /* ===== RESET ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ===== PAGE BACKGROUND BLOBS ===== */
+@keyframes blobFloat1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%     { transform: translate(40px,-30px) scale(1.08); }
+  66%     { transform: translate(-20px,20px) scale(0.95); }
+}
+@keyframes blobFloat2 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%     { transform: translate(-50px,25px) scale(1.05); }
+  66%     { transform: translate(30px,-40px) scale(0.97); }
+}
+@keyframes blobFloat3 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50%     { transform: translate(25px,35px) scale(1.06); }
+}
+
 html { scroll-behavior: smooth; height: 100%; }
 
 body {
@@ -67,7 +83,55 @@ body {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
+/* Three slow floating blobs as background */
+body::before, body::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.35;
+}
+body::before {
+  width: 420px; height: 420px;
+  top: -80px; left: -100px;
+  background: var(--accent);
+  animation: blobFloat1 18s ease-in-out infinite;
+}
+body::after {
+  width: 350px; height: 350px;
+  bottom: 10%; right: -80px;
+  background: var(--accent2);
+  animation: blobFloat2 22s ease-in-out infinite;
+}
+/* Third blob via main element */
+main::before {
+  content: '';
+  position: fixed;
+  width: 280px; height: 280px;
+  top: 45%; left: 30%;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.2;
+  background: var(--accent);
+  animation: blobFloat3 26s ease-in-out infinite;
+}
+/* Make sure content stays above blobs */
+header, .header, main, footer, #appContent {
+  position: relative;
+  z-index: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before, body::after, main::before { animation: none; }
+}
+:root[data-theme="light"] body::before { opacity: 0.18; }
+:root[data-theme="light"] body::after  { opacity: 0.15; }
+:root[data-theme="light"] main::before { opacity: 0.1; }
 a { text-decoration: none; color: inherit; }
 
 /* ===== SCROLLBAR ===== */
@@ -400,7 +464,7 @@ a { text-decoration: none; color: inherit; }
   width: 100%; aspect-ratio: 16/9; object-fit: cover;
   display: block; background: var(--bg3); flex-shrink: 0;
 }
-.card-info { padding: 8px 8px 10px; flex: 1; display: flex; flex-direction: column; background: rgba(0,0,0,0.08); backdrop-filter: blur(0px); }
+.card-info { padding: 8px 8px 10px; flex: 1; display: flex; flex-direction: column; background: var(--card-bg); }
 .card-badge {
   display: inline-block; background: var(--badge-bg); color: #fff;
   font-size: 9px; font-weight: 800; padding: 3px 8px;
