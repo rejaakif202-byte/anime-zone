@@ -347,14 +347,10 @@ a { text-decoration: none; color: inherit; }
 }
 
 /* ===== CARD AURORA ANIMATION ===== */
-@keyframes cardAurora {
+@keyframes cardShine {
   0%   { background-position: 0% 50%; }
   50%  { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
-}
-@keyframes cardAuroraDim {
-  0%,100% { opacity: 0.55; }
-  50%     { opacity: 0.75; }
 }
 
 /* ===== ANIME CARD ===== */
@@ -370,7 +366,7 @@ a { text-decoration: none; color: inherit; }
   flex-direction: column;
   isolation: isolate;
 }
-/* Animated aurora layer behind the card content */
+/* Vivid animated gradient behind card */
 .card::before {
   content: '';
   position: absolute;
@@ -379,17 +375,30 @@ a { text-decoration: none; color: inherit; }
   border-radius: 10px;
   background: linear-gradient(
     135deg,
-    var(--card-bg) 0%,
-    var(--bg3) 30%,
-    var(--accent2) 55%,
-    var(--bg3) 75%,
-    var(--card-bg) 100%
+    #1a1040 0%,
+    #6b3fa0 20%,
+    #9787F3 40%,
+    #3d1f7a 60%,
+    #b06cf5 80%,
+    #1a1040 100%
   );
-  background-size: 300% 300%;
-  animation: cardAurora 5s ease infinite, cardAuroraDim 5s ease infinite;
-  opacity: 0.6;
+  background-size: 400% 400%;
+  animation: cardShine 4s ease infinite;
 }
-:root[data-theme="light"] .card::before { opacity: 0.3; }
+/* Light theme — vivid but different palette */
+:root[data-theme="light"] .card::before {
+  background: linear-gradient(
+    135deg,
+    #2d5a27 0%,
+    #6aaf5e 20%,
+    #a8d89c 40%,
+    #3d7a34 60%,
+    #7cc46e 80%,
+    #2d5a27 100%
+  );
+  background-size: 400% 400%;
+  animation: cardShine 4s ease infinite;
+}
 .card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 0 var(--btn-3d), 0 14px 28px var(--shadow);
