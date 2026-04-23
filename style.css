@@ -384,44 +384,28 @@ a { text-decoration: none; color: inherit; }
   width: 100%; aspect-ratio: 16/9; object-fit: cover;
   display: block; background: var(--bg3); flex-shrink: 0;
 }
-/* Dark theme card-info animation */
+/* ── Card info panel ── */
 .card-info {
   padding: 8px 8px 10px; flex: 1; display: flex; flex-direction: column;
 }
-/* Dark theme — animated gradient */
+/* Dark — Imperial Red animated shimmer */
 :root[data-theme="dark"] .card-info {
   background: linear-gradient(135deg, #030908, #0e1f18, #FB3640, #0e1f18, #030908);
   background-size: 400% 400%;
   animation: cardShine 4s ease infinite;
 }
-/* Light theme — Persian Blue */
-:root[data-theme="light"] .card-info {
-  background: #27187E;
-}
-:root[data-theme="light"] .card-title {
-  color: #FFFFFF;
-}
-:root[data-theme="light"] .card-rating {
-  color: #FFD700;
-}
-:root[data-theme="light"] .card-year {
-  color: rgba(255,255,255,0.65);
-}
-:root[data-theme="light"] .genre-tag {
-  background: rgba(255,255,255,0.12);
-  border-color: rgba(255,255,255,0.2);
-  color: rgba(255,255,255,0.75);
-}
-:root[data-theme="light"] .card-info {
-  background: linear-gradient(135deg, #2a5225, #4e8c45, #8dc882, #4e8c45, #2a5225);
-  background-size: 400% 400%;
-  animation: cardShine 4s ease infinite;
-}
-/* Keep text visible on animated background */
-.card-title  { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
-.card-badge  { background: rgba(0,0,0,0.45) !important; }
-.card-rating { color: #ffd700 !important; }
-.card-year   { color: rgba(255,255,255,0.75) !important; }
+:root[data-theme="dark"] .card-title  { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+:root[data-theme="dark"] .card-rating { color: #ffd700; }
+:root[data-theme="dark"] .card-year   { color: rgba(255,255,255,0.7); }
+:root[data-theme="dark"] .genre-tag   { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.15); color:rgba(255,255,255,0.7); }
+
+/* Light — Persian Blue solid */
+:root[data-theme="light"] .card-info  { background: #27187E; }
+:root[data-theme="light"] .card-badge { background: rgba(255,255,255,0.2); color: #fff; }
+:root[data-theme="light"] .card-title { color: #ffffff; font-weight: 800; }
+:root[data-theme="light"] .card-rating { color: #FFD700; }
+:root[data-theme="light"] .card-year  { color: rgba(255,255,255,0.65); }
+:root[data-theme="light"] .genre-tag  { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.3); color: #ffffff; font-weight: 700; }
 .card-badge {
   display: inline-block; background: var(--badge-bg); color: #fff;
   font-size: 9px; font-weight: 800; padding: 3px 8px;
@@ -487,7 +471,17 @@ a { text-decoration: none; color: inherit; }
 .genre-tag {
   font-size: 11px; padding: 4px 10px; border-radius: 5px;
   background: var(--bg3); border: 1.5px solid var(--border);
-  color: var(--text2); font-weight: 600;
+  color: var(--text); font-weight: 700;
+}
+/* Light theme — genre tags on anime detail page */
+:root[data-theme="light"] .anime-poster-wrap .genre-tag,
+:root[data-theme="light"] .anime-desc .genre-tag,
+:root[data-theme="light"] .anime-info-col .genre-tag,
+:root[data-theme="light"] .genre-tags .genre-tag {
+  background: rgba(39,24,126,0.1);
+  border-color: rgba(39,24,126,0.35);
+  color: #27187E;
+  font-weight: 800;
 }
 
 /* ===== EMPTY STATE ===== */
