@@ -399,8 +399,12 @@ a { text-decoration: none; color: inherit; }
 :root[data-theme="dark"] .card-year   { color: rgba(255,255,255,0.7); }
 :root[data-theme="dark"] .genre-tag   { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.15); color:rgba(255,255,255,0.7); }
 
-/* Light — Persian Blue solid */
-:root[data-theme="light"] .card-info  { background: #27187E; }
+/* Light — Persian Blue animated aurora */
+:root[data-theme="light"] .card-info {
+  background: linear-gradient(135deg, #0D0A4A, #27187E, #758BFD, #27187E, #0D0A4A);
+  background-size: 400% 400%;
+  animation: cardShine 4s ease infinite;
+}
 :root[data-theme="light"] .card-badge { background: rgba(255,255,255,0.2); color: #fff; }
 :root[data-theme="light"] .card-title { color: #ffffff; font-weight: 800; }
 :root[data-theme="light"] .card-rating { color: #FFD700; }
