@@ -8,28 +8,28 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
     :root[data-theme="dark"] {
-      --bg:       #1e1933;
-      --bg2:      #2a2448;
-      --bg3:      #332b55;
-      --text:     #EAEFFE;
-      --text2:    #a99ff5;
-      --accent:   #9787F3;
-      --accent2:  #7d6de0;
-      --border:   #4a3f78;
-      --card:     #2d2550;
-      --shadow:   rgba(0,0,0,0.55);
+      --bg:       #000F08;
+      --bg2:      #071410;
+      --bg3:      #0E1F18;
+      --text:     #F0F0F0;
+      --text2:    #9AADA5;
+      --accent:   #FB3640;
+      --accent2:  #E02A33;
+      --border:   #1A3025;
+      --card:     #0A1A10;
+      --shadow:   rgba(0,0,0,0.72);
     }
     :root[data-theme="light"] {
-      --bg:       #DAE8B3;
-      --bg2:      #c8d89f;
-      --bg3:      #b5c98a;
-      --text:     #194342;
-      --text2:    #3d6b6a;
-      --accent:   #194342;
-      --accent2:  #0e2b2a;
-      --border:   #9eb870;
-      --card:     #e8f2c6;
-      --shadow:   rgba(25,67,66,0.18);
+      --bg:       #F7F7FF;
+      --bg2:      #EDEDFC;
+      --bg3:      #E0E0F8;
+      --text:     #27187E;
+      --text2:    #4A3A9A;
+      --accent:   #758BFD;
+      --accent2:  #5A72F0;
+      --border:   #C8C8F0;
+      --card:     #F2F2FE;
+      --shadow:   rgba(39,24,126,0.16);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -85,7 +85,7 @@
     .hero::before {
       content: '';
       position: absolute; inset: 0;
-      background: radial-gradient(ellipse at 50% 0%, rgba(151,135,243,0.18) 0%, transparent 70%);
+      background: radial-gradient(ellipse at 50% 0%, rgba(251,54,64,0.15) 0%, transparent 70%);
       pointer-events: none;
     }
     .hero-icon {
@@ -147,7 +147,7 @@
       user-select: none;
       transition: background 0.15s;
     }
-    .section-header:hover { background: rgba(151,135,243,0.07); }
+    .section-header:hover { background: rgba(251,54,64,0.06); }
     .section-icon {
       width: 40px; height: 40px; border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
@@ -191,8 +191,8 @@
 
     /* ── Tip box ── */
     .tip-box {
-      background: rgba(151,135,243,0.1);
-      border: 1px solid rgba(151,135,243,0.3);
+      background: rgba(251,54,64,0.08);
+      border: 1px solid rgba(251,54,64,0.25);
       border-radius: 8px; padding: 10px 12px;
       margin-top: 12px;
       font-size: 12px; color: var(--text2); line-height: 1.6;
@@ -239,7 +239,7 @@
       padding: 12px 24px; font-size: 14px; font-weight: 800;
       font-family: 'Poppins', sans-serif;
       cursor: pointer; text-decoration: none;
-      box-shadow: 0 4px 0 var(--accent2), 0 6px 14px rgba(151,135,243,0.3);
+      box-shadow: 0 4px 0 var(--accent2), 0 6px 14px rgba(251,54,64,0.3);
       transition: all 0.15s;
     }
     .cta-btn:hover { transform: translateY(-2px); }
