@@ -31,26 +31,31 @@
 }
 
 :root[data-theme="light"] {
+  /* 3-colour palette:
+     Ghost White  #F7F7FF  — backgrounds
+     Periwinkle   #758BFD  — accent / highlights / interactive
+     Persian Blue #27187E  — text / shadows / 3D press       */
   --bg:           #F7F7FF;
-  --bg2:          #EAEAF7;
-  --bg3:          #DCDCEF;
+  --bg2:          #EDEDFC;
+  --bg3:          #E0E0F8;
   --text:         #27187E;
-  --text2:        #5040A0;
-  --accent:       #27187E;
-  --accent2:      #1D1266;
-  --accent-dark:  #120C4A;
-  --border:       #C5C5E8;
-  --card-bg:      #F0F0FB;
+  --text2:        #4A3A9A;
+  --accent:       #758BFD;
+  --accent2:      #5A72F0;
+  --accent-dark:  #27187E;
+  --border:       #C8C8F0;
+  --card-bg:      #F2F2FE;
   --header-bg:    rgba(247,247,255,0.97);
-  --sidebar-bg:   #EAEAF7;
-  --pill-bg:      #DCDCEF;
+  --sidebar-bg:   #EDEDFC;
+  --pill-bg:      #E0E0F8;
   --pill-text:    #27187E;
-  --shadow:       rgba(39,24,126,0.14);
-  --input-bg:     #EAEAF7;
-  --badge-bg:     #27187E;
-  --scroll-thumb: #27187E;
-  --btn-3d:       #1D1266;
-  --card-shine:   rgba(39,24,126,0.04);
+  --shadow:       rgba(39,24,126,0.16);
+  --input-bg:     #EDEDFC;
+  --badge-bg:     #758BFD;
+  --scroll-thumb: #758BFD;
+  --btn-3d:       #27187E;
+  --btn-shadow:   rgba(39,24,126,0.4);
+  --card-shine:   rgba(117,139,253,0.05);
 }
 
 /* ===== RESET ===== */
