@@ -636,6 +636,18 @@
                 </button>
               </div>
             </div>
+            <!-- Season Reorder Box -->
+            <div style="background:var(--card-bg);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 3px 0 var(--btn-3d)">
+              <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:7px">
+                <i class="fas fa-grip-lines" style="color:var(--accent);font-size:14px"></i> Reorder Seasons
+              </div>
+              <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Hold &amp; drag a season up or down to reorder</div>
+              <div id="seasonReorderList" style="display:flex;flex-direction:column;gap:6px"></div>
+              <button onclick="saveSeasonOrder()" id="saveOrderBtn"
+                style="width:100%;margin-top:10px;display:none;background:var(--accent);border:none;border-radius:8px;padding:11px;color:#fff;font-size:13px;font-weight:700;font-family:'Poppins',sans-serif;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);display:none;align-items:center;justify-content:center;gap:6px">
+                <i class="fas fa-floppy-disk"></i> Save Order
+              </button>
+            </div>
             <div class="tg-admin-box">
               <div class="tg-admin-header">
                 <i class="fas fa-pen-to-square"
@@ -1623,6 +1635,9 @@
       const renameInput = document.getElementById('rename_season_input');
       if (renameInput) renameInput.value = season.title || '';
 
+      // Render season reorder list with ALL seasons from this anime
+      renderSeasonReorderList(doc.data().seasons || []);
+
       // Show season poster if exists
       const posterWrap = document.getElementById('editSeasonPosterWrap');
       const posterImg  = document.getElementById('editSeasonPosterImg');
@@ -1922,6 +1937,175 @@
       else ti.style.display = 'none';
       if (banner) { bi.src = banner; bi.style.display = 'block'; }
       else bi.style.display = 'none';
+    }
+
+    // ===== SEASON REORDER — DRAG & TOUCH =====
+    let _reorderSeasons = []; // current order copy
+    let _dragSrcIdx = null;
+
+    function renderSeasonReorderList(seasons) {
+      // Only top-level seasons
+      const topLevel = seasons.filter(s => !s.parentId);
+      _reorderSeasons = JSON.parse(JSON.stringify(topLevel));
+      const list = document.getElementById('seasonReorderList');
+      const btn  = document.getElementById('saveOrderBtn');
+      if (!list) return;
+      list.innerHTML = '';
+      if (btn) btn.style.display = 'none';
+
+      _reorderSeasons.forEach((s, idx) => {
+        const row = document.createElement('div');
+        row.dataset.idx = idx;
+        row.draggable = true;
+        row.style.cssText = `
+          display:flex;align-items:center;gap:10px;
+          background:var(--bg2);border:1.5px solid var(--border);
+          border-radius:8px;padding:10px 12px;
+          cursor:grab;transition:background 0.15s,opacity 0.15s;
+          box-shadow:0 2px 0 var(--btn-3d);
+          user-select:none;-webkit-user-select:none;
+        `;
+        row.innerHTML = `
+          <i class="fas fa-grip-vertical" style="color:var(--text2);font-size:14px;flex-shrink:0"></i>
+          <span style="font-size:13px;font-weight:700;color:var(--text);flex:1">${s.title}</span>
+          <div style="display:flex;gap:4px">
+            <button onclick="moveSeasonRow(${idx},-1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 9px;color:var(--text2);cursor:pointer;font-size:13px;box-shadow:0 2px 0 var(--btn-3d)">↑</button>
+            <button onclick="moveSeasonRow(${idx},1)"  style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 9px;color:var(--text2);cursor:pointer;font-size:13px;box-shadow:0 2px 0 var(--btn-3d)">↓</button>
+          </div>`;
+
+        // Desktop drag events
+        row.addEventListener('dragstart', e => {
+          _dragSrcIdx = idx;
+          e.dataTransfer.effectAllowed = 'move';
+          row.style.opacity = '0.4';
+        });
+        row.addEventListener('dragend', () => { row.style.opacity = '1'; });
+        row.addEventListener('dragover', e => { e.preventDefault(); row.style.background = 'rgba(251,54,64,0.12)'; });
+        row.addEventListener('dragleave', () => { row.style.background = 'var(--bg2)'; });
+        row.addEventListener('drop', e => {
+          e.preventDefault();
+          row.style.background = 'var(--bg2)';
+          if (_dragSrcIdx !== null && _dragSrcIdx !== idx) {
+            const moved = _reorderSeasons.splice(_dragSrcIdx, 1)[0];
+            _reorderSeasons.splice(idx, 0, moved);
+            renderSeasonReorderList_fromCache();
+          }
+        });
+
+        // Mobile touch events (long-press to drag)
+        let touchTimer, touchStartY, touchDragging = false;
+        row.addEventListener('touchstart', e => {
+          touchStartY = e.touches[0].clientY;
+          touchTimer = setTimeout(() => {
+            touchDragging = true;
+            _dragSrcIdx = idx;
+            row.style.opacity = '0.5';
+            row.style.transform = 'scale(1.02)';
+          }, 350); // 350ms hold
+        }, { passive: true });
+        row.addEventListener('touchmove', e => {
+          if (!touchDragging) { clearTimeout(touchTimer); return; }
+          e.preventDefault();
+          const touch = e.touches[0];
+          const els = document.elementsFromPoint(touch.clientX, touch.clientY);
+          const target = els.find(el => el.dataset.idx !== undefined && el !== row);
+          if (target) {
+            document.querySelectorAll('#seasonReorderList > div').forEach(r => r.style.background = 'var(--bg2)');
+            target.style.background = 'rgba(251,54,64,0.12)';
+          }
+        }, { passive: false });
+        row.addEventListener('touchend', e => {
+          clearTimeout(touchTimer);
+          if (!touchDragging) return;
+          touchDragging = false;
+          row.style.opacity = '1'; row.style.transform = '';
+          const touch = e.changedTouches[0];
+          const els = document.elementsFromPoint(touch.clientX, touch.clientY);
+          const target = els.find(el => el.dataset && el.dataset.idx !== undefined && el !== row);
+          if (target) {
+            const toIdx = parseInt(target.dataset.idx);
+            const moved = _reorderSeasons.splice(_dragSrcIdx, 1)[0];
+            _reorderSeasons.splice(toIdx, 0, moved);
+            renderSeasonReorderList_fromCache();
+          }
+        });
+
+        list.appendChild(row);
+      });
+    }
+
+    function renderSeasonReorderList_fromCache() {
+      const list = document.getElementById('seasonReorderList');
+      const btn  = document.getElementById('saveOrderBtn');
+      if (!list) return;
+      list.innerHTML = '';
+      _reorderSeasons.forEach((s, idx) => {
+        const row = document.createElement('div');
+        row.dataset.idx = idx;
+        row.draggable = true;
+        row.style.cssText = `display:flex;align-items:center;gap:10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;cursor:grab;box-shadow:0 2px 0 var(--btn-3d);user-select:none;-webkit-user-select:none;`;
+        row.innerHTML = `
+          <i class="fas fa-grip-vertical" style="color:var(--text2);font-size:14px;flex-shrink:0"></i>
+          <span style="font-size:13px;font-weight:700;color:var(--text);flex:1">${s.title}</span>
+          <div style="display:flex;gap:4px">
+            <button onclick="moveSeasonRow(${idx},-1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 9px;color:var(--text2);cursor:pointer;font-size:13px;box-shadow:0 2px 0 var(--btn-3d)">↑</button>
+            <button onclick="moveSeasonRow(${idx},1)"  style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 9px;color:var(--text2);cursor:pointer;font-size:13px;box-shadow:0 2px 0 var(--btn-3d)">↓</button>
+          </div>`;
+        row.addEventListener('dragstart', e => { _dragSrcIdx = idx; e.dataTransfer.effectAllowed = 'move'; row.style.opacity='0.4'; });
+        row.addEventListener('dragend',   () => row.style.opacity='1');
+        row.addEventListener('dragover',  e => { e.preventDefault(); row.style.background='rgba(251,54,64,0.12)'; });
+        row.addEventListener('dragleave', () => row.style.background='var(--bg2)');
+        row.addEventListener('drop', e => {
+          e.preventDefault(); row.style.background='var(--bg2)';
+          if (_dragSrcIdx!==null && _dragSrcIdx!==idx) {
+            const m=_reorderSeasons.splice(_dragSrcIdx,1)[0];
+            _reorderSeasons.splice(idx,0,m);
+            renderSeasonReorderList_fromCache();
+          }
+        });
+        list.appendChild(row);
+      });
+      if (btn) { btn.style.display='flex'; }
+    }
+
+    function moveSeasonRow(idx, dir) {
+      const newIdx = idx + dir;
+      if (newIdx < 0 || newIdx >= _reorderSeasons.length) return;
+      const tmp = _reorderSeasons[idx];
+      _reorderSeasons[idx] = _reorderSeasons[newIdx];
+      _reorderSeasons[newIdx] = tmp;
+      renderSeasonReorderList_fromCache();
+    }
+
+    async function saveSeasonOrder() {
+      if (!editingAnimeId) return;
+      const btn = document.getElementById('saveOrderBtn');
+      if (btn) { btn.innerHTML='<i class="fas fa-circle-notch fa-spin"></i> Saving...'; btn.disabled=true; }
+      try {
+        const ref = db.collection('anime').doc(editingAnimeId);
+        const doc = await ref.get();
+        const allSeasons = doc.data().seasons || [];
+        // Build new order: top-level in new order, keep sub-seasons attached to their parent
+        const topIds = _reorderSeasons.map(s => s.id);
+        const subs   = allSeasons.filter(s => s.parentId);
+        const reordered = [];
+        topIds.forEach(id => {
+          const top = allSeasons.find(s => s.id === id);
+          if (top) {
+            reordered.push(top);
+            subs.filter(s => s.parentId === id).forEach(sub => reordered.push(sub));
+          }
+        });
+        await ref.update({ seasons: reordered });
+        showEpSuccess('Season order saved!');
+        if (btn) { btn.innerHTML='<i class="fas fa-floppy-disk"></i> Save Order'; btn.disabled=false; btn.style.display='none'; }
+        // Refresh dropdown
+        const animeId = document.getElementById('ep_anime').value;
+        if (animeId) await loadAnimeSeasons(animeId);
+      } catch(e) {
+        alert('Error: ' + e.message);
+        if (btn) { btn.innerHTML='<i class="fas fa-floppy-disk"></i> Save Order'; btn.disabled=false; }
+      }
     }
 
     // ===== SEASON POSTER EDIT =====
