@@ -105,10 +105,42 @@
         </select></div>
       <div class="form-group"><label>STUDIO</label>
         <input type="text" id="edit_studio" placeholder="Studio name"/></div>
-      <div class="form-group"><label>COVER IMAGE URL</label>
-        <input type="url" id="edit_thumb" placeholder="https://..."/></div>
-      <div class="form-group"><label>BANNER URL</label>
-        <input type="url" id="edit_banner" placeholder="https://..."/></div>
+      <div class="form-group"><label>COVER IMAGE</label>
+        <div style="display:flex;gap:8px;margin-bottom:6px">
+          <div id="edit_thumb_preview" style="width:54px;height:54px;border-radius:8px;background:var(--bg3);border:1.5px solid var(--border);overflow:hidden;flex-shrink:0">
+            <img id="edit_thumb_img" style="width:100%;height:100%;object-fit:cover;display:none"/>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+            <button type="button" onclick="document.getElementById('edit_thumb_file').click()"
+              style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:9px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+              <i class="fas fa-image"></i> Pick from Gallery
+            </button>
+            <input type="url" id="edit_thumb" placeholder="Or paste image URL"
+              oninput="previewEditImg('edit_thumb','edit_thumb_img')"
+              style="padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+          </div>
+        </div>
+        <input type="file" id="edit_thumb_file" accept="image/*" style="display:none"
+          onchange="handleEditFile(this,'edit_thumb','edit_thumb_img')"/>
+      </div>
+      <div class="form-group"><label>BANNER IMAGE</label>
+        <div style="display:flex;gap:8px;margin-bottom:6px">
+          <div id="edit_banner_preview" style="width:54px;height:54px;border-radius:8px;background:var(--bg3);border:1.5px solid var(--border);overflow:hidden;flex-shrink:0">
+            <img id="edit_banner_img" style="width:100%;height:100%;object-fit:cover;display:none"/>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+            <button type="button" onclick="document.getElementById('edit_banner_file').click()"
+              style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:9px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+              <i class="fas fa-image"></i> Pick from Gallery
+            </button>
+            <input type="url" id="edit_banner" placeholder="Or paste banner URL"
+              oninput="previewEditImg('edit_banner','edit_banner_img')"
+              style="padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+          </div>
+        </div>
+        <input type="file" id="edit_banner_file" accept="image/*" style="display:none"
+          onchange="handleEditFile(this,'edit_banner','edit_banner_img')"/>
+      </div>
       <div class="form-group"><label>DESCRIPTION</label>
         <textarea id="edit_desc" placeholder="Story..."></textarea></div>
       <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap">
@@ -233,6 +265,16 @@
           <div style="font-size:26px;font-weight:700;color:#27ae60"
             id="statMovies">0</div>
           <div style="font-size:11px;color:var(--text2)">Movies</div>
+        </div>
+        <div class="admin-card" style="text-align:center;padding:14px 8px">
+          <div style="font-size:26px;font-weight:700;color:#9b59b6"
+            id="statSeries">0</div>
+          <div style="font-size:11px;color:var(--text2)">Series</div>
+        </div>
+        <div class="admin-card" style="text-align:center;padding:14px 8px">
+          <div style="font-size:26px;font-weight:700;color:#e67e22"
+            id="statNews">0</div>
+          <div style="font-size:11px;color:var(--text2)">News</div>
         </div>
       </div>
 
@@ -566,6 +608,31 @@
                 <button onclick="renameSeason()"
                   style="width:100%;background:var(--accent);border:none;border-radius:8px;padding:11px;color:#fff;font-size:13px;font-weight:700;font-family:'Poppins',sans-serif;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);display:flex;align-items:center;justify-content:center;gap:6px">
                   <i class="fas fa-floppy-disk"></i> Save Rename
+                </button>
+              </div>
+            </div>
+            <!-- Season Poster Edit Box -->
+            <div style="background:var(--card-bg);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 3px 0 var(--btn-3d)">
+              <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:7px">
+                <i class="fas fa-image" style="color:var(--accent);font-size:14px"></i> Season Poster
+              </div>
+              <!-- Current poster preview -->
+              <div id="editSeasonPosterWrap" style="margin-bottom:10px;display:none">
+                <img id="editSeasonPosterImg" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;border:1.5px solid var(--border)"/>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <button type="button" onclick="document.getElementById('editSeasonPosterFile').click()"
+                  style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+                  <i class="fas fa-image"></i> Pick from Gallery
+                </button>
+                <input type="url" id="editSeasonPosterUrl" placeholder="Or paste image URL"
+                  style="padding:9px 12px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box;width:100%"
+                  oninput="previewEditSeasonPoster(this.value)"/>
+                <input type="file" id="editSeasonPosterFile" accept="image/*" style="display:none"
+                  onchange="handleEditSeasonPosterFile(this)"/>
+                <button onclick="saveSeasonPoster()"
+                  style="width:100%;background:var(--accent);border:none;border-radius:8px;padding:11px;color:#fff;font-size:13px;font-weight:700;font-family:'Poppins',sans-serif;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);display:flex;align-items:center;justify-content:center;gap:6px">
+                  <i class="fas fa-floppy-disk"></i> Save Poster
                 </button>
               </div>
             </div>
@@ -1106,6 +1173,10 @@
         data.filter(a => (a.type||'').toLowerCase() === 'anime').length;
       document.getElementById('statMovies').textContent =
         data.filter(a => (a.type||'').toLowerCase() === 'movie').length;
+      document.getElementById('statSeries').textContent =
+        data.filter(a => (a.type||'').toLowerCase() === 'series').length;
+      document.getElementById('statNews').textContent =
+        data.filter(a => (a.type||'').toLowerCase() === 'news').length;
       if (currentTab === 'manage') renderManageList();
       populateAnimeDropdown();
     }
@@ -1172,6 +1243,10 @@
         all.filter(a => (a.type||'').toLowerCase() === 'anime').length;
       document.getElementById('statMovies').textContent =
         all.filter(a => (a.type||'').toLowerCase() === 'movie').length;
+      document.getElementById('statSeries').textContent =
+        all.filter(a => (a.type||'').toLowerCase() === 'series').length;
+      document.getElementById('statNews').textContent =
+        all.filter(a => (a.type||'').toLowerCase() === 'news').length;
       if (currentTab === 'manage') renderManageList();
     }
 
@@ -1460,6 +1535,7 @@
       document.getElementById('edit_studio').value  = d.studio||'';
       document.getElementById('edit_thumb').value   = d.thumbnail||'';
       document.getElementById('edit_banner').value  = d.banner||'';
+      prefillEditPreviews(d.thumbnail||'', d.banner||'');
       document.getElementById('edit_desc').value    = d.description||'';
       document.getElementById('edit_trending').checked = !!d.trending;
       document.getElementById('edit_latest').checked   = !!d.latest;
@@ -1546,6 +1622,19 @@
       // Pre-fill rename field with current season title
       const renameInput = document.getElementById('rename_season_input');
       if (renameInput) renameInput.value = season.title || '';
+
+      // Show season poster if exists
+      const posterWrap = document.getElementById('editSeasonPosterWrap');
+      const posterImg  = document.getElementById('editSeasonPosterImg');
+      const posterUrl  = document.getElementById('editSeasonPosterUrl');
+      if (season.poster) {
+        posterImg.src = season.poster;
+        posterWrap.style.display = 'block';
+        if (posterUrl) posterUrl.value = season.poster;
+      } else {
+        posterWrap.style.display = 'none';
+        if (posterUrl) posterUrl.value = '';
+      }
       editingSeasonPacks=[];
       if (season.telegramPacks&&season.telegramPacks.length>0) {
         editingSeasonPacks = JSON.parse(JSON.stringify(season.telegramPacks));
@@ -1805,6 +1894,77 @@
           style="width:100%;height:100%;object-fit:cover;border-radius:6px"
           onerror="this.parentElement.innerHTML='<i class=\\"fas fa-image\\" style=\\"color:var(--text2);font-size:16px\\"></i>'"/>`;
       }
+    }
+
+    // ===== EDIT MODAL GALLERY HELPERS =====
+    function previewEditImg(inputId, imgId) {
+      const url = document.getElementById(inputId).value.trim();
+      const img = document.getElementById(imgId);
+      if (url) { img.src = url; img.style.display = 'block'; }
+      else img.style.display = 'none';
+    }
+    function handleEditFile(input, urlInputId, imgId) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById(urlInputId).value = e.target.result;
+        const img = document.getElementById(imgId);
+        img.src = e.target.result; img.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+    // Pre-fill edit thumb/banner previews when modal opens
+    function prefillEditPreviews(thumbnail, banner) {
+      const ti = document.getElementById('edit_thumb_img');
+      const bi = document.getElementById('edit_banner_img');
+      if (thumbnail) { ti.src = thumbnail; ti.style.display = 'block'; }
+      else ti.style.display = 'none';
+      if (banner) { bi.src = banner; bi.style.display = 'block'; }
+      else bi.style.display = 'none';
+    }
+
+    // ===== SEASON POSTER EDIT =====
+    let _editSeasonPosterBase64 = '';
+    function previewEditSeasonPoster(url) {
+      const wrap = document.getElementById('editSeasonPosterWrap');
+      const img  = document.getElementById('editSeasonPosterImg');
+      _editSeasonPosterBase64 = '';
+      if (url) { img.src = url; wrap.style.display = 'block'; }
+      else wrap.style.display = 'none';
+    }
+    function handleEditSeasonPosterFile(input) {
+      const file = input.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        _editSeasonPosterBase64 = e.target.result;
+        document.getElementById('editSeasonPosterUrl').value = '';
+        const img  = document.getElementById('editSeasonPosterImg');
+        const wrap = document.getElementById('editSeasonPosterWrap');
+        img.src = e.target.result; wrap.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+    async function saveSeasonPoster() {
+      if (editingSeasonId === null || !editingAnimeId) { alert('No season selected.'); return; }
+      const urlInput  = document.getElementById('editSeasonPosterUrl').value.trim();
+      const poster    = _editSeasonPosterBase64 || urlInput;
+      if (!poster) { alert('Please pick an image or paste a URL.'); return; }
+      const ref = db.collection('anime').doc(editingAnimeId);
+      try {
+        const doc = await ref.get();
+        if (!doc.exists) return;
+        const seasons = doc.data().seasons || [];
+        const idx = seasons.findIndex(s => s.id === editingSeasonId);
+        if (idx === -1) return;
+        seasons[idx].poster = poster;
+        await ref.update({ seasons });
+        // Update preview
+        document.getElementById('editSeasonPosterImg').src = poster;
+        document.getElementById('editSeasonPosterWrap').style.display = 'block';
+        _editSeasonPosterBase64 = '';
+        showEpSuccess('Season poster saved!');
+      } catch(e) { alert('Error: ' + e.message); }
     }
 
     // ===== RENAME SEASON =====
