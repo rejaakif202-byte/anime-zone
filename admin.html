@@ -1088,53 +1088,59 @@
 
     // ===== FIREBASE =====
     // ===== REAL-TIME DATA LISTENER =====
-    // onSnapshot fires automatically when Firebase connects — no cold-start 0 issue
+    // ── Data loading: show cache instantly, update from server in background ──
     let _unsubscribeListener = null;
 
-    function startRealtimeListener() {
-      // Unsubscribe any previous listener
-      if (_unsubscribeListener) { _unsubscribeListener(); _unsubscribeListener = null; }
+    function sortData(data) {
+      return data.sort((a, b) => {
+        const ta = a.createdAt?.toDate?.()?.getTime?.() || 0;
+        const tb = b.createdAt?.toDate?.()?.getTime?.() || 0;
+        return tb - ta;
+      });
+    }
 
-      const manageList = document.getElementById('manageList');
-      if (manageList) {
-        manageList.innerHTML =
-          '<div style="text-align:center;padding:40px;color:var(--text2)"><i class="fas fa-circle-notch fa-spin"></i> Loading data...</div>';
+    function applyData(data) {
+      allAnimeCache = data;
+      document.getElementById('statTotal').textContent  = data.length;
+      document.getElementById('statAnime').textContent  =
+        data.filter(a => (a.type||'').toLowerCase() === 'anime').length;
+      document.getElementById('statMovies').textContent =
+        data.filter(a => (a.type||'').toLowerCase() === 'movie').length;
+      if (currentTab === 'manage') renderManageList();
+      populateAnimeDropdown();
+    }
+
+    function showLoadingState() {
+      const ml = document.getElementById('manageList');
+      if (ml && !allAnimeCache.length) {
+        ml.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>';
       }
+    }
 
-      _unsubscribeListener = db.collection('anime').onSnapshot(snap => {
+    async function loadFromCache() {
+      try {
+        const snap = await db.collection('anime').get({ source: 'cache' });
         const data = [];
         snap.forEach(doc => data.push({...doc.data(), firestoreId: doc.id}));
-        data.sort((a, b) => {
-          const ta = a.createdAt?.toDate?.()?.getTime?.() || 0;
-          const tb = b.createdAt?.toDate?.()?.getTime?.() || 0;
-          return tb - ta;
-        });
-        allAnimeCache = data;
+        if (data.length > 0) applyData(sortData(data));
+      } catch(e) { /* cache empty */ }
+    }
 
-        // Update stats
-        document.getElementById('statTotal').textContent  = data.length;
-        document.getElementById('statAnime').textContent  =
-          data.filter(a => (a.type||'').toLowerCase() === 'anime').length;
-        document.getElementById('statMovies').textContent =
-          data.filter(a => (a.type||'').toLowerCase() === 'movie').length;
-
-        // Refresh UI
-        if (currentTab === 'manage') renderManageList();
-        populateAnimeDropdown();
-      }, err => {
-        console.error('Snapshot error:', err);
-        // Fall back to single fetch on listener error
-        getAllAnime().then(data => {
-          if (!data.length) return;
-          allAnimeCache = data;
-          document.getElementById('statTotal').textContent  = data.length;
-          document.getElementById('statAnime').textContent  =
-            data.filter(a => (a.type||'').toLowerCase() === 'anime').length;
-          document.getElementById('statMovies').textContent =
-            data.filter(a => (a.type||'').toLowerCase() === 'movie').length;
-          if (currentTab === 'manage') renderManageList();
-        });
-      });
+    function startRealtimeListener() {
+      if (_unsubscribeListener) { _unsubscribeListener(); _unsubscribeListener = null; }
+      showLoadingState();
+      // Show cached data instantly while server loads
+      loadFromCache();
+      // onSnapshot keeps data live from server
+      _unsubscribeListener = db.collection('anime').onSnapshot(
+        { includeMetadataChanges: false },
+        snap => {
+          const data = [];
+          snap.forEach(doc => data.push({...doc.data(), firestoreId: doc.id}));
+          applyData(sortData(data));
+        },
+        err => console.error('Snapshot error:', err)
+      );
     }
 
     async function getAllAnime() {
@@ -1142,23 +1148,13 @@
         const snap = await db.collection('anime').get({ source: 'server' });
         const data = [];
         snap.forEach(doc => data.push({...doc.data(), firestoreId: doc.id}));
-        data.sort((a, b) => {
-          const ta = a.createdAt?.toDate?.()?.getTime?.() || 0;
-          const tb = b.createdAt?.toDate?.()?.getTime?.() || 0;
-          return tb - ta;
-        });
-        return data;
-      } catch(serverErr) {
+        return sortData(data);
+      } catch {
         try {
           const snap2 = await db.collection('anime').get({ source: 'cache' });
           const data2 = [];
           snap2.forEach(doc => data2.push({...doc.data(), firestoreId: doc.id}));
-          data2.sort((a, b) => {
-            const ta = a.createdAt?.toDate?.()?.getTime?.() || 0;
-            const tb = b.createdAt?.toDate?.()?.getTime?.() || 0;
-            return tb - ta;
-          });
-          return data2;
+          return sortData(data2);
         } catch(e) { return []; }
       }
     }
@@ -1168,7 +1164,8 @@
       allAnimeCache = fresh;
       return fresh;
     }
-    async function updateStats() {
+
+        async function updateStats() {
       const all = await forceReloadAllAnime();
       document.getElementById('statTotal').textContent  = all.length;
       document.getElementById('statAnime').textContent  =
