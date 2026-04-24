@@ -710,6 +710,7 @@ a { text-decoration: none; color: inherit; }
   background: var(--card-bg); border: 1.5px solid var(--border);
   border-radius: 14px; padding: 16px; margin-bottom: 16px;
   box-shadow: 0 4px 0 var(--btn-3d), 0 6px 14px var(--shadow);
+  overflow: hidden;
 }
 .admin-card h3 { font-size: 15px; font-weight: 800; margin-bottom: 14px; color: var(--text); letter-spacing: -0.2px; }
 
@@ -988,6 +989,7 @@ a { text-decoration: none; color: inherit; }
   background: linear-gradient(135deg,rgba(44,165,224,0.08),rgba(44,165,224,0.03));
   border: 1.5px solid rgba(44,165,224,0.3); border-radius: 12px;
   padding: 14px; margin-bottom: 16px;
+  overflow: hidden;
 }
 .tg-admin-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
 
