@@ -492,24 +492,43 @@ async function handleWishlistToggle(id, btnEl) {
 }
 
 // ===== FETCH ANIME =====
+// Show cache instantly, update from server silently in background
 async function fetchAllAnime() {
-  try {
-    let snap;
-    try {
-      snap = await db.collection('anime').orderBy('createdAt','desc').get();
-    } catch(e) {
-      snap = await db.collection('anime').get();
-    }
+  const parse = snap => {
     const data = [];
     snap.forEach(doc => {
       const d = { ...doc.data(), firestoreId: doc.id };
-      if (d.published !== false) data.push(d); // hide drafts from public
+      if (d.published !== false) data.push(d);
     });
+    return data;
+  };
+
+  // Step 1 — try server (primary source)
+  try {
+    const snap = await db.collection('anime').get({ source: 'server' });
+    const data = parse(snap);
     allAnimeData = data;
     return data;
-  } catch(e) {
-    console.error('Fetch error:', e);
-    return [];
+  } catch(serverErr) {
+    // Step 2 — server failed, use cache immediately
+    try {
+      const snap = await db.collection('anime').get({ source: 'cache' });
+      const data = parse(snap);
+      allAnimeData = data;
+      // Retry server in background and refresh UI silently
+      db.collection('anime').get({ source: 'server' }).then(serverSnap => {
+        const fresh = parse(serverSnap);
+        if (fresh.length > 0) {
+          allAnimeData = fresh;
+          renderHome(fresh);
+          checkCategoryNotifications(fresh);
+        }
+      }).catch(() => {});
+      return data;
+    } catch(cacheErr) {
+      console.error('Fetch error:', cacheErr);
+      return [];
+    }
   }
 }
 
@@ -580,8 +599,21 @@ async function initApp() {
   if (loadingState) loadingState.style.display = 'flex';
   if (emptyState)   emptyState.classList.add('hidden');
   if (homeSecs)     homeSecs.style.display = 'block';
-  const data = await fetchAllAnime();
+
+  let data = await fetchAllAnime();
   if (loadingState) loadingState.style.display = 'none';
+
+  // If still empty (cold start / slow connection) — retry after 2.5s
+  if (data.length === 0) {
+    setTimeout(async () => {
+      data = await fetchAllAnime();
+      if (data.length > 0) {
+        renderHome(data);
+        checkCategoryNotifications(data);
+      }
+    }, 2500);
+  }
+
   if (currentUser) {
     try {
       const doc  = await db.collection('users').doc(currentUser.uid).get();
