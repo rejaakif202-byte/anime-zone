@@ -2233,7 +2233,16 @@
         document.getElementById('editSeasonPosterWrap').style.display = 'block';
         _editSeasonPosterBase64 = '';
         showEpSuccess('Season poster saved!');
-      } catch(e) { alert('Error: ' + e.message); }
+      } catch(e) {
+        console.error('Post news error:', e);
+        const errEl = document.getElementById('newsSuccess');
+        errEl.style.display = 'block';
+        errEl.style.borderColor = '#e74c3c';
+        errEl.style.color = '#e74c3c';
+        errEl.style.background = 'rgba(231,76,60,0.1)';
+        errEl.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Error: ' + e.message;
+        setTimeout(() => { errEl.style.display='none'; errEl.style.borderColor='#27ae60'; errEl.style.color='#27ae60'; errEl.style.background='rgba(39,174,96,0.15)'; }, 4000);
+      }
     }
 
     // ===== RENAME SEASON =====
@@ -2698,11 +2707,14 @@
       const list = document.getElementById('newsList');
       if (!list) return;
       try {
-        const snap = await db.collection('news').orderBy('postedAtMs','desc').limit(20).get();
-        if (snap.empty) { list.innerHTML = '<div style="text-align:center;color:var(--text2);padding:20px;font-size:12px">No news posted yet.</div>'; return; }
+        const snap = await db.collection('news').get();
+        const newsItems = [];
+        snap.forEach(doc => newsItems.push({id: doc.id, ...doc.data()}));
+        newsItems.sort((a,b) => (b.postedAtMs||0) - (a.postedAtMs||0));
+        if (newsItems.length === 0) { list.innerHTML = '<div style="text-align:center;color:var(--text2);padding:20px;font-size:12px">No news posted yet.</div>'; return; }
         list.innerHTML = '';
-        snap.forEach(doc => {
-          const d = doc.data();
+        newsItems.forEach(d => {
+          const doc = { id: d.id };
           const date = d.postedAtMs ? new Date(d.postedAtMs).toLocaleString() : '';
           const row = document.createElement('div');
           row.style.cssText = 'display:flex;align-items:center;gap:10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:10px;box-shadow:0 3px 0 var(--btn-3d)';
@@ -2722,8 +2734,13 @@
 
     async function deleteNewsPost(id) {
       if (!confirm('Delete this news post?')) return;
-      await db.collection('news').doc(id).delete();
-      loadNewsList();
+      try {
+        await db.collection('news').doc(id).delete();
+        loadNewsList();
+      } catch(e) {
+        console.error('Delete error:', e);
+        alert('Delete failed — check Firestore rules: ' + e.message);
+      }
     }
 
     // Load news list when news tab is opened
