@@ -11,10 +11,9 @@ firebase.initializeApp(firebaseConfig);
 const db   = firebase.firestore();
 const auth = firebase.auth();
 
-// Enable offline persistence — data loads from cache instantly even without internet
-db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+// Enable offline persistence and expose promise for pages to await
+window._persistenceReady = db.enablePersistence({ synchronizeTabs: true }).catch(err => {
   if (err.code === 'failed-precondition') {
-    // Multiple tabs open — persistence only works in one tab at a time
     console.warn('Firestore persistence unavailable (multiple tabs)');
   } else if (err.code === 'unimplemented') {
     console.warn('Firestore persistence not supported in this browser');
