@@ -454,23 +454,8 @@ function renderPagination() {
 }
 
 // Wait for Firebase persistence (enablePersistence is async), then load
-// Wait for Firebase + persistence to be fully ready
-async function startWhenReady() {
-  if (typeof db === 'undefined') {
-    setTimeout(startWhenReady, 150);
-    return;
-  }
-  // Wait for persistence to resolve before querying
-  if (window._persistenceReady) {
-    await window._persistenceReady.catch(() => {});
-  }
-  loadData();
-}
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', startWhenReady);
-} else {
-  startWhenReady();
-}
+// Simple init — just wait for DOM
+document.addEventListener('DOMContentLoaded', loadData);
 </script>
 </body>
 </html>
