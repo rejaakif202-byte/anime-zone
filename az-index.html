@@ -261,15 +261,37 @@ LETTERS.forEach(l => {
 
 // ── Fetch data ──
 async function loadData() {
-  try {
-    const snap = await db.collection('anime').get();
+  const stateMsg = document.getElementById('stateMsg');
+  if (stateMsg) stateMsg.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i><br>Loading content...';
+
+  const parse = snap => {
+    const arr = [];
     snap.forEach(doc => {
       const d = doc.data();
-      if (d.published !== false) allAnime.push({...d, firestoreId: doc.id});
+      if (d.published !== false) arr.push({...d, firestoreId: doc.id});
     });
-    allAnime.sort((a,b) => (a.title||'').localeCompare(b.title||''));
-    updateLetterAvailability();
-  } catch(e) { console.error(e); }
+    return arr;
+  };
+
+  try {
+    // Try server first
+    const snap = await db.collection('anime').get({ source: 'server' });
+    allAnime = parse(snap);
+  } catch(e) {
+    try {
+      // Fallback to cache
+      const snap = await db.collection('anime').get({ source: 'cache' });
+      allAnime = parse(snap);
+    } catch(e2) {
+      // Last resort retry after 2s
+      setTimeout(loadData, 2000);
+      return;
+    }
+  }
+
+  allAnime.sort((a,b) => (a.title||'').localeCompare(b.title||''));
+  updateLetterAvailability();
+  if (stateMsg) stateMsg.innerHTML = '<i class="fas fa-arrow-up-a-z"></i><br>Pick a letter or type to search';
 }
 
 function updateLetterAvailability() {
@@ -322,8 +344,7 @@ function onSearchInput(val) {
   }
   document.querySelectorAll('.letter-btn').forEach(b => b.classList.remove('active'));
   currentLetter = '';
-  filtered = allAnime.filter(a => (a.title||'').toLowerCase().startsWith(q) ||
-                                   (a.title||'').toLowerCase().includes(q));
+  filtered = allAnime.filter(a => (a.title||'').toLowerCase().startsWith(q));
   showResults(val);
 }
 
@@ -420,7 +441,19 @@ function renderPagination() {
   }
 }
 
-loadData();
+// Wait for Firebase persistence (enablePersistence is async), then load
+function startWhenReady() {
+  if (typeof db !== 'undefined') {
+    loadData();
+  } else {
+    setTimeout(startWhenReady, 100);
+  }
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', startWhenReady);
+} else {
+  startWhenReady();
+}
 </script>
 </body>
 </html>
