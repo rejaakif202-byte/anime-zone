@@ -273,25 +273,30 @@ async function loadData() {
     return arr;
   };
 
-  try {
-    // Try server first
-    const snap = await db.collection('anime').get({ source: 'server' });
-    allAnime = parse(snap);
-  } catch(e) {
+  let retries = 0;
+  const tryFetch = async () => {
     try {
-      // Fallback to cache
-      const snap = await db.collection('anime').get({ source: 'cache' });
+      // Plain get() — Firestore picks best source automatically
+      const snap = await db.collection('anime').get();
       allAnime = parse(snap);
-    } catch(e2) {
-      // Last resort retry after 2s
-      setTimeout(loadData, 2000);
-      return;
+      if (allAnime.length === 0 && retries < 3) {
+        retries++;
+        setTimeout(tryFetch, 2000);
+        return;
+      }
+      allAnime.sort((a,b) => (a.title||'').localeCompare(b.title||''));
+      updateLetterAvailability();
+      if (stateMsg) stateMsg.innerHTML = '<i class="fas fa-arrow-up-a-z"></i><br>Pick a letter or type to search';
+    } catch(e) {
+      if (retries < 3) {
+        retries++;
+        setTimeout(tryFetch, 2000);
+      } else {
+        if (stateMsg) stateMsg.innerHTML = '<i class="fas fa-triangle-exclamation"></i><br>Failed to load. Refresh the page.';
+      }
     }
-  }
-
-  allAnime.sort((a,b) => (a.title||'').localeCompare(b.title||''));
-  updateLetterAvailability();
-  if (stateMsg) stateMsg.innerHTML = '<i class="fas fa-arrow-up-a-z"></i><br>Pick a letter or type to search';
+  };
+  tryFetch();
 }
 
 function updateLetterAvailability() {
