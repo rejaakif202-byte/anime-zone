@@ -289,6 +289,9 @@
         <button class="admin-tab" onclick="switchTab('episode',this)">
           <i class="fas fa-film"></i> Episode
         </button>
+        <button class="admin-tab" onclick="switchTab('news',this)">
+          <i class="fas fa-newspaper"></i> News
+        </button>
         <button class="admin-tab" onclick="switchTab('guide',this)">
           <i class="fas fa-book"></i> Guide
         </button>
@@ -935,6 +938,68 @@
             onclick="addEpisode()" style="width:100%">
             <i class="fas fa-film"></i> Add Episode
           </button>
+        </div>
+      </div>
+
+      <!-- ===== TAB: NEWS ===== -->
+      <div class="admin-panel" id="tab-news">
+        <div class="admin-card">
+          <h3><i class="fas fa-newspaper" style="color:var(--accent)"></i> Post News</h3>
+
+          <!-- Media picker -->
+          <div class="form-group">
+            <label>MEDIA (PHOTO OR VIDEO)</label>
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+              <button type="button" id="newsMediaTypeImg" onclick="setNewsMediaType('image')"
+                style="flex:1;padding:10px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d)">
+                <i class="fas fa-image"></i> Photo
+              </button>
+              <button type="button" id="newsMediaTypeVid" onclick="setNewsMediaType('video')"
+                style="flex:1;padding:10px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text2);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d)">
+                <i class="fas fa-video"></i> Video
+              </button>
+            </div>
+            <!-- Preview -->
+            <div id="newsMediaPreviewWrap" style="margin-bottom:8px;display:none;border-radius:10px;overflow:hidden;border:1.5px solid var(--border)">
+              <img id="newsMediaPreviewImg" style="width:100%;max-height:180px;object-fit:cover;display:none"/>
+              <video id="newsMediaPreviewVid" style="width:100%;max-height:180px;display:none" muted playsinline loop></video>
+            </div>
+            <button type="button" onclick="document.getElementById('newsMediaFile').click()"
+              style="width:100%;box-sizing:border-box;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);display:flex;align-items:center;justify-content:center;gap:6px">
+              <i class="fas fa-image"></i> Pick from Gallery
+            </button>
+            <input type="file" id="newsMediaFile" style="display:none" accept="image/*,video/*"
+              onchange="handleNewsMedia(this)"/>
+            <input type="url" id="newsMediaUrl" placeholder="Or paste image/video URL"
+              style="margin-top:6px;width:100%;box-sizing:border-box;padding:10px 12px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none"
+              oninput="handleNewsMediaUrl(this.value)"/>
+          </div>
+
+          <div class="form-group">
+            <label>HEADLINE *</label>
+            <input type="text" id="news_headline" placeholder="Breaking: ..."/>
+          </div>
+
+          <div class="form-group">
+            <label>DESCRIPTION</label>
+            <textarea id="news_desc" rows="5" placeholder="Full news description..."
+              style="width:100%;box-sizing:border-box;padding:10px 12px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:13px;outline:none;resize:vertical"></textarea>
+          </div>
+
+          <button class="btn-primary" id="postNewsBtn" onclick="postNews()" style="width:100%;box-sizing:border-box">
+            <i class="fas fa-paper-plane"></i> Post News
+          </button>
+          <div id="newsSuccess" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(39,174,96,0.15);border:1px solid #27ae60;border-radius:8px;color:#27ae60;font-size:13px;font-weight:700">
+            <i class="fas fa-check"></i> News posted successfully!
+          </div>
+        </div>
+
+        <!-- Manage existing news -->
+        <div class="admin-card">
+          <h3><i class="fas fa-list" style="color:var(--accent)"></i> Existing News</h3>
+          <div id="newsList" style="display:flex;flex-direction:column;gap:8px">
+            <div style="text-align:center;color:var(--text2);padding:20px;font-size:12px"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>
+          </div>
         </div>
       </div>
 
@@ -2537,7 +2602,139 @@
       return '720p';
     }
 
-    // ===== INIT =====
+    // ===== NEWS POST SYSTEM =====
+    let _newsMediaType = 'image';
+    let _newsMediaB64  = '';
+
+    function setNewsMediaType(type) {
+      _newsMediaType = type;
+      document.getElementById('newsMediaFile').accept =
+        type === 'image' ? 'image/*' : 'video/*';
+      const imgBtn = document.getElementById('newsMediaTypeImg');
+      const vidBtn = document.getElementById('newsMediaTypeVid');
+      if (type === 'image') {
+        imgBtn.style.background = 'var(--accent)'; imgBtn.style.color = '#fff'; imgBtn.style.border = 'none';
+        vidBtn.style.background = 'var(--bg3)';    vidBtn.style.color = 'var(--text2)'; vidBtn.style.border = '1.5px solid var(--border)';
+      } else {
+        vidBtn.style.background = 'var(--accent)'; vidBtn.style.color = '#fff'; vidBtn.style.border = 'none';
+        imgBtn.style.background = 'var(--bg3)';    imgBtn.style.color = 'var(--text2)'; imgBtn.style.border = '1.5px solid var(--border)';
+      }
+    }
+
+    function handleNewsMedia(input) {
+      const file = input.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        _newsMediaB64 = e.target.result;
+        _newsMediaType = file.type.startsWith('video') ? 'video' : 'image';
+        setNewsMediaType(_newsMediaType);
+        showNewsPreview(e.target.result, _newsMediaType);
+        document.getElementById('newsMediaUrl').value = '';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleNewsMediaUrl(url) {
+      _newsMediaB64 = '';
+      if (!url) { hideNewsPreview(); return; }
+      const isVid = /\.(mp4|webm|mov|avi)$/i.test(url) || url.includes('video');
+      _newsMediaType = isVid ? 'video' : 'image';
+      setNewsMediaType(_newsMediaType);
+      showNewsPreview(url, _newsMediaType);
+    }
+
+    function showNewsPreview(src, type) {
+      const wrap = document.getElementById('newsMediaPreviewWrap');
+      const img  = document.getElementById('newsMediaPreviewImg');
+      const vid  = document.getElementById('newsMediaPreviewVid');
+      wrap.style.display = 'block';
+      if (type === 'video') {
+        img.style.display = 'none';
+        vid.src = src; vid.style.display = 'block'; vid.load();
+      } else {
+        vid.style.display = 'none'; vid.src = '';
+        img.src = src; img.style.display = 'block';
+      }
+    }
+
+    function hideNewsPreview() {
+      document.getElementById('newsMediaPreviewWrap').style.display = 'none';
+    }
+
+    async function postNews() {
+      const headline = document.getElementById('news_headline').value.trim();
+      if (!headline) { alert('Please enter a headline.'); return; }
+      const mediaUrl = _newsMediaB64 || document.getElementById('newsMediaUrl').value.trim();
+      const desc     = document.getElementById('news_desc').value.trim();
+      const btn      = document.getElementById('postNewsBtn');
+      btn.innerHTML  = '<i class="fas fa-circle-notch fa-spin"></i> Posting...';
+      btn.disabled   = true;
+      try {
+        await db.collection('news').add({
+          headline,
+          description: desc,
+          mediaUrl,
+          mediaType: _newsMediaType,
+          postedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          postedAtMs: Date.now(),
+        });
+        // Reset form
+        document.getElementById('news_headline').value = '';
+        document.getElementById('news_desc').value = '';
+        document.getElementById('newsMediaUrl').value = '';
+        document.getElementById('newsMediaFile').value = '';
+        _newsMediaB64 = '';
+        hideNewsPreview();
+        const suc = document.getElementById('newsSuccess');
+        suc.style.display = 'block';
+        setTimeout(() => suc.style.display = 'none', 3000);
+        loadNewsList();
+      } catch(e) { alert('Error: ' + e.message); }
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> Post News';
+      btn.disabled  = false;
+    }
+
+    async function loadNewsList() {
+      const list = document.getElementById('newsList');
+      if (!list) return;
+      try {
+        const snap = await db.collection('news').orderBy('postedAtMs','desc').limit(20).get();
+        if (snap.empty) { list.innerHTML = '<div style="text-align:center;color:var(--text2);padding:20px;font-size:12px">No news posted yet.</div>'; return; }
+        list.innerHTML = '';
+        snap.forEach(doc => {
+          const d = doc.data();
+          const date = d.postedAtMs ? new Date(d.postedAtMs).toLocaleString() : '';
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:10px;box-shadow:0 3px 0 var(--btn-3d)';
+          row.innerHTML = `
+            ${d.mediaUrl ? `<img src="${d.mediaUrl}" style="width:50px;height:50px;border-radius:6px;object-fit:cover;flex-shrink:0;background:var(--bg3)" onerror="this.style.background='var(--bg3)'"/>` : '<div style="width:50px;height:50px;border-radius:6px;background:var(--bg3);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:18px"><i class="fas fa-newspaper"></i></div>'}
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.headline}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px">${date}</div>
+            </div>
+            <button onclick="deleteNewsPost('${doc.id}')" style="background:#e74c3c;border:none;border-radius:8px;padding:8px 10px;color:#fff;cursor:pointer;box-shadow:0 3px 0 #922b21;flex-shrink:0">
+              <i class="fas fa-trash"></i>
+            </button>`;
+          list.appendChild(row);
+        });
+      } catch(e) { list.innerHTML = '<div style="text-align:center;color:var(--text2);padding:20px;font-size:12px">Error loading news.</div>'; }
+    }
+
+    async function deleteNewsPost(id) {
+      if (!confirm('Delete this news post?')) return;
+      await db.collection('news').doc(id).delete();
+      loadNewsList();
+    }
+
+    // Load news list when news tab is opened
+    const _origSwitchTab = window.switchTab;
+    window.switchTab = function(tab, btn) {
+      if (_origSwitchTab) _origSwitchTab(tab, btn);
+      if (tab === 'news') loadNewsList();
+    };
+
+    // ===== END NEWS SYSTEM =====
+    
     async function initDashboard() {
       loadTheme();
       startRealtimeListener();
