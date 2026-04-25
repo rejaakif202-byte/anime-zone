@@ -276,23 +276,29 @@ async function loadData() {
   let retries = 0;
   const tryFetch = async () => {
     try {
-      // Plain get() — Firestore picks best source automatically
-      const snap = await db.collection('anime').get();
+      // Try server explicitly first for freshest data
+      let snap;
+      try {
+        snap = await db.collection('anime').get({ source: 'server' });
+      } catch(serverErr) {
+        snap = await db.collection('anime').get({ source: 'default' });
+      }
       allAnime = parse(snap);
-      if (allAnime.length === 0 && retries < 3) {
+      if (allAnime.length === 0 && retries < 4) {
         retries++;
-        setTimeout(tryFetch, 2000);
+        setTimeout(tryFetch, 1500);
         return;
       }
       allAnime.sort((a,b) => (a.title||'').localeCompare(b.title||''));
       updateLetterAvailability();
       if (stateMsg) stateMsg.innerHTML = '<i class="fas fa-arrow-up-a-z"></i><br>Pick a letter or type to search';
     } catch(e) {
-      if (retries < 3) {
+      console.error('AZ fetch error:', e);
+      if (retries < 4) {
         retries++;
-        setTimeout(tryFetch, 2000);
+        setTimeout(tryFetch, 1500);
       } else {
-        if (stateMsg) stateMsg.innerHTML = '<i class="fas fa-triangle-exclamation"></i><br>Failed to load. Refresh the page.';
+        if (stateMsg) stateMsg.innerHTML = '<i class="fas fa-triangle-exclamation"></i><br>Failed to load. Check internet and refresh.';
       }
     }
   };
@@ -447,12 +453,17 @@ function renderPagination() {
 }
 
 // Wait for Firebase persistence (enablePersistence is async), then load
-function startWhenReady() {
-  if (typeof db !== 'undefined') {
-    loadData();
-  } else {
-    setTimeout(startWhenReady, 100);
+// Wait for Firebase + persistence to be fully ready
+async function startWhenReady() {
+  if (typeof db === 'undefined') {
+    setTimeout(startWhenReady, 150);
+    return;
   }
+  // Wait for persistence to resolve before querying
+  if (window._persistenceReady) {
+    await window._persistenceReady.catch(() => {});
+  }
+  loadData();
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', startWhenReady);
