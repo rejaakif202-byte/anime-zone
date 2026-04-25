@@ -251,9 +251,10 @@ function renderPagination() {
 // ── Load data ──
 async function loadNews() {
   try {
-    const snap = await db.collection('news').orderBy('postedAtMs','desc').get();
+    const snap = await db.collection('news').get();
     allNews = [];
     snap.forEach(doc => allNews.push({ id: doc.id, ...doc.data() }));
+    allNews.sort((a,b) => (b.postedAtMs||0) - (a.postedAtMs||0));
     renderPage();
   } catch(e) {
     // Retry once
