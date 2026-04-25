@@ -1098,6 +1098,13 @@ function scrollTrending() {
 
 // ===== GLOBAL EXPORTS =====
 window.toggleTheme          = toggleTheme;
+window.toggleSidebarCats = function() {
+  var list = document.getElementById("sidebarCatList");
+  var chev = document.getElementById("catChevron");
+  var open = list.style.maxHeight && list.style.maxHeight !== "0px";
+  list.style.maxHeight = open ? "0px" : "300px";
+  chev.style.transform = open ? "" : "rotate(180deg)";
+};
 window.filterCategory           = filterCategory;
 window.checkCategoryNotifications = checkCategoryNotifications;
 window.clearCategoryDot         = clearCategoryDot;
