@@ -95,8 +95,8 @@
         <a href="#" class="sidebar-item" id="sb-series" onclick="filterCategory('series',null); closeSidebar(); setSidebarActive('sb-series')">
           <i class="fas fa-layer-group"></i> Series
         </a>
-        <a href="#" class="sidebar-item" id="sb-news" onclick="filterCategory('news',null); closeSidebar(); setSidebarActive('sb-news')">
-          <i class="fas fa-rss"></i> News
+        <a href="news.html" class="sidebar-item" id="sb-news">
+          <i class="fas fa-newspaper"></i> News
         </a>
       </div>
       <!-- A-Z Index -->
@@ -178,7 +178,7 @@
       <button class="pill active" onclick="filterCategory('all', this)">ALL</button>
       <button class="pill" id="pill-anime" onclick="filterCategory('anime', this)">ANIME<span class="pill-dot" id="dot-anime"></span></button>
       <button class="pill" id="pill-movie" onclick="filterCategory('movie', this)">MOVIE<span class="pill-dot" id="dot-movie"></span></button>
-      <button class="pill" id="pill-news" onclick="filterCategory('news', this)">NEWS<span class="pill-dot" id="dot-news"></span></button>
+      <button class="pill" id="pill-news" onclick="window.location.href='news.html'">NEWS<span class="pill-dot" id="dot-news"></span></button>
       <button class="pill" id="pill-series" onclick="filterCategory('series', this)">SERIES<span class="pill-dot" id="dot-series"></span></button>
     </div>
 
