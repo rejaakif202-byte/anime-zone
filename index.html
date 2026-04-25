@@ -328,6 +328,17 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="data.js"></script>
+  <script>
+    // Available immediately — before app.js loads
+    window.toggleSidebarCats = function() {
+      var list = document.getElementById('sidebarCatList');
+      var chev = document.getElementById('catChevron');
+      if (!list) return;
+      var open = list.style.maxHeight && list.style.maxHeight !== '0px';
+      list.style.maxHeight    = open ? '0px' : '300px';
+      chev.style.transform    = open ? '' : 'rotate(180deg)';
+    };
+  </script>
   <script src="app.js"></script>
 
   <!-- ===== REPORT MODAL ===== -->
