@@ -279,9 +279,10 @@ async function loadData() {
       // Try server explicitly first for freshest data
       let snap;
       try {
-        snap = await db.collection('anime').get({ source: 'server' });
+        snap = await db.collection('anime').get();
       } catch(serverErr) {
-        snap = await db.collection('anime').get({ source: 'default' });
+        console.error('AZ fetch error:', serverErr);
+        throw serverErr;
       }
       allAnime = parse(snap);
       if (allAnime.length === 0 && retries < 4) {
