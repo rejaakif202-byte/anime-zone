@@ -259,53 +259,6 @@ LETTERS.forEach(l => {
   letterBar.appendChild(btn);
 });
 
-// ── Fetch data ──
-async function loadData() {
-  const stateMsg = document.getElementById('stateMsg');
-  if (stateMsg) stateMsg.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i><br>Loading content...';
-
-  const parse = snap => {
-    const arr = [];
-    snap.forEach(doc => {
-      const d = doc.data();
-      if (d.published !== false) arr.push({...d, firestoreId: doc.id});
-    });
-    return arr;
-  };
-
-  let retries = 0;
-  const tryFetch = async () => {
-    try {
-      // Try server explicitly first for freshest data
-      let snap;
-      try {
-        snap = await db.collection('anime').get();
-      } catch(serverErr) {
-        console.error('AZ fetch error:', serverErr);
-        throw serverErr;
-      }
-      allAnime = parse(snap);
-      if (allAnime.length === 0 && retries < 4) {
-        retries++;
-        setTimeout(tryFetch, 1500);
-        return;
-      }
-      allAnime.sort((a,b) => (a.title||'').localeCompare(b.title||''));
-      updateLetterAvailability();
-      if (stateMsg) stateMsg.innerHTML = '<i class="fas fa-arrow-up-a-z"></i><br>Pick a letter or type to search';
-    } catch(e) {
-      console.error('AZ fetch error:', e);
-      if (retries < 4) {
-        retries++;
-        setTimeout(tryFetch, 1500);
-      } else {
-        if (stateMsg) stateMsg.innerHTML = '<i class="fas fa-triangle-exclamation"></i><br>Failed to load. Check internet and refresh.';
-      }
-    }
-  };
-  tryFetch();
-}
-
 function updateLetterAvailability() {
   const available = new Set();
   allAnime.forEach(a => {
@@ -320,48 +273,7 @@ function updateLetterAvailability() {
   });
 }
 
-// ── Select letter ──
-function selectLetter(letter) {
-  currentLetter = letter;
-  currentPage   = 1;
-  document.getElementById('azSearch').value = '';
-  document.querySelectorAll('.letter-btn').forEach(b => b.classList.remove('active'));
-  const btn = document.getElementById('lbtn-' + letter);
-  if (btn) btn.classList.add('active');
 
-  filtered = allAnime.filter(a => {
-    const first = (a.title||'').trim()[0]?.toUpperCase();
-    if (letter === '#') return first && !/[A-Z]/.test(first);
-    return first === letter;
-  });
-
-  showResults();
-}
-
-// ── Search input ──
-function onSearchInput(val) {
-  currentPage = 1;
-  const q = val.trim().toLowerCase();
-  if (!q) {
-    if (currentLetter) selectLetter(currentLetter);
-    else {
-      filtered = [];
-      document.getElementById('resultsGrid').innerHTML = '';
-      document.getElementById('stateMsg').style.display = '';
-      document.getElementById('resultsLetter').classList.remove('show');
-      document.getElementById('resultsCount').textContent = '';
-      renderPagination();
-    }
-    return;
-  }
-  document.querySelectorAll('.letter-btn').forEach(b => b.classList.remove('active'));
-  currentLetter = '';
-  filtered = allAnime.filter(a => (a.title||'').toLowerCase().startsWith(q));
-  showResults(val);
-}
-
-// ── Show results ──
-function showResults(label) {
   const grid     = document.getElementById('resultsGrid');
   const statMsg  = document.getElementById('stateMsg');
   const letterEl = document.getElementById('resultsLetter');
@@ -453,9 +365,97 @@ function renderPagination() {
   }
 }
 
-// Wait for Firebase persistence (enablePersistence is async), then load
-// Simple init — just wait for DOM
-document.addEventListener('DOMContentLoaded', loadData);
+// ── Lazy load: only fetch when user first interacts ──
+let dataLoaded = false;
+let dataLoading = false;
+
+async function ensureData() {
+  if (dataLoaded) return true;
+  if (dataLoading) {
+    // Wait for existing load to finish
+    await new Promise(res => {
+      const check = setInterval(() => {
+        if (dataLoaded || !dataLoading) { clearInterval(check); res(); }
+      }, 100);
+    });
+    return dataLoaded;
+  }
+  dataLoading = true;
+  const stateMsg = document.getElementById('stateMsg');
+  if (stateMsg) {
+    stateMsg.style.display = '';
+    stateMsg.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i><br>Loading content...';
+  }
+  try {
+    const snap = await db.collection('anime').get();
+    allAnime = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      if (d.published !== false) allAnime.push({...d, firestoreId: doc.id});
+    });
+    allAnime.sort((a,b) => (a.title||'').localeCompare(b.title||''));
+    updateLetterAvailability();
+    dataLoaded = true;
+    dataLoading = false;
+    if (stateMsg) stateMsg.style.display = 'none';
+    return true;
+  } catch(e) {
+    dataLoading = false;
+    if (stateMsg) {
+      stateMsg.innerHTML = '<i class="fas fa-triangle-exclamation"></i><br>Failed to load. Check internet and try again.';
+      stateMsg.style.display = '';
+    }
+    return false;
+  }
+}
+
+// Load data on first interaction only
+async function selectLetter(letter) {
+  const ok = await ensureData();
+  if (!ok) return;
+  currentLetter = letter;
+  currentPage   = 1;
+  document.getElementById('azSearch').value = '';
+  document.querySelectorAll('.letter-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('lbtn-' + letter);
+  if (btn) btn.classList.add('active');
+  filtered = allAnime.filter(a => {
+    const first = (a.title||'').trim()[0]?.toUpperCase();
+    if (letter === '#') return first && !/[A-Z]/.test(first);
+    return first === letter;
+  });
+  showResults();
+}
+
+async function onSearchInput(val) {
+  const q = val.trim().toLowerCase();
+  if (!q) {
+    if (currentLetter) selectLetter(currentLetter);
+    else {
+      filtered = [];
+      document.getElementById('resultsGrid').innerHTML = '';
+      document.getElementById('stateMsg').innerHTML = '<i class="fas fa-arrow-up-a-z"></i><br>Pick a letter or type to search';
+      document.getElementById('stateMsg').style.display = '';
+      document.getElementById('resultsLetter').classList.remove('show');
+      document.getElementById('resultsCount').textContent = '';
+      renderPagination();
+    }
+    return;
+  }
+  const ok = await ensureData();
+  if (!ok) return;
+  currentPage = 1;
+  document.querySelectorAll('.letter-btn').forEach(b => b.classList.remove('active'));
+  currentLetter = '';
+  filtered = allAnime.filter(a => (a.title||'').toLowerCase().startsWith(q));
+  showResults(val);
+}
+
+// No auto-load on page open — wait for user interaction
+document.addEventListener('DOMContentLoaded', () => {
+  // Page ready — letters are disabled (greyed) until user taps one
+  // Nothing fetched until then
+});
 </script>
 </body>
 </html>
