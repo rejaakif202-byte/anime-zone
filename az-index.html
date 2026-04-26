@@ -273,7 +273,8 @@ function updateLetterAvailability() {
   });
 }
 
-
+// ── Show Results (FIXED: wrapped in a function) ──
+function showResults(label) {
   const grid     = document.getElementById('resultsGrid');
   const statMsg  = document.getElementById('stateMsg');
   const letterEl = document.getElementById('resultsLetter');
@@ -308,7 +309,7 @@ function updateLetterAvailability() {
     card.style.animationDelay = (i * 0.04) + 's';
     card.innerHTML = `
       <img class="card-img" src="${a.banner || a.thumbnail || ''}" alt="${a.title}"
-        onerror="this.style.background='var(--bg3)'"/>
+        onerror="this.style.display='none'; this.insertAdjacentHTML('afterend','<div style=\\'background:var(--bg3); width:100%; aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--text2)\\'> <i class=\\'fas fa-image\\'></i></div>')"/>
       <div class="card-body">
         <span class="card-type">${a.type||'ANIME'}</span>
         <div class="card-title">${a.title||''}</div>
@@ -430,6 +431,8 @@ async function selectLetter(letter) {
 async function onSearchInput(val) {
   const q = val.trim().toLowerCase();
   if (!q) {
+    // Clear search: remove active letter highlight as well
+    document.querySelectorAll('.letter-btn').forEach(b => b.classList.remove('active'));
     if (currentLetter) selectLetter(currentLetter);
     else {
       filtered = [];
