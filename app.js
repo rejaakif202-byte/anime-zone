@@ -6,8 +6,8 @@ let currentUser     = null;
 let allAnimeData    = [];
 let currentCategory = 'all';
 let currentPage     = 1;
-const PAGE_SIZE     = 10;   // 10 cards per page
-const SECTION_SIZE  = 10;   // items shown per home section
+const PAGE_SIZE     = 10;
+const SECTION_SIZE  = 10;
 
 // ===== THEME =====
 function toggleTheme() {
@@ -30,20 +30,135 @@ function loadTheme() {
 }
 loadTheme();
 
+// ===== FETCH ANIME =====
+// Defined early so instant loader below can call it immediately
+async function fetchAllAnime() {
+  const parse = snap => {
+    const data = [];
+    snap.forEach(doc => {
+      const d = { ...doc.data(), firestoreId: doc.id };
+      if (d.published !== false) data.push(d);
+    });
+    return data;
+  };
+
+  // Try cache first for instant display, then update from server
+  try {
+    const cacheSnap = await db.collection('anime').get({ source: 'cache' });
+    const cacheData = parse(cacheSnap);
+    if (cacheData.length > 0) {
+      allAnimeData = cacheData;
+      // Silently refresh from server in background
+      db.collection('anime').get({ source: 'server' }).then(serverSnap => {
+        const fresh = parse(serverSnap);
+        if (fresh.length > 0) {
+          allAnimeData = fresh;
+          renderHome(fresh);
+          checkCategoryNotifications(fresh);
+        }
+      }).catch(() => {});
+      return cacheData;
+    }
+  } catch(cacheErr) {
+    // Cache empty or failed, fall through to server
+  }
+
+  // No cache — fetch from server directly
+  try {
+    const snap = await db.collection('anime').get({ source: 'server' });
+    const data = parse(snap);
+    allAnimeData = data;
+    return data;
+  } catch(serverErr) {
+    console.error('Fetch error:', serverErr);
+    return [];
+  }
+}
+
+// ===== INSTANT CONTENT LOAD =====
+// Runs immediately on page load — does NOT wait for auth state.
+// This ensures ALL users (guest, logged-in, Telegram Mini App) see
+// content right away without any blank screen wait.
+let _contentLoaded = false;
+(async () => {
+  const loadingState = document.getElementById('loadingState');
+  const emptyState   = document.getElementById('emptyState');
+  const homeSecs     = document.getElementById('homeSections');
+  if (loadingState) loadingState.style.display = 'flex';
+  if (emptyState)   emptyState && emptyState.classList.add('hidden');
+  if (homeSecs)     homeSecs.style.display = 'block';
+
+  let data = await fetchAllAnime();
+  if (loadingState) loadingState.style.display = 'none';
+
+  if (data.length > 0) {
+    _contentLoaded = true;
+    renderHome(data);
+    checkCategoryNotifications(data);
+  } else {
+    // Retry after 3s for very slow connections or cold starts
+    setTimeout(async () => {
+      if (_contentLoaded) return;
+      data = await fetchAllAnime();
+      if (data.length > 0) {
+        _contentLoaded = true;
+        renderHome(data);
+        checkCategoryNotifications(data);
+      }
+    }, 3000);
+  }
+})();
+
 // ===== AUTH STATE =====
+// Auth resolves AFTER content is already shown.
+// We only update profile UI and watchlist buttons here — no re-fetch.
 auth.onAuthStateChanged(async user => {
   currentUser = user;
   if (user) {
+    // Close auth modal if open
     const modal = document.getElementById('avAuthModal');
     if (modal) modal.style.display = 'none';
     document.body.style.overflow = '';
+
+    // Update profile/sidebar UI
     await updateAuthUI(user);
-    initApp();
+
+    // Mark saved watchlist buttons on already-rendered cards
+    try {
+      const doc  = await db.collection('users').doc(user.uid).get();
+      const list = doc.exists ? (doc.data().watchlist||[]).map(String) : [];
+      list.forEach(id => {
+        const btn = document.getElementById(`wl-${id}`);
+        if (btn) btn.classList.add('saved');
+      });
+    } catch(e) {}
+
+    // Safety net: if content somehow didn't load, load it now
+    if (!_contentLoaded || allAnimeData.length === 0) {
+      const data = await fetchAllAnime();
+      if (data.length > 0) {
+        _contentLoaded = true;
+        renderHome(data);
+        checkCategoryNotifications(data);
+      }
+    }
   } else {
+    // Guest user
     setProfileBtnAnon();
     updateSidebarProfile(null);
-    initApp();
+
+    // Safety net: if content somehow didn't load, load it now
+    if (!_contentLoaded || allAnimeData.length === 0) {
+      const data = await fetchAllAnime();
+      if (data.length > 0) {
+        _contentLoaded = true;
+        renderHome(data);
+        checkCategoryNotifications(data);
+      }
+    }
   }
+  // Always init sidebar (needed for toggle/close handlers)
+  initSidebar();
 });
 
 // ===== AUTH MODAL =====
@@ -375,9 +490,7 @@ async function avResend(email) {
   const err = document.getElementById('av_authErr');
   const ok = document.getElementById('av_authOk');
   try {
-    // Note: requires temporary login or re-auth to resend
     if (err) { err.textContent = 'Redirecting to verification...'; }
-    // Implementation simplified for brevity
   } catch(e) {}
 }
 
@@ -491,47 +604,6 @@ async function handleWishlistToggle(id, btnEl) {
   await toggleMyList(id, btnEl);
 }
 
-// ===== FETCH ANIME =====
-// Show cache instantly, update from server silently in background
-async function fetchAllAnime() {
-  const parse = snap => {
-    const data = [];
-    snap.forEach(doc => {
-      const d = { ...doc.data(), firestoreId: doc.id };
-      if (d.published !== false) data.push(d);
-    });
-    return data;
-  };
-
-  // Step 1 — try server (primary source)
-  try {
-    const snap = await db.collection('anime').get({ source: 'server' });
-    const data = parse(snap);
-    allAnimeData = data;
-    return data;
-  } catch(serverErr) {
-    // Step 2 — server failed, use cache immediately
-    try {
-      const snap = await db.collection('anime').get({ source: 'cache' });
-      const data = parse(snap);
-      allAnimeData = data;
-      // Retry server in background and refresh UI silently
-      db.collection('anime').get({ source: 'server' }).then(serverSnap => {
-        const fresh = parse(serverSnap);
-        if (fresh.length > 0) {
-          allAnimeData = fresh;
-          renderHome(fresh);
-          checkCategoryNotifications(fresh);
-        }
-      }).catch(() => {});
-      return data;
-    } catch(cacheErr) {
-      console.error('Fetch error:', cacheErr);
-      return [];
-    }
-  }
-}
-
 // ===== RENDER CARD =====
 function renderCard(anime, isScroll = false) {
   const div = document.createElement('div');
@@ -540,7 +612,7 @@ function renderCard(anime, isScroll = false) {
   const genres = (anime.genre||[]).slice(0,2).map(g =>
     `<span class="genre-tag" style="font-size:10px;padding:3px 8px">${g}</span>`
   ).join('');
-  
+
   const imgSrc = anime.banner || anime.thumbnail || '';
   div.innerHTML = `
     <div style="position:relative">
@@ -591,41 +663,14 @@ function renderNewsCard(anime) {
   return div;
 }
 
-
+// ===== initApp — kept for compatibility but no longer the main loader =====
 async function initApp() {
-  const loadingState = document.getElementById('loadingState');
-  const emptyState   = document.getElementById('emptyState');
-  const homeSecs     = document.getElementById('homeSections');
-  if (loadingState) loadingState.style.display = 'flex';
-  if (emptyState)   emptyState.classList.add('hidden');
-  if (homeSecs)     homeSecs.style.display = 'block';
-
-  let data = await fetchAllAnime();
-  if (loadingState) loadingState.style.display = 'none';
-
-  // If still empty (cold start / slow connection) — retry after 2.5s
-  if (data.length === 0) {
-    setTimeout(async () => {
-      data = await fetchAllAnime();
-      if (data.length > 0) {
-        renderHome(data);
-        checkCategoryNotifications(data);
-      }
-    }, 2500);
+  // Content is already loaded by the instant loader above.
+  // This function is kept so nothing breaks if called elsewhere.
+  if (_contentLoaded && allAnimeData.length > 0) {
+    renderHome(allAnimeData);
+    checkCategoryNotifications(allAnimeData);
   }
-
-  if (currentUser) {
-    try {
-      const doc  = await db.collection('users').doc(currentUser.uid).get();
-      const list = doc.exists ? (doc.data().watchlist||[]).map(String) : [];
-      list.forEach(id => {
-        const btn = document.getElementById(`wl-${id}`);
-        if (btn) btn.classList.add('saved');
-      });
-    } catch(e) {}
-  }
-  renderHome(data);
-  checkCategoryNotifications(data);
   initSidebar();
 }
 
@@ -718,15 +763,12 @@ function renderPageButtons(current, total) {
 
 function buildPageList(current, total) {
   if (total <= 7) return Array.from({length: total}, (_,i) => i+1);
-  // Show first 7 pages, ellipsis, then last page (like screenshot)
   if (current <= 6) {
     return [1,2,3,4,5,6,7,'...',total];
   }
-  // Near the end
   if (current >= total - 4) {
     return [1,'...',total-6,total-5,total-4,total-3,total-2,total-1,total];
   }
-  // Middle
   return [1,'...',current-1,current,current+1,'...',total];
 }
 
@@ -758,7 +800,6 @@ function getFilteredItems(cat) {
 }
 
 // ===== RENDER HOME =====
-// Per-section page state
 const sectionPages = { top10: 1, latest: 1, trending: 1 };
 const SECTION_LIMITS = { top10: 10, latest: 10, trending: 10 };
 
@@ -776,11 +817,9 @@ function renderSectionPage(section, allItems) {
   grid.innerHTML = '';
   slice.forEach(a => grid.appendChild(renderCard(a, false)));
 
-  // Always clear inline pagination div (keep it empty)
   const inlineWrap = document.getElementById(section + 'Pagination');
   if (inlineWrap) inlineWrap.innerHTML = '';
 
-  // Render page buttons into global paginationWrap (above footer)
   const wrap = document.getElementById('paginationWrap');
   if (!wrap) return;
   wrap.innerHTML = '';
@@ -824,12 +863,10 @@ function renderHome(data) {
 
   const usedIds = new Set();
 
-  // 1. All top10 items
   const top10All = data.filter(a => a.top10 && a.type !== 'news')
     .sort((a,b) => (b.top10AddedAt||0) - (a.top10AddedAt||0));
   top10All.forEach(a => usedIds.add(a.firestoreId));
 
-  // 2. All latest items
   const latestAll = data.filter(a => a.latest && a.type !== 'news' && !usedIds.has(a.firestoreId))
     .sort((a,b) => {
       const ta = a.createdAt?.toDate?.()?.getTime() || 0;
@@ -838,9 +875,7 @@ function renderHome(data) {
     });
   latestAll.forEach(a => usedIds.add(a.firestoreId));
 
-  // 3. All trending items
   const trendingAll = data.filter(a => a.trending && a.type !== 'news' && !usedIds.has(a.firestoreId));
-
   const news = data.filter(a => a.type === 'news');
 
   const latestSec   = document.getElementById('latestSection');
@@ -856,7 +891,6 @@ function renderHome(data) {
   if (catSec)    catSec.style.display    = 'none';
   if (homeSecs)  homeSecs.style.display  = 'block';
   if (searchSec) searchSec.classList.add('hidden');
-
 
   if (data.length === 0) {
     if (emptyState)   emptyState.classList.remove('hidden');
@@ -900,7 +934,7 @@ function renderNewsSection(items) {
   items.slice(0, SECTION_SIZE).forEach(a => grid.appendChild(renderNewsCard(a)));
 }
 
-// ===== FILTER CATEGORY (pills) =====
+// ===== FILTER CATEGORY =====
 function goHome(btnEl) {
   currentCategory = 'home';
   currentPage     = 1;
@@ -926,7 +960,6 @@ function checkCategoryNotifications(data) {
   NOTIF_CATS.forEach(cat => {
     const storageKey = `av_seen_${cat}`;
     const lastSeen   = parseInt(localStorage.getItem(storageKey) || '0');
-    // Find newest item in this category
     const items = data.filter(a => (a.type || '').toLowerCase() === cat);
     const newestTs = items.reduce((max, a) => {
       const t = a.createdAt?.toDate?.()?.getTime?.() || a.top10AddedAt || 0;
@@ -946,7 +979,6 @@ function checkCategoryNotifications(data) {
 function clearCategoryDot(cat) {
   const dot = document.getElementById('dot-' + cat);
   if (dot) dot.classList.remove('show');
-  // Save current time as "last seen" for this category
   const items = allAnimeData.filter(a => (a.type || '').toLowerCase() === cat);
   const newestTs = items.reduce((max, a) => {
     const t = a.createdAt?.toDate?.()?.getTime?.() || a.top10AddedAt || 0;
@@ -960,7 +992,6 @@ function filterCategory(cat, btnEl) {
   currentPage     = 1;
   document.querySelectorAll('.cat-pill,.pill').forEach(b => b.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
-  // Clear dot when user visits this category
   if (NOTIF_CATS.includes(cat)) clearCategoryDot(cat);
 
   const myListSec = document.getElementById('myListSection');
@@ -1097,24 +1128,24 @@ function scrollTrending() {
 }
 
 // ===== GLOBAL EXPORTS =====
-window.toggleTheme          = toggleTheme;
-window.filterCategory           = filterCategory;
+window.toggleTheme                = toggleTheme;
+window.filterCategory             = filterCategory;
 window.checkCategoryNotifications = checkCategoryNotifications;
-window.clearCategoryDot         = clearCategoryDot;
-window.goHome               = goHome;
-window.scrollTrending       = scrollTrending;
-window.showMyList           = showMyList;
-window.logoutUser           = logoutUser;
-window.openAuthModal        = openAuthModal;
-window.closeAuthModal       = closeAuthModal;
-window.handleWishlistToggle = handleWishlistToggle;
-window.toggleSearch         = toggleSearch;
-window.closeSearch          = closeSearch;
-window.searchAnime          = searchAnime;
-window.goToPage             = goToPage;
-window.avSwitchTab          = avSwitchTab;
-window.avDoLogin            = avDoLogin;
-window.avDoSignup           = avDoSignup;
-window.avForgotPw           = avForgotPw;
-window.avTogglePw           = avTogglePw;
-window.avResend             = avResend;
+window.clearCategoryDot           = clearCategoryDot;
+window.goHome                     = goHome;
+window.scrollTrending             = scrollTrending;
+window.showMyList                 = showMyList;
+window.logoutUser                 = logoutUser;
+window.openAuthModal              = openAuthModal;
+window.closeAuthModal             = closeAuthModal;
+window.handleWishlistToggle       = handleWishlistToggle;
+window.toggleSearch               = toggleSearch;
+window.closeSearch                = closeSearch;
+window.searchAnime                = searchAnime;
+window.goToPage                   = goToPage;
+window.avSwitchTab                = avSwitchTab;
+window.avDoLogin                  = avDoLogin;
+window.avDoSignup                 = avDoSignup;
+window.avForgotPw                 = avForgotPw;
+window.avTogglePw                 = avTogglePw;
+window.avResend                   = avResend;
