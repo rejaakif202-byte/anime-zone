@@ -247,17 +247,27 @@ let currentLetter = '';
 let currentPage   = 1;
 const PAGE_SIZE   = 20;
 
-// ── Build letter bar ──
+// ── Build letter bar (after DOM ready) ──
 const LETTERS = '#ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-const letterBar = document.getElementById('letterBar');
-LETTERS.forEach(l => {
-  const btn = document.createElement('button');
-  btn.className = 'letter-btn';   // always tappable — no 'disabled'
-  btn.id        = 'lbtn-' + l;
-  btn.textContent = l;
-  btn.onclick   = () => selectLetter(l);
-  letterBar.appendChild(btn);
-});
+function buildLetterBar() {
+  const bar = document.getElementById('letterBar');
+  if (!bar) return;
+  bar.innerHTML = '';
+  LETTERS.forEach(l => {
+    const btn = document.createElement('button');
+    btn.className   = 'letter-btn';
+    btn.id          = 'lbtn-' + l;
+    btn.textContent = l;
+    btn.onclick     = () => selectLetter(l);
+    bar.appendChild(btn);
+  });
+}
+// Build immediately if DOM is ready, otherwise wait
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', buildLetterBar);
+} else {
+  buildLetterBar();
+}
 
 function updateLetterAvailability() {
   const available = new Set();
