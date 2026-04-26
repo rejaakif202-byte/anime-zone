@@ -395,7 +395,7 @@ function showResults(label) {
     card.className = 'anime-card';
     card.style.animationDelay = (i * 0.04) + 's';
     card.innerHTML = `
-      <img class="card-img" src="${a.thumbnail||''}" alt="${a.title}"
+      <img class="card-img" src="${a.banner || a.thumbnail || ''}" alt="${a.title}"
         onerror="this.style.background='var(--bg3)'"/>
       <div class="card-body">
         <span class="card-type">${a.type||'ANIME'}</span>
