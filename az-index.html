@@ -224,6 +224,399 @@
 
 <script>
 // ── Theme ──
+function loadTheme(){const s=localStorage.getItem('av_theme')||'dark';document.documentElement.setAttribute('data-theme',s);document.getElementById('themeBtn').innerHTML=s==='dark'?'<i class="fas fa-moon"></i>':'<i class="fas fa-sun"></i>';}
+function toggleTheme(){const c=document.documentElement.getAttribute('data-theme'),n=c==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('av_theme',n);document.getElementById('themeBtn').innerHTML=n==='dark'?'<i class="fas fa-moon"></i>':'<i class="fas fa-sun"></i>';}
+loadTheme();
+
+// ── State ──
+let allAnime      = [];
+let dataLoaded    = false;
+let filtered      = [];
+let currentLetter = '';
+let currentPage   = 1;
+const PAGE_SIZE   = 20;
+
+// ── Build letter bar ──
+const LETTERS = '#ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const letterBar = document.getElementById('letterBar');
+LETTERS.forEach(l => {
+  const btn = document.createElement('button');
+  btn.className = 'letter-btn';
+  btn.id = 'lbtn-' + l;
+  btn.textContent = l;
+  btn.onclick = () => onLetterClick(l);
+  letterBar.appendChild(btn);
+});
+
+// ── Fetch data (only when first needed) ──
+async function ensureDataLoaded() {
+  if (dataLoaded) return true;
+  const stateMsg = document.getElementById('stateMsg');
+  stateMsg.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i><br>Loading...';
+  stateMsg.style.display = '';
+  try {
+    const snap = await db.collection('anime').get();
+    allAnime = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      if (d.published !== false) allAnime.push({...d, firestoreId: doc.id});
+    });
+    allAnime.sort((a,b) => (a.title||'').localeCompare(b.title||''));
+    dataLoaded = true;
+    updateLetterAvailability();
+    stateMsg.style.display = 'none';
+    return true;
+  } catch(e) {
+    stateMsg.innerHTML = '<i class="fas fa-triangle-exclamation"></i><br>Failed to load. Check connection and try again.';
+    return false;
+  }
+}
+
+function updateLetterAvailability() {
+  const available = new Set();
+  allAnime.forEach(a => {
+    const first = (a.title||'').trim()[0]?.toUpperCase();
+    if (!first) return;
+    available.add(/[A-Z]/.test(first) ? first : '#');
+  });
+  LETTERS.forEach(l => {
+    const btn = document.getElementById('lbtn-' + l);
+    if (btn) btn.classList.toggle('disabled', !available.has(l));
+  });
+}
+
+// ── Letter click ──
+async function onLetterClick(letter) {
+  const ok = await ensureDataLoaded();
+  if (!ok) return;
+  currentLetter = letter;
+  currentPage   = 1;
+  document.getElementById('azSearch').value = '';
+  document.querySelectorAll('.letter-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('lbtn-' + letter);
+  if (btn) btn.classList.add('active');
+  filtered = allAnime.filter(a => {
+    const first = (a.title||'').trim()[0]?.toUpperCase();
+    return letter === '#' ? (first && !/[A-Z]/.test(first)) : first === letter;
+  });
+  showResults();
+}
+
+// ── Search input ──
+async function onSearchInput(val) {
+  const q = val.trim().toLowerCase();
+  if (!q) {
+    // Clear results if search emptied
+    if (currentLetter) { onLetterClick(currentLetter); return; }
+    document.getElementById('resultsGrid').innerHTML = '';
+    document.getElementById('stateMsg').innerHTML = '<i class="fas fa-arrow-up-a-z"></i><br>Pick a letter or type to search';
+    document.getElementById('stateMsg').style.display = '';
+    document.getElementById('resultsLetter').classList.remove('show');
+    document.getElementById('resultsCount').textContent = '';
+    renderPagination();
+    return;
+  }
+  const ok = await ensureDataLoaded();
+  if (!ok) return;
+  currentPage = 1;
+  document.querySelectorAll('.letter-btn').forEach(b => b.classList.remove('active'));
+  currentLetter = '';
+  filtered = allAnime.filter(a => (a.title||'').toLowerCase().startsWith(q));
+  showResults(val);
+}
+
+// ── Show results ──
+function showResults(label) {
+  const grid     = document.getElementById('resultsGrid');
+  const statMsg  = document.getElementById('stateMsg');
+  const letterEl = document.getElementById('resultsLetter');
+  const countEl  = document.getElementById('resultsCount');
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    statMsg.innerHTML = '<i class="fas fa-face-frown-open"></i><br>No content found';
+    statMsg.style.display = '';
+    letterEl.classList.remove('show');
+    countEl.textContent = '';
+    renderPagination();
+    return;
+  }
+
+  statMsg.style.display = 'none';
+  letterEl.textContent = label || currentLetter;
+  letterEl.classList.remove('show');
+  requestAnimationFrame(() => requestAnimationFrame(() => letterEl.classList.add('show')));
+
+  const total = filtered.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const slice = filtered.slice(start, start + PAGE_SIZE);
+  countEl.textContent = `${total} result${total !== 1 ? 's' : ''} · Page ${currentPage}/${pages}`;
+
+  grid.innerHTML = '';
+  slice.forEach((a, i) => {
+    const card = document.createElement('div');
+    card.className = 'anime-card';
+    card.style.animationDelay = (i * 0.04) + 's';
+    card.innerHTML = `
+      <img class="card-img" src="${a.thumbnail||''}" alt="${a.title}"
+        onerror="this.style.background='var(--bg3)'"/>
+      <div class="card-body">
+        <span class="card-type">${a.type||'ANIME'}</span>
+        <div class="card-title">${a.title||''}</div>
+        <div class="card-meta">
+          <span class="card-rating"><i class="fas fa-star" style="font-size:9px"></i> ${a.rating||'N/A'}</span>
+          &nbsp;·&nbsp; ${a.year||''}
+        </div>
+      </div>`;
+    card.onclick = () => { window.location.href = `anime.html?id=${a.firestoreId}`; };
+    grid.appendChild(card);
+  });
+
+  renderPagination();
+  grid.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// ── Pagination ──
+function renderPagination() {
+  const wrap = document.getElementById('pagination');
+  wrap.innerHTML = '';
+  const total = filtered.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  if (pages <= 1) return;
+
+  const addBtn = (label, page, isActive, isDots) => {
+    if (isDots) { const s=document.createElement('span');s.className='page-dots';s.textContent='…';wrap.appendChild(s);return; }
+    const b=document.createElement('button');
+    b.className='page-btn'+(isActive?' active':'');
+    b.textContent=label;
+    if(!isActive)b.onclick=()=>{ currentPage=page; showResults(document.getElementById('azSearch').value||currentLetter); };
+    wrap.appendChild(b);
+  };
+
+  if(pages<=7){for(let p=1;p<=pages;p++)addBtn(p,p,p===currentPage);}
+  else if(currentPage<=4){for(let p=1;p<=5;p++)addBtn(p,p,p===currentPage);addBtn('…',null,false,true);addBtn(pages,pages,false);}
+  else if(currentPage>=pages-3){addBtn(1,1,false);addBtn('…',null,false,true);for(let p=pages-4;p<=pages;p++)addBtn(p,p,p===currentPage);}
+  else{addBtn(1,1,false);addBtn('…',null,false,true);for(let p=currentPage-1;p<=currentPage+1;p++)addBtn(p,p,p===currentPage);addBtn('…',null,false,true);addBtn(pages,pages,false);}
+}
+</script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <style>
+    :root[data-theme="dark"] {
+      --bg:      #000F08; --bg2: #071410; --bg3: #0E1F18;
+      --text:    #F0F0F0; --text2: #9AADA5;
+      --accent:  #FB3640; --accent2: #E02A33; --btn-3d: #8B1017;
+      --border:  #1A3025; --card: #0A1A10; --shadow: rgba(0,0,0,0.72);
+    }
+    :root[data-theme="light"] {
+      --bg:      #F7F7FF; --bg2: #EDEDFC; --bg3: #E0E0F8;
+      --text:    #27187E; --text2: #4A3A9A;
+      --accent:  #758BFD; --accent2: #5A72F0; --btn-3d: #27187E;
+      --border:  #C8C8F0; --card: #F2F2FE; --shadow: rgba(39,24,126,0.16);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+    html { scroll-behavior: smooth; }
+    body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; transition:background 0.3s,color 0.3s; }
+
+    /* ── Header ── */
+    .az-header {
+      position:sticky; top:0; z-index:100;
+      background:var(--bg2); border-bottom:2px solid var(--border);
+      padding:12px 16px;
+      display:flex; align-items:center; justify-content:space-between;
+      box-shadow:0 4px 0 var(--btn-3d),0 6px 20px var(--shadow);
+    }
+    .az-header-left { display:flex; align-items:center; gap:10px; }
+    .back-btn, .theme-btn {
+      background:var(--bg3); border:1.5px solid var(--border); color:var(--text2);
+      border-radius:8px; width:38px; height:38px;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; text-decoration:none; font-size:15px;
+      box-shadow:0 3px 0 var(--btn-3d),0 4px 8px var(--shadow);
+      transition:transform 0.1s,box-shadow 0.1s,border-color 0.15s;
+    }
+    .back-btn:hover,.theme-btn:hover { border-color:var(--accent); color:var(--accent); transform:translateY(-2px); box-shadow:0 5px 0 var(--btn-3d); }
+    .back-btn:active,.theme-btn:active { transform:translateY(3px); box-shadow:0 1px 0 var(--btn-3d); }
+    .logo { font-family:'Bebas Neue',cursive; font-size:20px; letter-spacing:1px; }
+    .logo span { color:var(--accent); }
+
+    /* ── Hero ── */
+    .hero {
+      text-align:center; padding:40px 20px 24px;
+      background:linear-gradient(180deg,rgba(251,54,64,0.08) 0%,transparent 100%);
+    }
+    .hero-icon {
+      width:68px; height:68px; border-radius:18px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      display:flex; align-items:center; justify-content:center;
+      font-size:30px; color:#fff; margin:0 auto 14px;
+      box-shadow:0 6px 0 var(--btn-3d),0 10px 24px var(--shadow);
+      animation:iconFloat 3s ease-in-out infinite;
+    }
+    @keyframes iconFloat {
+      0%,100% { transform:translateY(0); }
+      50%     { transform:translateY(-7px); }
+    }
+    .hero h1 { font-family:'Bebas Neue',cursive; font-size:32px; letter-spacing:2px; margin-bottom:6px; }
+    .hero p  { font-size:12px; color:var(--text2); font-weight:500; }
+
+    /* ── Letter keyboard ── */
+    .letter-bar {
+      padding:14px 12px;
+      display:flex; flex-wrap:wrap; gap:6px; justify-content:center;
+    }
+    .letter-btn {
+      min-width:36px; height:36px; padding:0 6px;
+      background:var(--card); border:1.5px solid var(--border); border-radius:8px;
+      font-size:13px; font-weight:800; color:var(--text2); cursor:pointer;
+      font-family:'Poppins',sans-serif;
+      box-shadow:0 3px 0 var(--btn-3d),0 4px 8px var(--shadow);
+      transition:transform 0.1s,box-shadow 0.1s,background 0.15s,color 0.15s;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .letter-btn:hover { transform:translateY(-2px); box-shadow:0 5px 0 var(--btn-3d); border-color:var(--accent); color:var(--accent); }
+    .letter-btn:active { transform:translateY(3px); box-shadow:0 1px 0 var(--btn-3d); }
+    .letter-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 3px 0 var(--btn-3d); }
+    .letter-btn.disabled { opacity:0.3; cursor:default; pointer-events:none; }
+
+    /* ── Search bar ── */
+    .search-wrap {
+      padding:0 14px 14px;
+      position:relative;
+    }
+    .search-wrap i { position:absolute; left:24px; top:50%; transform:translateY(-50%); color:var(--text2); font-size:14px; }
+    .az-search {
+      width:100%; padding:12px 14px 12px 42px;
+      background:var(--bg2); border:1.5px solid var(--border); border-radius:10px;
+      color:var(--text); font-family:'Poppins',sans-serif; font-size:14px; font-weight:600;
+      outline:none; box-shadow:0 3px 0 var(--btn-3d);
+      transition:border-color 0.2s,box-shadow 0.2s;
+    }
+    .az-search:focus { border-color:var(--accent); box-shadow:0 3px 0 var(--btn-3d),0 0 0 2px rgba(251,54,64,0.15); }
+
+    /* ── Results header ── */
+    .results-header {
+      padding:0 14px 10px;
+      display:flex; align-items:center; gap:10px;
+    }
+    .results-letter {
+      font-family:'Bebas Neue',cursive; font-size:48px; color:var(--accent);
+      line-height:1; text-shadow:0 4px 0 var(--btn-3d);
+      opacity:0; transform:scale(0.7);
+      transition:opacity 0.3s,transform 0.3s;
+    }
+    .results-letter.show { opacity:1; transform:scale(1); }
+    .results-count { font-size:12px; color:var(--text2); font-weight:600; }
+
+    /* ── Results grid ── */
+    .results-grid {
+      display:grid; grid-template-columns:1fr 1fr;
+      gap:10px; padding:0 14px 14px;
+    }
+    .anime-card {
+      background:var(--card); border:1.5px solid var(--border); border-radius:10px;
+      overflow:hidden; cursor:pointer;
+      box-shadow:0 4px 0 var(--btn-3d),0 6px 14px var(--shadow);
+      transition:transform 0.15s,box-shadow 0.15s;
+      display:flex; flex-direction:column;
+      opacity:0; transform:translateY(16px);
+      animation:cardIn 0.35s ease forwards;
+    }
+    @keyframes cardIn {
+      to { opacity:1; transform:translateY(0); }
+    }
+    .anime-card:hover { transform:translateY(-4px); box-shadow:0 8px 0 var(--btn-3d); }
+    .anime-card:active { transform:translateY(2px); box-shadow:0 2px 0 var(--btn-3d); }
+    .card-img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:var(--bg3); }
+    .card-body { padding:8px; flex:1; display:flex; flex-direction:column; }
+    .card-type {
+      display:inline-block; background:var(--accent); color:#fff;
+      font-size:8px; font-weight:800; padding:2px 7px;
+      border-radius:4px; letter-spacing:1px; text-transform:uppercase;
+      margin-bottom:5px; align-self:flex-start;
+    }
+    .card-title {
+      font-size:12px; font-weight:700; color:var(--text); line-height:1.3;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+      height:2.6em; margin-bottom:4px;
+    }
+    .card-meta { font-size:10px; color:var(--text2); margin-top:auto; }
+    .card-rating { color:#ffd700; font-weight:700; }
+
+    /* ── Empty / Loading ── */
+    .state-msg {
+      text-align:center; padding:48px 20px;
+      color:var(--text2); font-size:13px; font-weight:600;
+    }
+    .state-msg i { font-size:36px; margin-bottom:12px; display:block; color:var(--border); }
+
+    /* ── Pagination ── */
+    .pagination {
+      display:flex; justify-content:center; align-items:center;
+      gap:6px; flex-wrap:wrap; padding:14px 14px 32px;
+    }
+    .page-btn {
+      min-width:36px; height:36px; padding:0 8px;
+      border-radius:8px; border:1.5px solid var(--border);
+      background:var(--card); color:var(--text2);
+      font-family:'Poppins',sans-serif; font-size:12px; font-weight:800;
+      cursor:pointer; box-shadow:0 3px 0 var(--btn-3d);
+      transition:transform 0.1s,box-shadow 0.1s;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .page-btn:hover  { transform:translateY(-2px); box-shadow:0 5px 0 var(--btn-3d); border-color:var(--accent); color:var(--accent); }
+    .page-btn:active { transform:translateY(2px); box-shadow:0 1px 0 var(--btn-3d); }
+    .page-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); cursor:default; }
+    .page-dots { color:var(--text2); font-size:14px; padding:0 4px; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="az-header">
+  <div class="az-header-left">
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    <div class="logo">ANIME <span>VERSE</span></div>
+  </div>
+  <button class="theme-btn" onclick="toggleTheme()" id="themeBtn"><i class="fas fa-moon"></i></button>
+</header>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-icon"><i class="fas fa-arrow-down-a-z"></i></div>
+  <h1>A-Z Index</h1>
+  <p>Browse all content alphabetically</p>
+</div>
+
+<!-- Letter bar -->
+<div class="letter-bar" id="letterBar">
+  <!-- built by JS -->
+</div>
+
+<!-- Search -->
+<div class="search-wrap">
+  <i class="fas fa-magnifying-glass"></i>
+  <input class="az-search" type="text" id="azSearch" placeholder="Search by letter or name..." oninput="onSearchInput(this.value)"/>
+</div>
+
+<!-- Results header -->
+<div class="results-header">
+  <div class="results-letter" id="resultsLetter"></div>
+  <div class="results-count" id="resultsCount"></div>
+</div>
+
+<!-- Results grid -->
+<div id="resultsGrid" class="results-grid"></div>
+<div id="stateMsg" class="state-msg">
+  <i class="fas fa-arrow-up-a-z"></i> Pick a letter or type to search
+</div>
+
+<!-- Pagination -->
+<div class="pagination" id="pagination"></div>
+
+<script>
+// ── Theme ──
 function loadTheme() {
   const s = localStorage.getItem('av_theme') || 'dark';
   document.documentElement.setAttribute('data-theme', s);
