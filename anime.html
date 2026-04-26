@@ -576,10 +576,102 @@
           document.title = `${anime.title} — Anime Verse`;
           renderDetail(anime);
           recordView(animeId);
+          loadRecommendations(anime);
         } else {
           showError('Anime not found or failed to load.');
         }
       });
+    }
+
+    // ===== RECOMMENDATIONS =====
+    async function loadRecommendations(currentAnime) {
+      try {
+        const snap = await db.collection('anime').get();
+        const all = [];
+        snap.forEach(doc => {
+          const d = doc.data();
+          if (d.published !== false && doc.id !== animeId && d.type === currentAnime.type)
+            all.push({...d, firestoreId: doc.id});
+        });
+
+        // Score by genre overlap
+        const currentGenres = new Set((currentAnime.genre || []).map(g => g.toLowerCase()));
+        all.forEach(a => {
+          const genres = (a.genre || []).map(g => g.toLowerCase());
+          a._score = genres.filter(g => currentGenres.has(g)).length;
+        });
+
+        // Sort: genre match first, then by rating
+        const recs = all
+          .sort((a, b) => b._score - a._score || (b.rating || 0) - (a.rating || 0))
+          .slice(0, 4);
+
+        if (recs.length === 0) return;
+
+        // Build UI
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'padding:20px 14px 32px;max-width:700px;margin:0 auto';
+        wrap.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <div style="width:32px;height:32px;background:var(--accent);border-radius:8px;
+              display:flex;align-items:center;justify-content:center;flex-shrink:0;
+              box-shadow:0 3px 0 var(--accent2)">
+              <i class="fas fa-thumbs-up" style="color:#fff;font-size:14px"></i>
+            </div>
+            <span style="font-size:16px;font-weight:800;color:var(--text)">You May Also Like</span>
+          </div>
+          <div id="recGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>`;
+
+        document.querySelector('.anime-detail-wrap') ?
+          document.querySelector('.anime-detail-wrap').after(wrap) :
+          document.body.appendChild(wrap);
+
+        const grid = wrap.querySelector('#recGrid');
+        recs.forEach((a, i) => {
+          const card = document.createElement('div');
+          card.style.cssText = `
+            background:var(--card-bg);border:1.5px solid var(--border);border-radius:10px;
+            overflow:hidden;cursor:pointer;
+            box-shadow:0 4px 0 var(--btn-3d),0 6px 14px var(--shadow);
+            transition:transform 0.15s,box-shadow 0.15s;
+            opacity:0;transform:translateY(16px);
+            animation:recIn 0.4s ease ${i*0.08}s forwards;
+            display:flex;flex-direction:column`;
+          card.innerHTML = `
+            <img src="${a.thumbnail||''}" alt="${a.title}"
+              style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--bg3)"
+              onerror="this.style.background='var(--bg3)'"/>
+            <div style="padding:8px;flex:1;display:flex;flex-direction:column">
+              <span style="display:inline-block;background:var(--badge-bg);color:#fff;
+                font-size:8px;font-weight:800;padding:2px 7px;border-radius:4px;
+                letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;align-self:flex-start">
+                ${a.type||'ANIME'}
+              </span>
+              <div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.3;
+                display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+                overflow:hidden;height:2.6em;margin-bottom:4px">${a.title}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;
+                margin-top:auto;font-size:10px;color:var(--text2)">
+                <span style="color:#ffd700;font-weight:700">
+                  <i class="fas fa-star" style="font-size:9px"></i> ${a.rating||'N/A'}
+                </span>
+                <span>${a.year||''}</span>
+              </div>
+            </div>`;
+          card.onclick = () => { window.location.href = `anime.html?id=${a.firestoreId}`; };
+          card.addEventListener('mouseover',  () => { card.style.transform='translateY(-4px)'; card.style.boxShadow='0 8px 0 var(--btn-3d)'; });
+          card.addEventListener('mouseout',   () => { card.style.transform=''; card.style.boxShadow='0 4px 0 var(--btn-3d),0 6px 14px var(--shadow)'; });
+          grid.appendChild(card);
+        });
+
+        // Add keyframe if not present
+        if (!document.getElementById('recStyle')) {
+          const s = document.createElement('style');
+          s.id = 'recStyle';
+          s.textContent = '@keyframes recIn{to{opacity:1;transform:translateY(0)}}';
+          document.head.appendChild(s);
+        }
+      } catch(e) { console.warn('Recommendations failed:', e); }
     }
 
     // ===== VIEW COUNTER =====
