@@ -3,227 +3,278 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Genre - Anime Verse</title>
+  <title>Genre — Anime Verse</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
   <style>
     .genre-page {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 30px 20px 80px;
+      padding: 20px 16px 80px;
     }
     .genre-header {
       display: flex;
       align-items: center;
-      gap: 16px;
-      margin-bottom: 30px;
+      gap: 14px;
+      margin: 10px 0 22px;
       flex-wrap: wrap;
-    }
-    .genre-header .back-btn {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.12);
-      color: #fff;
-      padding: 10px 16px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-family: 'Poppins', sans-serif;
-      font-weight: 600;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: all .2s;
-    }
-    .genre-header .back-btn:hover {
-      background: rgba(255,255,255,0.15);
-      transform: translateX(-2px);
     }
     .genre-title {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(32px, 5vw, 56px);
+      font-size: clamp(28px, 5vw, 48px);
       letter-spacing: 2px;
       margin: 0;
-      background: linear-gradient(135deg, #ff4757, #ff6b81);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: var(--text, #fff);
+    }
+    .genre-title .accent {
+      color: var(--accent, #ff4757);
     }
     .genre-count {
-      color: #aaa;
+      color: var(--text2, #aaa);
       font-family: 'Poppins', sans-serif;
-      font-size: 14px;
+      font-size: 13px;
       margin-left: auto;
+      background: var(--bg3, rgba(255,255,255,0.06));
+      padding: 6px 12px;
+      border-radius: 20px;
     }
+
     .genre-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
     }
-    .anime-card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px;
+    @media (max-width: 480px) {
+      .genre-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+    }
+
+    .g-card {
+      background: var(--bg2, rgba(255,255,255,0.04));
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 12px;
       overflow: hidden;
       cursor: pointer;
-      transition: all .3s;
-      animation: cardFade .4s ease both;
+      transition: transform .25s, box-shadow .25s, border-color .25s;
+      animation: gFade .35s ease both;
+      display: flex;
+      flex-direction: column;
     }
-    .anime-card:hover {
-      transform: translateY(-6px);
-      border-color: rgba(255,71,87,0.5);
-      box-shadow: 0 12px 30px rgba(255,71,87,0.2);
+    .g-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent, #ff4757);
+      box-shadow: 0 10px 25px rgba(0,0,0,.35);
     }
-    .anime-card img {
+    .g-card .poster {
       width: 100%;
-      aspect-ratio: 2/3;
+      aspect-ratio: 2 / 3;
       object-fit: cover;
       display: block;
+      background: #111;
     }
-    .anime-card .info {
-      padding: 12px;
+    .g-card .info {
+      padding: 10px 10px 12px;
     }
-    .anime-card .title {
+    .g-card .t {
       font-family: 'Poppins', sans-serif;
-      font-weight: 600;
-      font-size: 14px;
-      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--text, #fff);
       margin: 0 0 6px;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      line-height: 1.3;
+      min-height: 2.6em;
     }
-    .anime-card .meta {
-      font-size: 12px;
-      color: #aaa;
+    .g-card .m {
+      font-size: 11px;
+      color: var(--text2, #999);
       display: flex;
       justify-content: space-between;
+      gap: 6px;
+      font-family: 'Poppins', sans-serif;
     }
+
     .empty-state, .loading-state {
       text-align: center;
-      padding: 80px 20px;
-      color: #888;
+      padding: 70px 20px;
+      color: var(--text2, #888);
       font-family: 'Poppins', sans-serif;
     }
     .empty-state i, .loading-state i {
-      font-size: 48px;
-      margin-bottom: 16px;
-      color: #ff4757;
+      font-size: 44px;
+      margin-bottom: 14px;
+      color: var(--accent, #ff4757);
     }
-    .loading-state .spinner {
-      width: 48px;
-      height: 48px;
+    .empty-state h3 { margin: 8px 0 6px; color: var(--text, #fff); }
+    .spinner {
+      width: 44px; height: 44px;
       border: 4px solid rgba(255,71,87,0.2);
-      border-top-color: #ff4757;
+      border-top-color: var(--accent, #ff4757);
       border-radius: 50%;
-      margin: 0 auto 16px;
+      margin: 0 auto 14px;
       animation: spin 1s linear infinite;
     }
+
     @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes cardFade {
-      from { opacity: 0; transform: translateY(20px); }
+    @keyframes gFade {
+      from { opacity: 0; transform: translateY(14px); }
       to   { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
 
-  <div class="genre-page">
-    <div class="genre-header">
-      <a href="index.html" class="back-btn">
-        <i class="fas fa-arrow-left"></i> Back
-      </a>
-      <h1 class="genre-title" id="genreTitle">Genre</h1>
-      <span class="genre-count" id="genreCount"></span>
+  <!-- Header (matches site style) -->
+  <header class="header">
+    <div class="header-left">
+      <button class="icon-btn" onclick="history.back()" aria-label="Back">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <a href="index.html" class="logo">ANIME <span>VERSE</span></a>
     </div>
+    <div class="header-right">
+      <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+  </header>
 
-    <div id="genreContent">
-      <div class="loading-state">
-        <div class="spinner"></div>
-        <p>Loading anime...</p>
+  <main class="main">
+    <div class="genre-page">
+      <div class="genre-header">
+        <h1 class="genre-title">
+          <span class="accent" id="genreTitle">Genre</span>
+        </h1>
+        <span class="genre-count" id="genreCount" style="display:none"></span>
+      </div>
+
+      <div id="genreContent">
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading anime...</p>
+        </div>
       </div>
     </div>
-  </div>
+  </main>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase (same versions as the rest of the site) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="firebase-config.js"></script>
 
   <script>
-    // Get genre from URL: genre.html?name=Action
-    const params = new URLSearchParams(window.location.search);
-    const genreName = params.get('name') || '';
-    document.getElementById('genreTitle').textContent = genreName || 'All Anime';
-    document.title = (genreName || 'Genre') + ' - Anime Verse';
+    /* ---------- Theme (matches anime.html) ---------- */
+    function toggleTheme() {
+      const html = document.documentElement;
+      const btn  = document.getElementById('themeBtn');
+      const dark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', dark ? 'light' : 'dark');
+      btn.innerHTML = dark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+      localStorage.setItem('av_theme', dark ? 'light' : 'dark');
+    }
+    (function loadTheme(){
+      const saved = localStorage.getItem('av_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      const btn = document.getElementById('themeBtn');
+      if (btn) btn.innerHTML = saved === 'dark'
+        ? '<i class="fas fa-moon"></i>'
+        : '<i class="fas fa-sun"></i>';
+    })();
 
-    function matchesGenre(animeData, target) {
+    /* ---------- Get genre from URL ---------- */
+    const params    = new URLSearchParams(window.location.search);
+    const genreName = (params.get('name') || '').trim();
+    document.getElementById('genreTitle').textContent = genreName || 'All Anime';
+    document.title = (genreName || 'All Anime') + ' — Anime Verse';
+
+    /* ---------- Genre matcher (handles array OR comma string, both `genre` and `genres`) ---------- */
+    function matchesGenre(data, target) {
       if (!target) return true;
       const t = target.toLowerCase().trim();
-      let list = [];
-
-      if (Array.isArray(animeData.genres)) list = list.concat(animeData.genres);
-      else if (typeof animeData.genres === 'string') list = list.concat(animeData.genres.split(','));
-
-      if (Array.isArray(animeData.genre)) list = list.concat(animeData.genre);
-      else if (typeof animeData.genre === 'string') list = list.concat(animeData.genre.split(','));
-
+      const list = [];
+      ['genre', 'genres'].forEach(k => {
+        const v = data[k];
+        if (Array.isArray(v)) v.forEach(x => list.push(x));
+        else if (typeof v === 'string') v.split(',').forEach(x => list.push(x));
+      });
       return list.some(g => String(g).toLowerCase().trim() === t);
     }
 
+    /* ---------- Load anime ---------- */
     async function loadGenreAnime() {
       const container = document.getElementById('genreContent');
+      const counter   = document.getElementById('genreCount');
+
       try {
+        // Wait for Firestore persistence (set in firebase-config.js) if available
+        if (window._persistenceReady) { try { await window._persistenceReady; } catch(_){} }
+
         const snap = await firebase.firestore().collection('anime').get();
         const matches = [];
         snap.forEach(doc => {
           const d = doc.data();
           if (matchesGenre(d, genreName)) {
-            matches.push({ id: doc.id, ...d });
+            matches.push({ firestoreId: doc.id, ...d });
           }
         });
 
-        document.getElementById('genreCount').textContent =
-          matches.length + ' ' + (matches.length === 1 ? 'anime' : 'anime');
+        // Sort alphabetically by title
+        matches.sort((a, b) =>
+          String(a.title || '').localeCompare(String(b.title || ''))
+        );
+
+        counter.style.display = '';
+        counter.textContent = matches.length + (matches.length === 1 ? ' result' : ' results');
 
         if (matches.length === 0) {
           container.innerHTML = `
             <div class="empty-state">
               <i class="fas fa-ghost"></i>
-              <h3>No anime found</h3>
-              <p>There are no anime in the "${genreName}" genre yet.</p>
+              <h3>Nothing here yet</h3>
+              <p>No anime found in the "<strong>${genreName || 'this'}</strong>" genre.</p>
             </div>`;
           return;
         }
 
         const grid = document.createElement('div');
         grid.className = 'genre-grid';
+
         matches.forEach((a, i) => {
           const card = document.createElement('div');
-          card.className = 'anime-card';
-          card.style.animationDelay = (i * 0.04) + 's';
-          const poster = a.poster || a.image || a.thumbnail || 'https://via.placeholder.com/300x450?text=No+Image';
+          card.className = 'g-card';
+          card.style.animationDelay = (Math.min(i, 20) * 0.03) + 's';
+
+          const poster = a.thumbnail || a.poster || a.image || a.banner || '';
           const title  = a.title || a.name || 'Untitled';
           const year   = a.year || a.releaseYear || '';
-          const eps    = a.episodes ? a.episodes + ' eps' : (a.type || '');
+          const studio = a.studio || a.type || '';
+
           card.innerHTML = `
-            <img src="${poster}" alt="${title}" loading="lazy"
-                 onerror="this.src='https://via.placeholder.com/300x450?text=No+Image'">
+            <img class="poster" src="${poster}" alt="${title}" loading="lazy"
+                 onerror="this.style.background='#222';this.removeAttribute('src');">
             <div class="info">
-              <p class="title">${title}</p>
-              <div class="meta">
+              <p class="t">${title}</p>
+              <div class="m">
                 <span>${year}</span>
-                <span>${eps}</span>
+                <span>${studio}</span>
               </div>
             </div>`;
+
           card.addEventListener('click', () => {
-            window.location.href = 'anime.html?id=' + encodeURIComponent(a.id);
+            window.location.href = 'anime.html?id=' + encodeURIComponent(a.firestoreId);
           });
+
           grid.appendChild(card);
         });
+
         container.innerHTML = '';
         container.appendChild(grid);
       } catch (err) {
@@ -232,7 +283,7 @@
           <div class="empty-state">
             <i class="fas fa-triangle-exclamation"></i>
             <h3>Something went wrong</h3>
-            <p>${err.message}</p>
+            <p>${err.message || 'Failed to load anime.'}</p>
           </div>`;
       }
     }
