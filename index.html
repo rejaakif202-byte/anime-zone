@@ -110,6 +110,27 @@
       </a>
     </div>
 
+    <!-- GENRES (live from Firestore) -->
+    <div class="sidebar-section">
+      <div id="sidebarGenreToggle" onclick="toggleSidebarGenres()"
+        style="display:flex;align-items:center;justify-content:space-between;
+          padding:11px 20px;margin:2px 10px;border-radius:8px;cursor:pointer;
+          font-size:13px;font-weight:800;color:var(--text2);letter-spacing:1px;
+          transition:background 0.2s;user-select:none">
+        <span><i class="fas fa-tags" style="width:18px;margin-right:12px"></i>GENRES</span>
+        <i class="fas fa-chevron-down" id="genreChevron"
+          style="font-size:11px;transition:transform 0.3s"></i>
+      </div>
+      <div id="sidebarGenreList"
+        style="overflow:hidden;max-height:0;transition:max-height 0.4s ease;padding:0 10px">
+        <div id="sidebarGenreInner" style="display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;padding:6px 0">
+          <div style="grid-column:1/-1;padding:10px;text-align:center;color:var(--text2);font-size:12px">
+            Loading…
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="sidebar-section"
       style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
       <a href="#" class="sidebar-item" id="sidebarLoginBtn"
@@ -512,6 +533,76 @@
         icon.className = 'fas fa-eye';
       }
     }
+  </script>
+
+
+  <!-- ===== GENRES SIDEBAR (live from Firestore) ===== -->
+  <script>
+    let _genresLoaded = false;
+
+    window.toggleSidebarGenres = function() {
+      const list  = document.getElementById('sidebarGenreList');
+      const chev  = document.getElementById('genreChevron');
+      const inner = document.getElementById('sidebarGenreInner');
+      const open  = list.style.maxHeight && list.style.maxHeight !== '0px';
+
+      if (open) {
+        list.style.maxHeight = '0px';
+        chev.style.transform = 'rotate(0deg)';
+      } else {
+        chev.style.transform = 'rotate(180deg)';
+        if (!_genresLoaded) {
+          loadSidebarGenres().then(() => {
+            list.style.maxHeight = (inner.scrollHeight + 20) + 'px';
+          });
+        } else {
+          list.style.maxHeight = (inner.scrollHeight + 20) + 'px';
+        }
+      }
+    };
+
+    async function loadSidebarGenres() {
+      const inner = document.getElementById('sidebarGenreInner');
+      try {
+        if (typeof db === 'undefined') {
+          inner.innerHTML = '<div style="grid-column:1/-1;padding:10px;text-align:center;color:var(--text2);font-size:12px">Database not ready</div>';
+          return;
+        }
+        const snap = await db.collection('anime').get();
+        const set  = new Set();
+        snap.forEach(doc => {
+          const d = doc.data();
+          if (Array.isArray(d.genres))           d.genres.forEach(g => g && set.add(String(g).trim()));
+          else if (Array.isArray(d.genre))       d.genre .forEach(g => g && set.add(String(g).trim()));
+          else if (typeof d.genres === 'string') d.genres.split(',').forEach(g => g.trim() && set.add(g.trim()));
+          else if (typeof d.genre  === 'string') d.genre .split(',').forEach(g => g.trim() && set.add(g.trim()));
+        });
+        const genres = [...set].sort((a, b) => a.localeCompare(b));
+
+        if (!genres.length) {
+          inner.innerHTML = '<div style="grid-column:1/-1;padding:10px;text-align:center;color:var(--text2);font-size:12px">No genres yet</div>';
+        } else {
+          inner.innerHTML = genres.map((g, i) => `
+            <a href="genre.html?name=${encodeURIComponent(g)}"
+               class="sidebar-item"
+               style="padding:8px 10px;font-size:13px;animation:gFade .35s both;animation-delay:${i*25}ms"
+               onclick="closeSidebar && closeSidebar()">
+              ${g}
+            </a>
+          `).join('');
+        }
+        _genresLoaded = true;
+      } catch (err) {
+        console.error('Genre load failed:', err);
+        inner.innerHTML = '<div style="grid-column:1/-1;padding:10px;text-align:center;color:#e55;font-size:12px">Failed to load</div>';
+      }
+    }
+
+    (function injectGenreAnim(){
+      const s = document.createElement('style');
+      s.textContent = '@keyframes gFade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}';
+      document.head.appendChild(s);
+    })();
   </script>
 
 </body>
